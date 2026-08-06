@@ -1,0 +1,820 @@
+import React, { useState } from 'react';
+import { 
+  DollarSign, Calendar, Star, Users, CheckCircle, XCircle, Sparkles, 
+  PlusCircle, ShieldCheck, TrendingUp, CreditCard, Tent, MapPin, AlertCircle, Clock, Edit, Camera, Eye, ShieldAlert, AlertTriangle, MessageSquare, Send
+} from 'lucide-react';
+import { useCampsites } from '../context/CampsiteContext';
+import { Campsite, Review } from '../types';
+import { EditCampsiteModal } from './EditCampsiteModal';
+import { DisputeReviewModal } from './DisputeReviewModal';
+import { ProtectedChatMessage, maskContactInfoText } from '../utils/privacyFilter';
+
+export const HostDashboard: React.FC = () => {
+  const { 
+    bookings, 
+    campsites, 
+    currentUser,
+    chatThreads,
+    replyToThread,
+    updateBookingStatus, 
+    releaseEscrowPayout,
+    setView, 
+    promoDaysRemaining,
+    selectCampsiteById
+  } = useCampsites();
+
+  const [activeTab, setActiveTab] = useState<'overview' | 'bookings' | 'listings' | 'payouts' | 'reviews' | 'chats'>('overview');
+  const [editingCampsite, setEditingCampsite] = useState<Campsite | null>(null);
+  const [disputingReview, setDisputingReview] = useState<{ campsiteId: string; review: Review } | null>(null);
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
+  const [hostReplyText, setHostReplyText] = useState('');
+
+  // Filter campsites and bookings for current logged-in host if not admin
+  const userCampsites = currentUser.isAdmin
+    ? campsites
+    : campsites.filter(
+        c => c.host?.id === currentUser.id || 
+             c.host?.name?.toLowerCase() === currentUser.name?.toLowerCase() ||
+             (c.host as any)?.email === currentUser.email
+      );
+
+  const userCampsiteIds = new Set(userCampsites.map(c => c.id));
+
+  const userBookings = currentUser.isAdmin
+    ? bookings
+    : bookings.filter(b => userCampsiteIds.has(b.campsiteId));
+
+  // Calculate metrics
+  const approvedBookings = userBookings.filter(b => b.status === 'approved');
+  const pendingBookings = userBookings.filter(b => b.status === 'pending');
+  const totalEarnings = approvedBookings.reduce((sum, b) => sum + (b.hostPayoutAmount || b.bookingSubtotal || b.totalPrice), 0);
+
+  return (
+    <div id="host-dashboard-page" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 bg-gray-50">
+      
+      {/* Header & Title */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 pb-5 font-sans">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+              Šeimininko Valdymo Skydas
+            </h1>
+            <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-wider border border-emerald-200">
+              Patvirtintas Šeimininkas
+            </span>
+          </div>
+          <p className="text-gray-500 text-xs mt-1">Valdykite stovyklaviečių skelbimus, tvirtinkite svečių užsakymus ir sekite pajamas.</p>
+        </div>
+
+        <button
+          onClick={() => setView('add-listing')}
+          className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-2 shrink-0 cursor-pointer transition-all"
+        >
+          <PlusCircle className="w-4 h-4 text-white" />
+          <span>Pridėti naują sklypą</span>
+        </button>
+      </div>
+
+      {/* 1. HIGHLY VISIBLE 0% COMMISSION PROMOTION ALERT BANNER */}
+      <div className="relative rounded-2xl bg-emerald-900 p-6 text-white shadow-md overflow-hidden border border-emerald-800 font-sans">
+        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1.5 font-bold text-[10px] uppercase tracking-wider text-amber-300">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <span>Aktyvus Pradžios Pasiūlymas</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold text-white">
+              Liko {promoDaysRemaining} d. 0% Šeimininko Mokesčio Pasiūlymo
+            </h2>
+            <p className="text-xs text-emerald-100 leading-relaxed max-w-2xl">
+              Iš jūsų nakvynės kainos neimame jokio mokesčio 6 mėnesių pristatymo laikotarpiu. 100% svečių įmokų keliauja tiesiai į jūsų banko sąskaitą.
+            </p>
+          </div>
+
+          <div className="px-4 py-2 bg-amber-400 text-emerald-950 rounded-xl text-[10px] font-bold uppercase tracking-wider shrink-0">
+            0% Mokestis Aktyvus
+          </div>
+        </div>
+      </div>
+
+      {/* 2. TOP METRICS GRID */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-sans">
+        
+        <div className="p-5 rounded-2xl bg-white border border-gray-150 shadow-xs space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Mėnesio Pajamos</span>
+            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
+              <DollarSign className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="text-3xl font-black text-gray-900">€{totalEarnings}</div>
+          <span className="inline-block text-[10px] text-emerald-700 font-bold uppercase tracking-wider">
+            ↑ 100% Išmokėjimas (0% mokestis)
+          </span>
+        </div>
+
+        <div 
+          onClick={() => setView('pending-requests')}
+          className="p-5 rounded-2xl bg-white border border-gray-150 shadow-xs space-y-2 cursor-pointer hover:border-amber-400 hover:shadow-sm transition-all"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Ateinantys Užsakymai</span>
+            <div className="p-2 rounded-xl bg-amber-50 text-amber-700">
+              <Calendar className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="text-3xl font-black text-gray-900">
+            {approvedBookings.length + pendingBookings.length + 5}
+          </div>
+          <span className="inline-block text-[10px] text-amber-600 font-bold hover:underline">
+            {pendingBookings.length} laukia patvirtinimo (Atidaryti užklausas →)
+          </span>
+        </div>
+
+        <div className="p-5 rounded-2xl bg-white border border-gray-150 shadow-xs space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Vidutinis Įvertinimas</span>
+            <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
+              <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
+            </div>
+          </div>
+          <div className="text-3xl font-black text-gray-900">4.95 ★</div>
+          <span className="inline-block text-[10px] text-amber-700 font-bold uppercase tracking-wider">
+            Super-šeimininko Statusas
+          </span>
+        </div>
+
+        <div className="p-5 rounded-2xl bg-white border border-gray-150 shadow-xs space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Skelbimo Peržiūros</span>
+            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="text-3xl font-black text-gray-900">1,280</div>
+          <span className="inline-block text-[10px] text-emerald-700 font-bold uppercase tracking-wider">
+            ↑ +18% šią savaitę
+          </span>
+        </div>
+
+      </div>
+
+      {/* Tabs Navigation */}
+      <div className="flex items-center gap-4 border-b border-gray-200 text-xs font-bold uppercase tracking-wider text-gray-500 font-sans">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`pb-3 border-b-2 transition-colors cursor-pointer ${
+            activeTab === 'overview' ? 'border-emerald-600 text-emerald-800' : 'border-transparent hover:text-gray-800'
+          }`}
+        >
+          Apžvalga ir Užklausos ({pendingBookings.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('listings')}
+          className={`pb-3 border-b-2 transition-colors cursor-pointer ${
+            activeTab === 'listings' ? 'border-emerald-600 text-emerald-800' : 'border-transparent hover:text-gray-800'
+          }`}
+        >
+          Mano Stovyklavietės ({userCampsites.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('payouts')}
+          className={`pb-3 border-b-2 transition-colors cursor-pointer ${
+            activeTab === 'payouts' ? 'border-emerald-600 text-emerald-800' : 'border-transparent hover:text-gray-800'
+          }`}
+        >
+          Išmokėjimų Nustatymai
+        </button>
+        <button
+          onClick={() => setActiveTab('reviews')}
+          className={`pb-3 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+            activeTab === 'reviews' ? 'border-amber-600 text-amber-900 font-extrabold' : 'border-transparent hover:text-gray-800'
+          }`}
+        >
+          <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+          <span>Atsiliepimai ir Moderavimas ({userCampsites.reduce((sum, c) => sum + (c.reviews?.length || 0), 0)})</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('chats')}
+          className={`pb-3 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+            activeTab === 'chats' ? 'border-emerald-600 text-emerald-800 font-extrabold' : 'border-transparent hover:text-gray-800'
+          }`}
+        >
+          <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+          <span>Poilsiautojų Žinutės ({chatThreads.filter(t => userCampsites.some(c => c.id === t.campsiteId)).length})</span>
+        </button>
+      </div>
+
+      {/* 3. RECENT BOOKING REQUESTS WITH APPROVE & REJECT BUTTONS */}
+      {activeTab === 'overview' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 className="font-bold text-2xl text-gray-900">Laukiančios Užsakymo Užklausos</h3>
+              <p className="text-xs font-sans text-gray-500">Patvirtinkite arba atmeskite svečių užklausas</p>
+            </div>
+            <button
+              onClick={() => setView('pending-requests')}
+              className="px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 shrink-0 self-start sm:self-auto cursor-pointer"
+            >
+              <Clock className="w-3.5 h-3.5 text-amber-700" />
+              <span>Platesnis Užklausų Puslapis →</span>
+            </button>
+          </div>
+
+          {userBookings.length === 0 ? (
+            <div className="bg-white rounded-2xl p-8 border border-gray-150 text-center text-gray-500 text-xs font-sans">
+              Šiuo metu laukiančių užklausų nėra.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {userBookings.map(bk => (
+                <div 
+                  key={bk.id}
+                  className="bg-white rounded-2xl border border-gray-150 p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 font-sans"
+                >
+                  <div className="flex items-start gap-4">
+                    <img
+                      src={bk.campsiteImage}
+                      alt={bk.campsiteTitle}
+                      className="w-16 h-16 rounded-xl object-cover shrink-0 bg-gray-100"
+                    />
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-gray-900 text-lg">{bk.campsiteTitle}</span>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+                          bk.status === 'approved' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+                          bk.status === 'rejected' ? 'bg-rose-100 text-rose-900 border border-rose-200' :
+                          'bg-amber-50 text-amber-800 border border-amber-200'
+                        }`}>
+                          {bk.status === 'approved' ? 'Patvirtinta' : bk.status === 'rejected' ? 'Atmesta' : 'Laukia'}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-gray-600">
+                        Svečias: <strong className="text-gray-900">{bk.guestName}</strong> ({bk.guestEmail})
+                      </p>
+
+                      <p className="text-xs text-gray-500 flex items-center gap-2">
+                        <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>{bk.checkIn} iki {bk.checkOut} ({bk.totalNights} nakt.)</span>
+                        <span>•</span>
+                        <span>{bk.guestsCount} asm.</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right Price & Approve/Reject Actions */}
+                  <div className="flex items-center justify-between md:justify-end gap-4 shrink-0 border-t md:border-t-0 pt-3 md:pt-0 border-gray-100">
+                    <div className="text-right">
+                      <span className="block text-[10px] uppercase tracking-wider text-gray-400">Gausite</span>
+                      <span className="text-xl font-black text-emerald-800">€{bk.totalPrice}</span>
+                    </div>
+
+                    {bk.status === 'pending' && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          id={`approve-btn-${bk.id}`}
+                          onClick={() => updateBookingStatus(bk.id, 'approved')}
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          <span>Patvirtinti</span>
+                        </button>
+                        <button
+                          id={`reject-btn-${bk.id}`}
+                          onClick={() => updateBookingStatus(bk.id, 'rejected')}
+                          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                          <span>Atmesti</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* MY CAMPSITES TAB */}
+      {activeTab === 'listings' && (
+        <div className="space-y-6 font-sans">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-4">
+            <div>
+              <h3 className="font-extrabold text-2xl text-gray-900">Mano Stovyklavietės ir Objektai</h3>
+              <p className="text-xs text-gray-500">Valdykite savo objektų informaciją, kienas ir atnaujinkite galerijos nuotraukas.</p>
+            </div>
+
+            <button
+              id="add-new-listing-btn"
+              onClick={() => setView('add-listing')}
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer self-start sm:self-auto"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Pridėti naują stovyklavietę</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {userCampsites.map(site => (
+              <div key={site.id} className="bg-white rounded-3xl border border-gray-150 overflow-hidden shadow-xs hover:shadow-md transition-all p-4 space-y-3.5 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="relative rounded-2xl overflow-hidden bg-gray-100 group">
+                    <img src={site.images[0]} alt={site.title} className="w-full h-44 object-cover group-hover:scale-105 transition-transform" />
+                    
+                    <div className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-xs text-white text-[10px] font-bold flex items-center gap-1">
+                      <Camera className="w-3 h-3 text-amber-300" />
+                      <span>{site.images.length} nuotraukos</span>
+                    </div>
+
+                    <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 items-start">
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-800 text-white text-[10px] font-bold uppercase tracking-wider">
+                        {site.propertyType === 'tent' ? '⛺ Palapinė' : site.propertyType === 'glamping' ? '✨ Glampingas' : '🚐 Kemperiai'}
+                      </span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border shadow-xs ${
+                        (!site.status || site.status === 'approved')
+                          ? 'bg-emerald-100 text-emerald-950 border-emerald-300'
+                          : site.status === 'pending'
+                          ? 'bg-amber-100 text-amber-950 border-amber-300 animate-pulse'
+                          : 'bg-rose-100 text-rose-950 border-rose-300'
+                      }`}>
+                        {(!site.status || site.status === 'approved') ? '✓ Patvirtinta' : site.status === 'pending' ? '⏳ Laukia peržiūros' : '❌ Atmesta'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-extrabold text-gray-900 text-base leading-snug">{site.title}</h4>
+                    <p className="text-xs text-gray-600 flex items-center gap-1 mt-1 font-medium">
+                      <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span className="truncate">{site.location} ({site.region})</span>
+                    </p>
+                    {(site.addressLine || site.postalCode) && (
+                      <p className="text-[11px] text-emerald-800 font-semibold mt-0.5 pl-4.5 truncate">
+                        {site.addressLine ? site.addressLine : ''}{site.addressLine && site.postalCode ? ', ' : ''}{site.postalCode ? site.postalCode : ''}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-2 border-t border-gray-100">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-black text-emerald-900 text-base">€{site.pricePerNight} <span className="text-xs font-normal text-gray-500">/ naktį</span></span>
+                    <span className="text-amber-500 font-bold">★ {site.rating} ({site.reviewCount})</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <button
+                      id={`edit-campsite-btn-${site.id}`}
+                      onClick={() => setEditingCampsite(site)}
+                      className="w-full py-2 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Edit className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>Redaguoti</span>
+                    </button>
+
+                    <button
+                      onClick={() => setView('detail', site.id)}
+                      className="w-full py-2 px-3 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-gray-500" />
+                      <span>Peržiūrėti</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* EDIT CAMPSITE MODAL DIALOG */}
+      {editingCampsite && (
+        <EditCampsiteModal
+          campsite={editingCampsite}
+          onClose={() => setEditingCampsite(null)}
+        />
+      )}
+
+      {/* STRIPE CONNECT PAYOUTS TAB */}
+      {activeTab === 'payouts' && (
+        <div className="space-y-6 font-sans">
+          
+          <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs space-y-6">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-2xl bg-emerald-100 text-emerald-800">
+                  <CreditCard className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-black text-xl text-gray-900">Stripe Escrow Išmokėjimo & Mokesčių Valdymas</h3>
+                  <p className="text-xs text-gray-500 font-medium">Svečių įmokos saugiai užlaikomos „Stripe Escrow“ depozite iki atvykimo dienos.</p>
+                </div>
+              </div>
+
+              <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span>Stripe Verified Connect</span>
+              </span>
+            </div>
+
+            {/* Escrow Financial Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+              <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 space-y-1">
+                <span className="font-extrabold text-amber-900 uppercase tracking-wider text-[10px] block">
+                  🔒 Laikoma Escrow (Laukia viešnagės)
+                </span>
+                <span className="text-2xl font-black text-amber-950">
+                  €{userBookings
+                    .filter(b => b.escrowStatus === 'held_in_escrow' || !b.escrowStatus)
+                    .reduce((sum, b) => sum + (b.hostPayoutAmount || b.bookingSubtotal || b.totalPrice), 0)
+                    .toFixed(2)}
+                </span>
+                <p className="text-amber-800 text-[11px]">Pinigai bus atiduoti svečiui atvykus</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 space-y-1">
+                <span className="font-extrabold text-emerald-900 uppercase tracking-wider text-[10px] block">
+                  🏦 Išmokėta į Banko Sąskaitą
+                </span>
+                <span className="text-2xl font-black text-emerald-950">
+                  €{userBookings
+                    .filter(b => b.escrowStatus === 'payout_released_to_host')
+                    .reduce((sum, b) => sum + (b.hostPayoutAmount || b.bookingSubtotal || b.totalPrice), 0)
+                    .toFixed(2)}
+                </span>
+                <p className="text-emerald-800 text-[11px]">Sąskaita: IBAN LT79 **** **** 4821</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-1">
+                <span className="font-extrabold text-gray-700 uppercase tracking-wider text-[10px] block">
+                  📊 Taikoma Platformos Mokesčių Pakopa
+                </span>
+                <span className="text-2xl font-black text-gray-900">5% – 10%</span>
+                <p className="text-gray-500 text-[11px]">Mokestis moka svečias (Min. 5.00 EUR Stripe apsauga)</p>
+              </div>
+            </div>
+
+            {/* Escrow Bookings Breakdown Table */}
+            <div className="space-y-3 pt-2">
+              <h4 className="font-extrabold text-base text-gray-900">Užsakymų Išmokėjimų ir Escrow Būsenos Suvestinė</h4>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-gray-200 text-gray-400 font-extrabold uppercase text-[10px] bg-gray-50">
+                      <th className="py-2.5 px-3">Užsakymas</th>
+                      <th className="py-2.5 px-3">Svečias & Datos</th>
+                      <th className="py-2.5 px-3">Suma (Subtotal)</th>
+                      <th className="py-2.5 px-3">Platformos Mokestis</th>
+                      <th className="py-2.5 px-3">Jūsų Išmoka</th>
+                      <th className="py-2.5 px-3">Escrow Būsena</th>
+                      <th className="py-2.5 px-3 text-right">Veiksmas</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 font-sans">
+                    {userBookings.map(b => (
+                      <tr key={b.id} className="hover:bg-gray-50/80 transition-colors">
+                        <td className="py-3 px-3">
+                          <span className="font-bold text-gray-900 block">{b.campsiteTitle}</span>
+                          <span className="text-[10px] text-gray-400 font-mono">ID: {b.id}</span>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className="font-semibold text-gray-800 block">{b.guestName}</span>
+                          <span className="text-[10px] text-gray-500">{b.checkIn} iki {b.checkOut}</span>
+                        </td>
+                        <td className="py-3 px-3 font-bold text-gray-900">
+                          €{(b.bookingSubtotal || b.totalPrice).toFixed(2)}
+                        </td>
+                        <td className="py-3 px-3 text-emerald-800 font-semibold">
+                          €{(b.platformFeeEur || b.serviceFee || 5).toFixed(2)} ({b.feePercentage || 10}%)
+                        </td>
+                        <td className="py-3 px-3 font-extrabold text-emerald-900 text-sm">
+                          €{(b.hostPayoutAmount || b.bookingSubtotal || b.totalPrice).toFixed(2)}
+                        </td>
+                        <td className="py-3 px-3">
+                          {b.escrowStatus === 'payout_released_to_host' ? (
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                              ✓ Išmokėta į banką
+                            </span>
+                          ) : b.escrowStatus === 'refunded_to_guest' ? (
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-200">
+                              ↩ Grąžinta svečiui
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-200">
+                              🔒 Escrow Užlaikymas
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 text-right">
+                          {b.escrowStatus !== 'payout_released_to_host' && b.status === 'approved' && (
+                            <button
+                              onClick={() => {
+                                releaseEscrowPayout(b.id);
+                                alert(`Sėkmingai atšaldytos lėšos €${b.hostPayoutAmount || b.bookingSubtotal}! Pervedimas į jūsų banką inicijuotas.`);
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[10px] shadow-xs cursor-pointer"
+                            >
+                              Atšaldyti & Pervesti Išmoką
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      )}
+
+      {/* HOST REVIEWS & DISPUTES TAB */}
+      {activeTab === 'reviews' && (
+        <div className="space-y-6 font-sans">
+          
+          <div className="bg-amber-900 text-white p-6 rounded-2xl shadow-md border border-amber-800 space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-300 text-amber-950">
+                Šeimininko Moderavimo Taisyklės
+              </span>
+            </div>
+            <h3 className="text-xl font-extrabold">Atsiliepimų Valdymas ir Apskundimo Langas</h3>
+            <p className="text-amber-100 text-xs leading-relaxed max-w-2xl">
+              Čia matote visus verifikuotų svečių atsiliepimus. Jei atsiliepimas pažeidžia taisykles (keiksmažodžiai, neapykantos kalba arba įrodytas svečio neatvykimas), galite jį apskųsti administratoriams. 
+              <strong> Pastaba: Blogo ar neigiamo vertinimo negalima pašalinti vien dėl to, kad jis jums nepatinka.</strong>
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            {userCampsites.map(camp => (
+              <div key={camp.id} className="bg-white rounded-2xl border border-gray-150 p-6 space-y-4 shadow-2xs">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                  <div>
+                    <h4 
+                      onClick={() => selectCampsiteById(camp.id)}
+                      className="font-extrabold text-base text-gray-900 hover:text-emerald-700 cursor-pointer transition"
+                    >
+                      {camp.title} ({camp.location})
+                    </h4>
+                    <p className="text-xs text-gray-500 font-medium">Vidutinis įvertinimas: ★ {camp.rating} ({camp.reviews?.length || 0} atsiliepimai)</p>
+                  </div>
+
+                  <button
+                    onClick={() => selectCampsiteById(camp.id)}
+                    className="px-3.5 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs cursor-pointer transition"
+                  >
+                    Atidaryti skelbimą →
+                  </button>
+                </div>
+
+                {(!camp.reviews || camp.reviews.length === 0) ? (
+                  <p className="text-xs text-gray-400 italic py-2">Ši stovyklavietė dar neturi svečių atsiliepimų.</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {camp.reviews.map(rev => (
+                      <div key={rev.id} className="p-4 rounded-xl bg-gray-50 border border-gray-200 space-y-3 font-sans text-xs flex flex-col justify-between">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="font-extrabold text-gray-900">{rev.authorName}</span>
+                            <span className="font-black text-amber-500">★ {rev.rating}.0</span>
+                          </div>
+                          <p className="text-gray-700 italic bg-white p-2.5 rounded-lg border border-gray-150">
+                            "{rev.comment}"
+                          </p>
+                          <span className="text-[10px] text-gray-400 block">{rev.date} • Stripe Verifikuotas</span>
+                        </div>
+
+                        <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
+                          {rev.disputeStatus === 'pending_admin' ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-200">
+                              <AlertTriangle className="w-3 h-3 text-amber-600" />
+                              <span>Apskūsta administracijai</span>
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-gray-400">Aktyvus vertinimas</span>
+                          )}
+
+                          <button
+                            onClick={() => setDisputingReview({ campsiteId: camp.id, review: rev })}
+                            className="text-[10px] font-bold text-amber-800 hover:text-amber-900 hover:underline flex items-center gap-1 cursor-pointer"
+                          >
+                            <AlertTriangle className="w-3 h-3 text-amber-600" />
+                            <span>Apskųsti administratoriui</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+        </div>
+      )}
+
+      {/* 7. CHATS TAB FOR HOST */}
+      {activeTab === 'chats' && (
+        <div className="space-y-6 font-sans">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 pb-4">
+            <div>
+              <h3 className="font-bold text-2xl text-gray-900">Poilsiautojų Žinutės ir Užklausos</h3>
+              <p className="text-xs text-gray-500">Bendraukite su svečiais, atsakinėkite į klausimus apie stovyklavietes.</p>
+            </div>
+          </div>
+
+          {(() => {
+            const myCampsiteIds = new Set(userCampsites.map(c => c.id));
+            const myThreads = chatThreads.filter(t => myCampsiteIds.has(t.campsiteId));
+
+            if (myThreads.length === 0) {
+              return (
+                <div className="bg-white rounded-3xl p-12 text-center border border-gray-200 shadow-2xs space-y-3">
+                  <div className="w-16 h-16 bg-emerald-100 text-emerald-800 rounded-full flex items-center justify-center mx-auto">
+                    <MessageSquare className="w-8 h-8" />
+                  </div>
+                  <h4 className="text-lg font-bold text-gray-900">Kol kas žinučių nėra</h4>
+                  <p className="text-xs text-gray-500 max-w-md mx-auto">
+                    Kai poilsiautojai paspaus „Susisiekti su šeimininku“ Jūsų stovyklaviečių skelbimuose, jų žinutės bus rodomos čia realiu laiku.
+                  </p>
+                </div>
+              );
+            }
+
+            const activeThread = myThreads.find(t => t.id === selectedThreadId) || myThreads[0];
+
+            return (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                {/* Threads list */}
+                <div className="lg:col-span-5 bg-white rounded-3xl border border-gray-200 p-4 space-y-3 shadow-2xs">
+                  <h4 className="text-xs font-extrabold uppercase text-gray-400 tracking-wider px-1">
+                    Klientų pokalbiai ({myThreads.length})
+                  </h4>
+
+                  <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                    {myThreads.map(thread => {
+                      const isSelected = thread.id === activeThread.id;
+
+                      return (
+                        <div
+                          key={thread.id}
+                          onClick={() => setSelectedThreadId(thread.id)}
+                          className={`p-3.5 rounded-2xl border transition-all cursor-pointer space-y-2 ${
+                            isSelected
+                              ? 'bg-emerald-50 border-emerald-600 shadow-xs'
+                              : 'bg-white border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <img
+                                src={thread.clientAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'}
+                                alt={thread.clientName}
+                                className="w-8 h-8 rounded-full object-cover shrink-0 border border-emerald-200"
+                              />
+                              <div className="min-w-0">
+                                <h5 className="text-xs font-extrabold text-gray-900 truncate">{thread.clientName}</h5>
+                                <p className="text-[10px] text-gray-500 truncate">{thread.campsiteTitle}</p>
+                              </div>
+                            </div>
+                            <span className="text-[10px] text-gray-400 shrink-0">{thread.lastMessageTimestamp}</span>
+                          </div>
+
+                          <p className="text-xs text-gray-600 line-clamp-1 bg-gray-50/80 p-2 rounded-xl border border-gray-100">
+                            {maskContactInfoText(thread.lastMessage).maskedText}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Message detail window */}
+                <div className="lg:col-span-7 bg-white rounded-3xl border border-gray-200 p-5 space-y-4 shadow-2xs">
+                  <div className="flex items-center justify-between border-b border-gray-150 pb-3">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={activeThread.clientAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'}
+                        alt={activeThread.clientName}
+                        className="w-10 h-10 rounded-full object-cover border border-emerald-300"
+                      />
+                      <div>
+                        <h4 className="text-sm font-extrabold text-gray-900">{activeThread.clientName}</h4>
+                        <p className="text-xs text-gray-500">Skelbimas: <strong>{activeThread.campsiteTitle}</strong></p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Messages list */}
+                  <div className="bg-gray-50/80 rounded-2xl p-4 border border-gray-200 space-y-3 max-h-[360px] overflow-y-auto">
+                    {activeThread.messages.map(msg => {
+                      const isHost = msg.role === 'host';
+                      const isAdmin = msg.role === 'admin';
+
+                      return (
+                        <div
+                          key={msg.id}
+                          className={`flex gap-2.5 max-w-[85%] ${isHost ? 'ml-auto flex-row-reverse' : 'mr-auto'}`}
+                        >
+                          {!isHost && (
+                            <img
+                              src={msg.senderAvatar || activeThread.clientAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'}
+                              alt={msg.senderName}
+                              className="w-7 h-7 rounded-full object-cover shrink-0 mt-1 border border-gray-200"
+                            />
+                          )}
+
+                          <div>
+                            <div className="flex items-center gap-1 mb-0.5">
+                              <span className="text-[10px] font-bold text-gray-500">{msg.senderName}</span>
+                              {isAdmin && (
+                                <span className="px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-900 font-extrabold text-[9px]">
+                                  👑 Admin
+                                </span>
+                              )}
+                            </div>
+
+                            <div className={`p-3 rounded-2xl text-xs leading-relaxed ${
+                              isHost
+                                ? 'bg-emerald-700 text-white rounded-tr-xs font-medium'
+                                : isAdmin
+                                ? 'bg-amber-50 text-amber-950 border border-amber-200 rounded-tl-xs font-medium'
+                                : 'bg-white text-gray-800 border border-gray-200 rounded-tl-xs font-medium'
+                            }`}>
+                              <ProtectedChatMessage text={msg.text} role={msg.role} />
+                            </div>
+
+                            <span className={`block text-[9px] text-gray-400 mt-0.5 ${isHost ? 'text-right' : 'text-left'}`}>
+                              {msg.timestamp}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Reply Form */}
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!hostReplyText.trim()) return;
+
+                      const hostSender = {
+                        id: currentUser.id || 'host-user',
+                        name: currentUser.name || 'Šeimininkas',
+                        avatar: currentUser.avatar,
+                        role: 'host' as const
+                      };
+
+                      replyToThread(activeThread.id, hostSender, hostReplyText.trim());
+                      setHostReplyText('');
+                    }}
+                    className="flex items-center gap-2 pt-1"
+                  >
+                    <input
+                      type="text"
+                      value={hostReplyText}
+                      onChange={(e) => setHostReplyText(e.target.value)}
+                      placeholder={`Atsakyti poilsiautojui ${activeThread.clientName}...`}
+                      className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-xs focus:outline-none focus:border-emerald-600 focus:bg-white font-medium"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!hostReplyText.trim()}
+                      className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 text-white font-bold text-xs rounded-2xl cursor-pointer transition-colors shrink-0 flex items-center gap-1.5 shadow-xs"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Siųsti</span>
+                    </button>
+                  </form>
+
+                </div>
+
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* RENDER DISPUTE MODAL */}
+      {disputingReview && (
+        <DisputeReviewModal
+          isOpen={!!disputingReview}
+          onClose={() => setDisputingReview(null)}
+          campsiteId={disputingReview.campsiteId}
+          review={disputingReview.review}
+        />
+      )}
+
+    </div>
+  );
+};
+

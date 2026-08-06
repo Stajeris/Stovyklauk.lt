@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #F9FAFB;
+    color: #111827;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F9FAFB;
+}
+::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #059669;
+}
+
+/* Leaflet Custom Map Styling */
+.custom-map-price-pin {
+  background: transparent !important;
+  border: none !important;
+}
+
+.custom-leaflet-popup .leaflet-popup-content-wrapper {
+  background-color: #FFFFFF !important;
+  color: #111827 !important;
+  border: 1px solid #F3F4F6 !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  padding: 0.25rem !important;
+}
+
+.custom-leaflet-popup .leaflet-popup-tip {
+  background-color: #FFFFFF !important;
+  border: 1px solid #F3F4F6 !important;
+}
+
+.custom-leaflet-popup .leaflet-popup-content {
+  margin: 0.5rem !important;
+  line-height: 1.4 !important;
+}
+
+

@@ -1,0 +1,165 @@
+export type PropertyType = 'tent' | 'rv' | 'glamping';
+
+export type CancellationPolicy = 'flexible' | 'moderate' | 'strict';
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  avatar: string;
+  bio?: string;
+  joinedDate: string;
+  isAdmin: boolean;
+  isSuperhost?: boolean;
+}
+
+export interface Host {
+  id: string;
+  name: string;
+  avatar: string;
+  isSuperhost: boolean;
+  joinedDate: string;
+  responseRate: string;
+  bio: string;
+}
+
+export interface Review {
+  id: string;
+  campsiteId?: string;
+  bookingId?: string;
+  authorName: string;
+  authorAvatar: string;
+  rating: number;
+  date: string;
+  comment: string;
+  verifiedStay?: boolean;
+  disputed?: boolean;
+  disputeReason?: string;
+  disputeCategory?: 'profanity' | 'hate_speech' | 'no_show' | 'other_violation';
+  disputeStatus?: 'none' | 'pending_admin' | 'dismissed' | 'removed_violation';
+  disputeDate?: string;
+}
+
+export interface Amenity {
+  id: string;
+  name: string;
+  iconName: string; // Lucide icon name mapping
+  category: 'essentials' | 'hookups' | 'activities' | 'rules';
+}
+
+export interface Campsite {
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  region: string;
+  addressLine?: string;
+  postalCode?: string;
+  latitude: number;
+  longitude: number;
+  pricePerNight: number;
+  rating: number;
+  reviewCount: number;
+  propertyType: PropertyType;
+  maxGuests: number;
+  rvMaxLengthFt?: number;
+  images: string[];
+  host: Host;
+  amenities: string[]; // List of amenity IDs or names
+  cancellationPolicy: CancellationPolicy;
+  terrainType: string;
+  featured: boolean;
+  blockedDates: string[]; // ISO date strings YYYY-MM-DD
+  reviews: Review[];
+  rules: string[];
+  status?: 'approved' | 'pending' | 'rejected';
+}
+
+export interface Booking {
+  id: string;
+  campsiteId: string;
+  campsiteTitle: string;
+  campsiteImage: string;
+  location: string;
+  guestName: string;
+  guestEmail: string;
+  guestPhone?: string;
+  guestNote?: string;
+  checkIn: string; // YYYY-MM-DD
+  checkOut: string; // YYYY-MM-DD
+  guestsCount: number;
+  totalNights: number;
+  nightlyRate: number;
+  cleaningFee: number;
+  serviceFee: number;
+  totalPrice: number;
+  bookingSubtotal?: number;
+  platformFeeCents?: number;
+  platformFeeEur?: number;
+  feePercentage?: number;
+  hostPayoutAmount?: number;
+  stripePaymentStatus?: 'unpaid' | 'succeeded_escrow_held' | 'payout_released' | 'refunded';
+  escrowStatus?: 'held_in_escrow' | 'payout_released_to_host' | 'refunded_to_guest';
+  paymentMethodType?: 'card' | 'apple_pay' | 'google_pay';
+  stripePaymentIntentId?: string;
+  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  createdAt: string;
+  propertyType: PropertyType;
+}
+
+export interface SearchFilters {
+  location: string;
+  propertyType: PropertyType | 'all';
+  checkIn: string;
+  checkOut: string;
+  guests: number;
+  maxPrice: number;
+  petFriendly: boolean;
+  electricity: boolean;
+  nearWater: boolean;
+  firePit: boolean;
+}
+
+export type ViewState = 'landing' | 'search' | 'detail' | 'host-dashboard' | 'add-listing' | 'my-trips' | 'pending-requests' | 'admin';
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar?: string;
+  role: 'client' | 'host' | 'admin';
+  text: string;
+  timestamp: string;
+}
+
+export interface ChatThread {
+  id: string; // chat-{campsiteId}-{clientId}
+  campsiteId: string;
+  campsiteTitle: string;
+  campsiteImage?: string;
+  hostId: string;
+  hostName: string;
+  hostAvatar?: string;
+  clientId: string;
+  clientName: string;
+  clientEmail?: string;
+  clientAvatar?: string;
+  lastMessage: string;
+  lastMessageTimestamp: string;
+  messages: ChatMessage[];
+  unreadByHost?: boolean;
+  unreadByClient?: boolean;
+  unreadByAdmin?: boolean;
+}
+
+export const TERRAIN_OPTIONS = [
+  'Miškas ir pieva',
+  'Upės pakrantė',
+  'Ežero pakrantė',
+  'Laukymė',
+  'Sodas prie Sodybos'
+] as const;
+
+export type TerrainOption = typeof TERRAIN_OPTIONS[number];
+

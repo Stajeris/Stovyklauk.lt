@@ -1,0 +1,422 @@
+import { Campsite, Booking } from '../types';
+
+export const INITIAL_CAMPSITES: Campsite[] = [
+  {
+    id: 'camp-1',
+    title: 'Asvejos Pakrantės Stovyklavietė',
+    description: 'Privatus 1.5 hektaro miško sklypas tiesiai ant Asvejos ežero kranto. Ideali vieta stovyklauti su palapinėmis, žvejoti karšius ar plaukioti irklentėmis. Vakare jus džiugins skaidrus žvaigždėtas dangus be miesto šviesų.',
+    location: 'Molėtų r., Asveja',
+    region: 'Aukštaitija',
+    addressLine: 'Ežero g. 14, Dubingių seniūnija',
+    postalCode: 'LT-33100',
+    latitude: 55.058,
+    longitude: 25.452,
+    status: 'approved',
+    pricePerNight: 25,
+    rating: 4.95,
+    reviewCount: 42,
+    propertyType: 'tent',
+    maxGuests: 6,
+    images: [
+      'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1517824806704-9040b037703b?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?auto=format&fit=crop&w=800&q=80'
+    ],
+    host: {
+      id: 'host-1',
+      name: 'Mantas Lapinskas',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      isSuperhost: true,
+      joinedDate: '2021 m. Gegužė',
+      responseRate: '100% per 1 valandą',
+      bio: 'Gamta gyvenantis molėtiškis, baidarininkas ir žvejas. Mielai pasidalinsiu slaptomis ežero vietomis!'
+    },
+    amenities: ['Laužavietė', 'Geriamas vanduo', 'Draugiška gyvūnams', 'Prie ežero', 'Pirtis krante', 'Pikniko stalas', 'Lauko tualetas'],
+    cancellationPolicy: 'flexible',
+    terrainType: 'Ežero pakrantė ir pušynas',
+    featured: true,
+    blockedDates: ['2026-08-10', '2026-08-11', '2026-08-12', '2026-08-20', '2026-08-21'],
+    rules: [
+      'Tylos valandos nuo 22:00 iki 07:00',
+      'Išsivežti visas savo šiukšles',
+      'Laužus kūrenti tik tam skirtoje laužavietėje',
+      'Gyvūnai turi būti prižiūrimi'
+    ],
+    reviews: [
+      {
+        id: 'rev-1',
+        authorName: 'Rūta ir Paulius',
+        authorAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80',
+        rating: 5,
+        date: '2026 m. Liepa',
+        comment: 'Nuostabi vieta! Ryte pagavome ešerių, o vakare stebėjome krentančias žvaigždes prie laužo.',
+        verifiedStay: true
+      },
+      {
+        id: 'rev-2',
+        authorName: 'Dainius K.',
+        authorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80',
+        rating: 5,
+        date: '2026 m. Birželis',
+        comment: 'Šeimininkas Mantas labai paslaugus. Vietovė tvarkinga, privatumas 100%.',
+        verifiedStay: true
+      }
+    ]
+  },
+  {
+    id: 'camp-2',
+    title: 'Aukštaitijos Glamping Namelis ir Kubilas',
+    description: 'Prabangus kupolinis glamping namelis ant skardžio su panoraminiu ežero vaizdu. Viduje – karališko dydžio lova, stoglangis žvaigždėms stebėti, medinis karšto vandens kubilas ir privatus dušas.',
+    location: 'Zarasų r., Dusetos',
+    region: 'Aukštaitija',
+    addressLine: 'Sartų Kranto g. 8, Vasaknos',
+    postalCode: 'LT-32301',
+    latitude: 55.748,
+    longitude: 25.843,
+    status: 'approved',
+    pricePerNight: 95,
+    rating: 4.98,
+    reviewCount: 88,
+    propertyType: 'glamping',
+    maxGuests: 2,
+    images: [
+      'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1537225228614-56cc3556d7ed?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1499696010180-025ef6e1a8f9?auto=format&fit=crop&w=800&q=80'
+    ],
+    host: {
+      id: 'host-2',
+      name: 'Elena Petrauskienė',
+      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
+      isSuperhost: true,
+      joinedDate: '2022 m. Kovo',
+      responseRate: '98% per 30 min',
+      bio: 'Architektė ir gamtos mylėtoja, sukūrusi tvarią poilsio erdvę Zarasų krašte.'
+    },
+    amenities: ['Elektra', 'Šiltas dušas', 'Vandens tualetas', 'Wi-Fi', 'Karštas kubilas', 'Kava/Arbata', 'Laužavietė', 'Ežero pakrantė'],
+    cancellationPolicy: 'moderate',
+    terrainType: 'Kalvelė prie ežero',
+    featured: true,
+    blockedDates: ['2026-08-14', '2026-08-15', '2026-08-16'],
+    rules: [
+      'Rūkyti viduje griežtai draudžiama',
+      'Be pašalinių neregistruotų svečių',
+      'Atsakingai naudotis kubilu'
+    ],
+    reviews: [
+      {
+        id: 'rev-3',
+        authorName: 'Tomas V.',
+        authorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80',
+        rating: 5,
+        date: '2026 m. Liepa',
+        comment: 'Nepamirštamas savaitgalis. Mėgautis karštu kubilu žiūrint į ežerą – visiška magija!'
+      }
+    ]
+  },
+  {
+    id: 'camp-3',
+    title: 'Dzūkijos Šilo Kemperių Aikštelė ir Prijungimai',
+    description: 'Erdvi išlyginta aikštelė kemperiams su 220V elektros lizdais, geriamojo vandens įvadu ir greitu Wi-Fi. Apsupta ošiančių Varėnos pušynų, patogus įvažiavimas net ir dideliems kemperiams.',
+    location: 'Varėnos r., Marcinkonys',
+    region: 'Dzūkija',
+    addressLine: 'Šilo g. 21, Marcinkonys',
+    postalCode: 'LT-65301',
+    latitude: 54.053,
+    longitude: 24.410,
+    status: 'approved',
+    pricePerNight: 28,
+    rating: 4.91,
+    reviewCount: 31,
+    propertyType: 'rv',
+    maxGuests: 8,
+    rvMaxLengthFt: 35,
+    images: [
+      'https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80'
+    ],
+    host: {
+      id: 'host-3',
+      name: 'Gintaras ir Birutė',
+      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80',
+      isSuperhost: false,
+      joinedDate: '2023 m. Balandis',
+      responseRate: '100% per 2 valandas',
+      bio: 'Dzūkijos senbuviai, džiaugsmingai priimantys keliautojus savo sodybos teritorijoje.'
+    },
+    amenities: ['Elektra', 'Geriamas vanduo', 'Wi-Fi', 'Draugiška gyvūnams', 'Nuotekų išpylimas', 'Pikniko stalas', 'Laužavietė'],
+    cancellationPolicy: 'flexible',
+    terrainType: 'Pušyno aikštelė',
+    featured: true,
+    blockedDates: ['2026-08-08', '2026-08-09'],
+    rules: [
+      'Gretimoje teritorijoje greitis iki 10 km/h',
+      'Generatorius naudoti tik esant būtinybei',
+      'Šunys su pavadėliu sodybos ribose'
+    ],
+    reviews: [
+      {
+        id: 'rev-4',
+        authorName: 'Karolina L.',
+        authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
+        rating: 5,
+        date: '2026 m. Birželis',
+        comment: 'Puikiai pritaikyta vieta musų kemperiui. Švaru, ramu, visai šalia Ūlos upė.'
+      }
+    ]
+  },
+  {
+    id: 'camp-4',
+    title: 'Lūšių Ežero Safario Palapinė ir Baidarės',
+    description: 'Įrengta prabangi dvisienė palapinė ant Aukštaitijos nacionalinio parko ežero kranto. Į kaimynystę įskaičiuotos baidarės, irklentės, patogi dvigulė lova bei saulės baterijų apšvietimas.',
+    location: 'Ignalinos r., Palūšė',
+    region: 'Aukštaitija',
+    addressLine: 'Lūšių g. 12, Palūšės k.',
+    postalCode: 'LT-30202',
+    latitude: 55.328,
+    longitude: 26.103,
+    status: 'approved',
+    pricePerNight: 65,
+    rating: 4.97,
+    reviewCount: 56,
+    propertyType: 'glamping',
+    maxGuests: 4,
+    images: [
+      'https://images.unsplash.com/photo-1499696010180-025ef6e1a8f9?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?auto=format&fit=crop&w=800&q=80'
+    ],
+    host: {
+      id: 'host-1',
+      name: 'Mantas Lapinskas',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      isSuperhost: true,
+      joinedDate: '2021 m. Gegužė',
+      responseRate: '100% per 1 valandą',
+      bio: 'Gamta gyvenantis molėtiškis ir gidas.'
+    },
+    amenities: ['Prie ežero', 'Laužavietė', 'Geriamas vanduo', 'Draugiška gyvūnams', 'Pikniko stalas', 'Baidarės nemokamai'],
+    cancellationPolicy: 'flexible',
+    terrainType: 'Pakrantės miškas',
+    featured: false,
+    blockedDates: ['2026-08-18', '2026-08-19'],
+    rules: [
+      'Gelbėjimosi liemenės būtinos plaukiojant baidarėmis',
+      'Prieš einant miegoti laužą užpilti vandeniu'
+    ],
+    reviews: [
+      {
+        id: 'rev-5',
+        authorName: 'Aleksas B.',
+        authorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80',
+        rating: 5,
+        date: '2026 m. Liepa',
+        comment: 'Irkluoti saulei tekant tiesiai iš liepto buvo tiesiog neįtikėtina.'
+      }
+    ]
+  },
+  {
+    id: 'camp-5',
+    title: 'Šventosios Slėnio Laukinė Stovyklavietė',
+    description: 'Atskirta laukinė vieta palapinėms Anykščių šilelio apsaltyje prie Šventosios upės. Visiška ramybė, tyras šaltinio vanduo už 100 metrų ir Puntuco akmuo pėsčiomis pasiekiamu atstumu.',
+    location: 'Anykščių r., Niūronys',
+    region: 'Aukštaitija',
+    addressLine: 'Šventosios Vingio kelias 5, Niūronys',
+    postalCode: 'LT-29175',
+    latitude: 55.570,
+    longitude: 25.088,
+    status: 'approved',
+    pricePerNight: 18,
+    rating: 4.88,
+    reviewCount: 29,
+    propertyType: 'tent',
+    maxGuests: 4,
+    images: [
+      'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?auto=format&fit=crop&w=800&q=80'
+    ],
+    host: {
+      id: 'host-4',
+      name: 'Saulius Gimžauskas',
+      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
+      isSuperhost: true,
+      joinedDate: '2020 m. Sausis',
+      responseRate: '95% per 4 valandas',
+      bio: 'Saugau Anykščių šilelio sklypus tikriems minimalistinio poilsio mėgėjams.'
+    },
+    amenities: ['Šaltinio vanduo', 'Draugiška gyvūnams', 'Žvaigždėtas dangus', 'Kompostinis tualetas'],
+    cancellationPolicy: 'strict',
+    terrainType: 'Šilelis prie upės',
+    featured: false,
+    blockedDates: [],
+    rules: [
+      'Griežta Nenumesk Šiukšlės politika',
+      'Sausros metu naudoti tik turistines virykles'
+    ],
+    reviews: [
+      {
+        id: 'rev-6',
+        authorName: 'Kristina M.',
+        authorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80',
+        rating: 5,
+        date: '2026 m. Birželis',
+        comment: 'Visapusiška ramybė. Miegoti po ošiančiomis pušimis be jokių automobilių garso.'
+      }
+    ]
+  },
+  {
+    id: 'camp-6',
+    title: 'Kuršių Marių Kemperių ir Auto-Palapinių Oazė',
+    description: 'Sutvarkyta žvyro aikštelė su 220V elektra, saulės burės pavėsine, lauko ugniaviete bei moderniu dušo ir tualeto pastatu. Idealiai pritaikyta mikroautobusams, kemperiams ir keliautojams.',
+    location: 'Neringa, Juodkrantė',
+    region: 'Pajūris',
+    addressLine: 'L. Rėzos g. 42B, Juodkrantė',
+    postalCode: 'LT-93101',
+    latitude: 55.533,
+    longitude: 21.117,
+    status: 'approved',
+    pricePerNight: 35,
+    rating: 4.93,
+    reviewCount: 64,
+    propertyType: 'rv',
+    maxGuests: 4,
+    rvMaxLengthFt: 28,
+    images: [
+      'https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80'
+    ],
+    host: {
+      id: 'host-2',
+      name: 'Elena Petrauskienė',
+      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
+      isSuperhost: true,
+      joinedDate: '2022 m. Kovo',
+      responseRate: '98% per 30 min',
+      bio: 'Pajūrio krašto architektė.'
+    },
+    amenities: ['Elektra', 'Šiltas dušas', 'Vandens tualetas', 'Wi-Fi', 'Laužavietė', 'Draugiška gyvūnams'],
+    cancellationPolicy: 'flexible',
+    terrainType: 'Pajūrio smėlynai',
+    featured: false,
+    blockedDates: ['2026-08-25', '2026-08-26'],
+    rules: [
+      'Pajūrio gamtą saugoti, nuotekas pilti tik į tam skirtą vietą',
+      'Šunys su pavadėliais'
+    ],
+    reviews: [
+      {
+        id: 'rev-7',
+        authorName: 'Neringa S.',
+        authorAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80',
+        rating: 5,
+        date: '2026 m. Liepa',
+        comment: 'Švariausias dušas ir patogiausia vieta Juodkrantėje. Labai geras internetas ryšiui palei marias.'
+      }
+    ]
+  }
+];
+
+export const INITIAL_BOOKINGS: Booking[] = [
+  {
+    id: 'bk-101',
+    campsiteId: 'camp-1',
+    campsiteTitle: 'Asvejos Pakrantės Stovyklavietė',
+    campsiteImage: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80',
+    location: 'Molėtų r., Asveja',
+    guestName: 'Giedrius Štajeris',
+    guestEmail: 'giedrius@example.com',
+    guestPhone: '+370 655 12345',
+    guestNote: 'Norėtume ramios vietos prie pat vandens kranto. Atvyksime šeštadienį apie 14 val.',
+    checkIn: '2026-08-10',
+    checkOut: '2026-08-13',
+    guestsCount: 2,
+    totalNights: 3,
+    nightlyRate: 25,
+    cleaningFee: 10,
+    bookingSubtotal: 85,
+    serviceFee: 8.5,
+    platformFeeCents: 850,
+    platformFeeEur: 8.5,
+    feePercentage: 10,
+    hostPayoutAmount: 85,
+    totalPrice: 93.5,
+    stripePaymentStatus: 'succeeded_escrow_held',
+    escrowStatus: 'held_in_escrow',
+    paymentMethodType: 'card',
+    stripePaymentIntentId: 'pi_3M0001EscrowAsveja',
+    status: 'approved',
+    createdAt: '2026-08-01',
+    propertyType: 'tent'
+  },
+  {
+    id: 'bk-102',
+    campsiteId: 'camp-2',
+    campsiteTitle: 'Aukštaitijos Glamping Namelis ir Kubilas',
+    campsiteImage: 'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?auto=format&fit=crop&w=600&q=80',
+    location: 'Zarasų r., Dusetos',
+    guestName: 'Aistė Ridikaitė',
+    guestEmail: 'aiste@example.com',
+    guestPhone: '+370 684 67890',
+    guestNote: 'Išsinuomojome glampingą gimtadienio proga. Ar galima užsakyti kubilo iškūrenimą atvykimo dieną?',
+    checkIn: '2026-08-14',
+    checkOut: '2026-08-16',
+    guestsCount: 2,
+    totalNights: 2,
+    nightlyRate: 95,
+    cleaningFee: 25,
+    bookingSubtotal: 215,
+    serviceFee: 15.05,
+    platformFeeCents: 1505,
+    platformFeeEur: 15.05,
+    feePercentage: 7,
+    hostPayoutAmount: 215,
+    totalPrice: 230.05,
+    stripePaymentStatus: 'succeeded_escrow_held',
+    escrowStatus: 'held_in_escrow',
+    paymentMethodType: 'card',
+    stripePaymentIntentId: 'pi_3M0002EscrowGlamping',
+    status: 'pending',
+    createdAt: '2026-08-04',
+    propertyType: 'glamping'
+  },
+  {
+    id: 'bk-103',
+    campsiteId: 'camp-3',
+    campsiteTitle: 'Dzūkijos Šilo Kemperių Aikštelė ir Prijungimai',
+    campsiteImage: 'https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?auto=format&fit=crop&w=600&q=80',
+    location: 'Varėnos r., Marcinkonys',
+    guestName: 'Tomas Jonaitis',
+    guestEmail: 'tomas.j@example.com',
+    guestPhone: '+370 612 34567',
+    guestNote: 'Atvykstame su 7m ilgio kemperiu. Mums reikalinga 16A elektros jungtis.',
+    checkIn: '2026-08-18',
+    checkOut: '2026-08-21',
+    guestsCount: 4,
+    totalNights: 3,
+    nightlyRate: 28,
+    cleaningFee: 15,
+    bookingSubtotal: 99,
+    serviceFee: 9.9,
+    platformFeeCents: 990,
+    platformFeeEur: 9.9,
+    feePercentage: 10,
+    hostPayoutAmount: 99,
+    totalPrice: 108.9,
+    stripePaymentStatus: 'succeeded_escrow_held',
+    escrowStatus: 'held_in_escrow',
+    paymentMethodType: 'card',
+    stripePaymentIntentId: 'pi_3M0003EscrowRv',
+    status: 'pending',
+    createdAt: '2026-08-04',
+    propertyType: 'rv'
+  }
+];

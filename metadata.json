@@ -1,0 +1,6 @@
+{
+  "name": "Stovyklauk.lt",
+  "description": "Privačių stovyklaviečių, glamping namelių bei kemperių aikštelių rezervacijos platforma Lietuvoje.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
