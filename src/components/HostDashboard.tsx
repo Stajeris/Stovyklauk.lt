@@ -8,6 +8,8 @@ import { Campsite, Review } from '../types';
 import { EditCampsiteModal } from './EditCampsiteModal';
 import { DisputeReviewModal } from './DisputeReviewModal';
 import { HostCalendarManager } from './HostCalendarManager';
+import { HostVerificationSection } from './HostVerificationSection';
+import { VisitArrivalConfirmationCard } from './VisitArrivalConfirmationCard';
 import { ProtectedChatMessage, maskContactInfoText } from '../utils/privacyFilter';
 
 export const HostDashboard: React.FC = () => {
@@ -47,6 +49,9 @@ export const HostDashboard: React.FC = () => {
   const userBookings = currentUser.isAdmin
     ? bookings
     : bookings.filter(b => userCampsiteIds.has(b.campsiteId));
+
+  // Calculate total PRO monthly cost based on 1 night price for each listing
+  const totalProMonthlyCost = userCampsites.reduce((sum, c) => sum + (c.pricePerNight || 0), 0);
 
   // Calculate metrics
   const approvedBookings = userBookings.filter(b => b.status === 'approved');
@@ -235,10 +240,14 @@ export const HostDashboard: React.FC = () => {
       {/* 3. RECENT BOOKING REQUESTS WITH APPROVE & REJECT BUTTONS */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
+
+          {/* Host Verification Section */}
+          <HostVerificationSection />
+
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h3 className="font-bold text-2xl text-gray-900">Laukiančios Užsakymo Užklausos</h3>
-              <p className="text-xs font-sans text-gray-500">Patvirtinkite arba atmeskite svečių užklausas</p>
+              <p className="text-xs font-sans text-gray-500 font-medium">Patvirtinkite arba atmeskite svečių užklausas bei tikrinkite apsilankymų patvirtinimus</p>
             </div>
             <button
               onClick={() => setView('pending-requests')}
@@ -292,30 +301,39 @@ export const HostDashboard: React.FC = () => {
                   </div>
 
                   {/* Right Price & Approve/Reject Actions */}
-                  <div className="flex items-center justify-between md:justify-end gap-4 shrink-0 border-t md:border-t-0 pt-3 md:pt-0 border-gray-100">
-                    <div className="text-right">
-                      <span className="block text-[10px] uppercase tracking-wider text-gray-400">Gausite</span>
-                      <span className="text-xl font-black text-emerald-800">€{bk.totalPrice}</span>
+                  <div className="flex flex-col md:items-end justify-between gap-3 shrink-0 border-t md:border-t-0 pt-3 md:pt-0 border-gray-100">
+                    <div className="flex items-center justify-between md:justify-end gap-4">
+                      <div className="text-right">
+                        <span className="block text-[10px] uppercase tracking-wider text-gray-400">Gausite</span>
+                        <span className="text-xl font-black text-emerald-800">€{bk.totalPrice}</span>
+                      </div>
+
+                      {bk.status === 'pending' && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            id={`approve-btn-${bk.id}`}
+                            onClick={() => updateBookingStatus(bk.id, 'approved')}
+                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            <span>Patvirtinti</span>
+                          </button>
+                          <button
+                            id={`reject-btn-${bk.id}`}
+                            onClick={() => updateBookingStatus(bk.id, 'rejected')}
+                            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                          >
+                            <XCircle className="w-3.5 h-3.5" />
+                            <span>Atmesti</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
 
-                    {bk.status === 'pending' && (
-                      <div className="flex items-center gap-2">
-                        <button
-                          id={`approve-btn-${bk.id}`}
-                          onClick={() => updateBookingStatus(bk.id, 'approved')}
-                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
-                        >
-                          <CheckCircle className="w-3.5 h-3.5" />
-                          <span>Patvirtinti</span>
-                        </button>
-                        <button
-                          id={`reject-btn-${bk.id}`}
-                          onClick={() => updateBookingStatus(bk.id, 'rejected')}
-                          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl text-xs flex items-center gap-1 transition-colors cursor-pointer"
-                        >
-                          <XCircle className="w-3.5 h-3.5" />
-                          <span>Atmesti</span>
-                        </button>
+                    {/* Visit Confirmation and 24h Escrow Countdown Card for Approved Bookings */}
+                    {bk.status === 'approved' && (
+                      <div className="w-full md:w-80">
+                        <VisitArrivalConfirmationCard booking={bk} role="host" />
                       </div>
                     )}
                   </div>
@@ -331,8 +349,17 @@ export const HostDashboard: React.FC = () => {
         <div className="space-y-6 font-sans">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-4">
             <div>
-              <h3 className="font-extrabold text-2xl text-gray-900">Mano Stovyklavietės ir Objektai</h3>
-              <p className="text-xs text-gray-500">Valdykite savo objektų informaciją, kienas ir atnaujinkite galerijos nuotraukas.</p>
+              <div className="flex items-center gap-2">
+                <h3 className="font-extrabold text-2xl text-gray-900">Mano Stovyklavietės ir Objektai</h3>
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                  hostTier === 'pro' 
+                    ? 'bg-amber-100 text-amber-900 border border-amber-300' 
+                    : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                }`}>
+                  {hostTier === 'pro' ? 'PRO (Keli sklypai)' : `Bazinė (${userCampsites.length}/1 sklypas)`}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Valdykite savo objektų informaciją, kainas ir atnaujinkite galerijos nuotraukas.</p>
             </div>
 
             <button
@@ -342,8 +369,37 @@ export const HostDashboard: React.FC = () => {
             >
               <PlusCircle className="w-4 h-4" />
               <span>Pridėti naują stovyklavietę</span>
+              {hostTier === 'free' && userCampsites.length >= 1 && (
+                <span className="px-1.5 py-0.5 rounded bg-amber-400 text-amber-950 font-black text-[9px] uppercase">
+                  PRO reikalingas 2+
+                </span>
+              )}
             </button>
           </div>
+
+          {/* Free Tier Limit Warning Banner in Listings Tab */}
+          {hostTier === 'free' && userCampsites.length >= 1 && (
+            <div className="p-5 rounded-2xl bg-amber-50 border border-amber-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 font-black text-amber-950">
+                  <Crown className="w-4 h-4 text-amber-600 fill-amber-500" />
+                  <span>Nemokama (Bazinė) versija: Pasiektas 1 sklypo limitas</span>
+                </div>
+                <p className="text-amber-900 text-[11px] leading-relaxed">
+                  Bazinėje versijoje galite valdyti tik <strong>1 skelbimą</strong>. Norėdami registruoti ir valdyti <strong>daugiau nei 1 sklypą (kelis objektus)</strong>, aktyvuokite <strong>PRO paketą</strong>.
+                  Mėnesinis PRO mokestis skaičiuojamas pagal kiekvieno sklypo 1 nakvynės kainą per mėnesį.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setHostTier('pro')}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5 shrink-0"
+              >
+                <Zap className="w-3.5 h-3.5 fill-white" />
+                <span>Atnaujinti į PRO paketą</span>
+              </button>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {userCampsites.map(site => (
@@ -902,8 +958,11 @@ export const HostDashboard: React.FC = () => {
                   <div className="space-y-3">
                     <div className="text-amber-400 font-black text-xl flex items-center gap-1.5 justify-center sm:justify-start">
                       <Zap className="w-5 h-5 fill-amber-400" />
-                      <span>25 € / mėn.</span>
+                      <span>{totalProMonthlyCost > 0 ? `€${totalProMonthlyCost} / mėn.` : '1 nakvynės kaina / mėn.'}</span>
                     </div>
+                    <p className="text-[10px] text-emerald-200 text-center sm:text-left">
+                      Skaičiuojama už {userCampsites.length} sklyp. (1 nakvynės kaina / mėn.)
+                    </p>
                     <button
                       onClick={() => setHostTier('free')}
                       className="w-full py-2.5 px-4 bg-white/20 hover:bg-white/30 text-white rounded-xl text-xs font-bold transition cursor-pointer"
@@ -913,15 +972,15 @@ export const HostDashboard: React.FC = () => {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="text-white font-extrabold text-lg">
-                      <span className="text-amber-300 text-2xl font-black">25 €</span> <span className="text-xs text-emerald-200">/ mėn.</span>
+                    <div className="text-white font-extrabold text-sm">
+                      <span className="text-amber-300 text-lg font-black">1 nakvynės kaina</span> <span className="text-xs text-emerald-200">/ mėn. per sklypą</span>
                     </div>
                     <button
                       onClick={() => setHostTier('pro')}
                       className="w-full py-3 px-6 bg-amber-400 hover:bg-amber-300 text-amber-950 rounded-xl text-xs font-black shadow-md transition cursor-pointer flex items-center justify-center gap-2"
                     >
                       <Crown className="w-4 h-4 text-amber-950 fill-amber-950" />
-                      <span>Aktivuoti PRO Paketą (14 d. Nemokamai)</span>
+                      <span>Aktivuoti PRO Paketą (Keliems Sklypams)</span>
                     </button>
                   </div>
                 )}
@@ -933,7 +992,7 @@ export const HostDashboard: React.FC = () => {
           <div className="space-y-4">
             <div className="text-center max-w-xl mx-auto space-y-1">
               <h3 className="text-xl font-extrabold text-gray-900">Palyginkite Narystės Planus</h3>
-              <p className="text-xs text-gray-500">Pasirinkite įrankius, atitinkančius jūsų stovyklavietės ar kemperio nuomos verslo apimtis.</p>
+              <p className="text-xs text-gray-500">Pasirinkite įrankius pagal savo stovyklavietės ar sodybos sklypų skaičių.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
@@ -946,7 +1005,7 @@ export const HostDashboard: React.FC = () => {
                   <div>
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Startui Rinkvietėje</span>
                     <h4 className="text-2xl font-black text-gray-900 mt-1">Bazinė Versija</h4>
-                    <p className="text-xs text-gray-500 mt-1">Idealu pradedantiems šeimininkams be finansinės rizikos.</p>
+                    <p className="text-xs text-emerald-800 font-bold mt-1">✓ Viskas nemokamai (1 sklypui per šeimininką)</p>
                   </div>
                   <span className="px-3 py-1 bg-gray-100 text-gray-700 font-black text-sm rounded-full">
                     Nemokamai
@@ -972,17 +1031,21 @@ export const HostDashboard: React.FC = () => {
                 <div className="space-y-3 pt-4 border-t border-gray-100 text-xs">
                   <div className="font-bold text-gray-900">Kas įskaičiuota nemokamai:</div>
                   <ul className="space-y-2.5 text-gray-600">
+                    <li className="flex items-start gap-2 text-emerald-950 font-bold bg-emerald-50 p-2 rounded-lg border border-emerald-100">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <span><strong>Objektų limitas:</strong> Tik 1 sklypas per šeimininko paskyrą</span>
+                    </li>
                     <li className="flex items-start gap-2">
                       <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                       <span><strong>Standartinis skelbimas:</strong> Vieta kataloge su aprašymu ir koordinatėmis</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                      <span><strong>Nuotraukų galerija:</strong> Įkelkite iki 6 nuotraukų</span>
+                      <span><strong>Nuotraukų galerija & Tiesioginiai užsakymai</strong></span>
                     </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                      <span><strong>Rezervacijų užklausos:</strong> Tiesioginiai užsakymai ir atsiliepimai</span>
+                    <li className="flex items-start gap-2 text-gray-400 line-through">
+                      <XCircle className="w-4 h-4 text-gray-300 shrink-0 mt-0.5" />
+                      <span>Kelių sklypų valdymas (daugiau nei 1 sklypas reikalauja PRO)</span>
                     </li>
                     <li className="flex items-start gap-2 text-gray-400 line-through">
                       <XCircle className="w-4 h-4 text-gray-300 shrink-0 mt-0.5" />
@@ -991,10 +1054,6 @@ export const HostDashboard: React.FC = () => {
                     <li className="flex items-start gap-2 text-gray-400 line-through">
                       <XCircle className="w-4 h-4 text-gray-300 shrink-0 mt-0.5" />
                       <span>iCal automatinis kalendorių sinchronizavimas</span>
-                    </li>
-                    <li className="flex items-start gap-2 text-gray-400 line-through">
-                      <XCircle className="w-4 h-4 text-gray-300 shrink-0 mt-0.5" />
-                      <span>Drono video ir išsami lankomumo statistika</span>
                     </li>
                   </ul>
                 </div>
@@ -1006,21 +1065,25 @@ export const HostDashboard: React.FC = () => {
               }`}>
                 <div className="absolute top-4 right-4 px-3 py-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black text-[10px] uppercase tracking-wider rounded-full shadow-xs flex items-center gap-1">
                   <Crown className="w-3 h-3 text-amber-100" />
-                  <span>Rekomenduojama Verslui</span>
+                  <span>Daugiau Nei 2 Objektai</span>
                 </div>
 
                 <div>
-                  <span className="text-xs font-bold text-amber-800 uppercase tracking-wider">Maksimalus Užimtumas</span>
+                  <span className="text-xs font-bold text-amber-800 uppercase tracking-wider">Kelių Sklypų Valdymas</span>
                   <h4 className="text-2xl font-black text-gray-900 mt-1 flex items-center gap-2">
                     <span>PRO Paketas</span>
                     <Sparkles className="w-5 h-5 text-amber-500" />
                   </h4>
-                  <p className="text-xs text-gray-600 mt-1">Aktyviems nuomotojams, siekiantiems didžiausio pamatomumo ir automatizacijos.</p>
+                  <p className="text-xs text-gray-600 mt-1">Šeimininkams, valdantiems kelis sklypus (daugiau nei 2 objektus).</p>
                 </div>
 
-                <div className="flex items-baseline gap-2">
-                  <div className="text-3xl font-black text-gray-900">25 €</div>
-                  <div className="text-xs font-bold text-gray-500">/ mėn. sezono metu (arba 199 €/metams)</div>
+                <div className="space-y-1">
+                  <div className="text-xl font-black text-amber-950">
+                    1 nakvynės kaina / mėn. <span className="text-xs font-extrabold text-amber-800">per sklypą</span>
+                  </div>
+                  <p className="text-[11px] text-gray-500">
+                    Kiekvieno sklypo mėnesinis PRO mokestis lygus to sklypo 1 nakvynės kainai per mėnesį.
+                  </p>
                 </div>
 
                 <button
@@ -1039,30 +1102,83 @@ export const HostDashboard: React.FC = () => {
                 <div className="space-y-3 pt-4 border-t border-amber-200/60 text-xs">
                   <div className="font-bold text-gray-900">Visi PRO privalumai:</div>
                   <ul className="space-y-2.5 text-gray-700 font-medium">
+                    <li className="flex items-start gap-2 text-amber-950 font-bold bg-amber-100/70 p-2 rounded-lg border border-amber-200">
+                      <Check className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <span><strong>Objektų valdymas:</strong> Leidžia valdyti kelis sklypus (2 ir daugiau)</span>
+                    </li>
                     <li className="flex items-start gap-2">
                       <Check className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                       <span><strong>Prioritetinis rodymas paieškoje:</strong> Skelbimai rodomi pirmi su <strong>„PRO / Rekomenduojama“</strong> ženkleliu</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                      <span><strong>iCal Kalendoriaus Sinchronizacija:</strong> Automatinis užimtumo suderinimas su Airbnb, Booking.com ir išvengimas dvigubų rezervacijų</span>
+                      <span><strong>iCal Kalendoriaus Sinchronizacija:</strong> Airbnb & Booking.com suderinamumas</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                      <span><strong>Išplėstinė galerija & Media:</strong> Neribotos nuotraukos ir Drono / Youtube video turas</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                      <span><strong>Išsami Lankomumo Analitika:</strong> Matote peržiūras, paieškos rodymus ir išsaugojimus į favoritus</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                      <span><strong>Pirmenybinis 24/7 palaikymas:</strong> Greitas techninių klausimų sprendimas</span>
+                      <span><strong>Išsami Lankomumo Analitika & Video turas</strong></span>
                     </li>
                   </ul>
                 </div>
               </div>
 
+            </div>
+          </div>
+
+          {/* Dynamic PRO Pricing Calculation Breakdown Card */}
+          <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-amber-100/40 rounded-3xl p-6 sm:p-8 border-2 border-amber-300 font-sans space-y-4 shadow-xs">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-amber-500 text-white rounded-2xl shrink-0 shadow-xs">
+                <Crown className="w-6 h-6 fill-white" />
+              </div>
+              <div>
+                <h4 className="font-black text-lg text-gray-900">Jūsų Skelbimų PRO Mėnesinio Mokesčio Apskaičiavimas</h4>
+                <p className="text-xs text-gray-600">
+                  Taisyklė: PRO narystės kaina už kiekvieną objektą = **to sklypo 1 nakvynės kaina per mėnesį**.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-5 border border-amber-200 space-y-3">
+              <div className="text-xs font-bold text-gray-900 border-b border-gray-150 pb-2 flex justify-between items-center">
+                <span>Jūsų Registruoti Sklypai ({userCampsites.length})</span>
+                <span className="text-amber-900">1 Nakvynės Kaina ➔ PRO Mokestis / mėn.</span>
+              </div>
+
+              {userCampsites.length === 0 ? (
+                <p className="text-xs text-gray-400 italic py-2">
+                  Jūs dar neturite užregistruotų sklypų. Pridėjus sklypą (pvz. už €30/naktį), jo PRO mėnesinis mokestis bus lygiai €30/mėn.
+                </p>
+              ) : (
+                <div className="space-y-2 text-xs">
+                  {userCampsites.map((site) => (
+                    <div key={site.id} className="flex flex-col sm:flex-row justify-between sm:items-center py-1.5 border-b border-gray-50 text-gray-800 font-medium gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-gray-900">• {site.title}</span>
+                        <span className="text-[10px] text-gray-400">({site.location})</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-amber-950 font-bold self-end sm:self-auto">
+                        <span>€{site.pricePerNight} / naktį</span>
+                        <span>➔</span>
+                        <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-black border border-amber-300">
+                          €{site.pricePerNight} / mėn.
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="pt-3 border-t border-amber-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 font-black text-sm text-gray-900">
+                <div className="flex items-center gap-2">
+                  <span>Bendras PRO Mėnesinis Mokestis Visiems Objektams:</span>
+                  <span className="text-xs font-normal text-gray-500">({userCampsites.length} sklypai)</span>
+                </div>
+                <div className="text-emerald-800 text-lg sm:text-xl font-extrabold flex items-center gap-1.5 self-end sm:self-auto">
+                  <Zap className="w-5 h-5 fill-amber-500 text-amber-500" />
+                  <span>€{totalProMonthlyCost} / mėn.</span>
+                </div>
+              </div>
             </div>
           </div>
 

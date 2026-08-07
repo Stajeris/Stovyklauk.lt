@@ -3,6 +3,7 @@ import { Briefcase, Calendar, MapPin, CheckCircle, Clock, XCircle, Tent, ArrowRi
 import { useCampsites } from '../context/CampsiteContext';
 import { OrderApproxMap } from './OrderApproxMap';
 import { ReviewModal } from './ReviewModal';
+import { VisitArrivalConfirmationCard } from './VisitArrivalConfirmationCard';
 import { Booking, Campsite } from '../types';
 
 export const MyTripsPage: React.FC = () => {
@@ -170,6 +171,13 @@ export const MyTripsPage: React.FC = () => {
                     </button>
                   </div>
                 </div>
+
+                {/* Visit Arrival Confirmation & Stripe Escrow 24h Payout Section */}
+                {(bk.status === 'approved' || bk.status === 'completed') && (
+                  <div className="pt-1">
+                    <VisitArrivalConfirmationCard booking={bk} role="guest" />
+                  </div>
+                )}
 
                 {/* Expandable Order Location Map */}
                 {isMapOpen && (

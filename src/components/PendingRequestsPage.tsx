@@ -6,6 +6,7 @@ import {
 import { useCampsites } from '../context/CampsiteContext';
 import { Booking } from '../types';
 import { OrderApproxMap } from './OrderApproxMap';
+import { VisitArrivalConfirmationCard } from './VisitArrivalConfirmationCard';
 
 export const PendingRequestsPage: React.FC = () => {
   const { campsites, bookings, updateBookingStatus, setView, t } = useCampsites();
@@ -387,17 +388,20 @@ export const PendingRequestsPage: React.FC = () => {
                     )}
 
                     {bk.status === 'approved' && (
-                      <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs text-emerald-900 font-bold">
-                        <span className="flex items-center gap-1.5">
-                          <CheckCircle className="w-4 h-4 text-emerald-600" />
-                          Užsakymas patvirtintas
-                        </span>
-                        <button
-                          onClick={() => setSelectedContactBooking(bk)}
-                          className="text-emerald-800 underline text-[11px]"
-                        >
-                          Rodyti kontaktus
-                        </button>
+                      <div className="space-y-3">
+                        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs text-emerald-900 font-bold">
+                          <span className="flex items-center gap-1.5">
+                            <CheckCircle className="w-4 h-4 text-emerald-600" />
+                            Užsakymas patvirtintas
+                          </span>
+                          <button
+                            onClick={() => setSelectedContactBooking(bk)}
+                            className="text-emerald-800 underline text-[11px]"
+                          >
+                            Rodyti kontaktus
+                          </button>
+                        </div>
+                        <VisitArrivalConfirmationCard booking={bk} role="host" />
                       </div>
                     )}
 

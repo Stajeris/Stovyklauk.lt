@@ -1,15 +1,24 @@
 import React, { useState } from 'react';
 import { 
   Tent, Sparkles, Trees, DollarSign, MapPin, CheckCircle, ArrowRight, 
-  ArrowLeft, Plus, Image as ImageIcon, ShieldAlert, Check, Clock, User, Phone, Mail, FileText 
+  ArrowLeft, Plus, Image as ImageIcon, ShieldAlert, Check, Clock, User, Phone, Mail, FileText, Crown, Zap 
 } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
 import { PropertyType, CancellationPolicy, TERRAIN_OPTIONS } from '../types';
 import { getAmenityConfig } from './AmenityBadge';
 import { LocationPickerMap } from './LocationPickerMap';
+import { HostVerificationSection } from './HostVerificationSection';
 
 export const AddListingWizard: React.FC = () => {
-  const { registerHostAndAddCampsite, currentUser, setView } = useCampsites();
+  const { registerHostAndAddCampsite, currentUser, setView, campsites, hostTier, setHostTier } = useCampsites();
+
+  const userCampsites = campsites.filter(
+    c => c.host?.id === currentUser.id || 
+         c.host?.name?.toLowerCase() === currentUser.name?.toLowerCase() ||
+         (c.host as any)?.email === currentUser.email
+  );
+
+  const isFreeTierLimitReached = hostTier === 'free' && userCampsites.length >= 1;
 
   const [step, setStep] = useState(1);
 
@@ -89,16 +98,16 @@ export const AddListingWizard: React.FC = () => {
 
   const [isSubmitted, setIsSubmitted] = useState(false);
 
+  const [createdCampsiteId, setCreatedCampsiteId] = useState<string | null>(null);
+
   const toggleAmenity = (amenity: string) => {
     setSelectedAmenities(prev => 
       prev.includes(amenity) ? prev.filter(a => a !== amenity) : [...prev, amenity]
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    registerHostAndAddCampsite(
+  const handleRegisterAndProceedToStep4 = () => {
+    const newCamp = registerHostAndAddCampsite(
       {
         name: hostName.trim() || 'Naujas Šeimininkas',
         email: hostEmail.trim() || 'seimininkas@stovyklauk.lt',
@@ -135,7 +144,19 @@ export const AddListingWizard: React.FC = () => {
       }
     );
 
-    setIsSubmitted(true);
+    if (newCamp) {
+      setCreatedCampsiteId(newCamp.id);
+    }
+    setStep(4);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (step < 4) {
+      handleRegisterAndProceedToStep4();
+    } else {
+      setIsSubmitted(true);
+    }
   };
 
   if (isSubmitted) {
@@ -205,6 +226,7 @@ export const AddListingWizard: React.FC = () => {
           { num: 1, label: 'Šeimininkas ir Objektas' },
           { num: 2, label: 'Kaina ir Patogumai' },
           { num: 3, label: 'Taisyklės ir Nuotraukos' },
+          { num: 4, label: 'Verifikacija ir Publikavimas' },
         ].map((s) => (
           <div key={s.num} className="flex items-center gap-2">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
@@ -222,6 +244,52 @@ export const AddListingWizard: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* Free Tier Limit Warning Banner */}
+      {isFreeTierLimitReached && (
+        <div className="p-6 rounded-3xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-amber-100/40 border-2 border-amber-400 font-sans space-y-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="p-3 bg-amber-500 text-white rounded-2xl shrink-0 shadow-xs">
+              <Crown className="w-6 h-6 fill-white" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-950 font-black text-[10px] uppercase tracking-wider">
+                  Nemokamos Versijos Limitas
+                </span>
+                <span className="text-amber-800 text-xs font-bold">Max 1 sklypas per šeimininką</span>
+              </div>
+              <h3 className="font-black text-lg text-gray-900">
+                Nemokamoje (Bazinėje) versijoje galite valdyti tik 1 objektą
+              </h3>
+              <p className="text-xs text-gray-700 leading-relaxed">
+                Jūs jau turite užregistravę 1 sklypą <strong>„{userCampsites[0]?.title || 'Mano stovyklavietė'}“</strong>. Norėdami registruoti ir valdyti <strong>kelis sklypus (2 ar daugiau objektų)</strong>, aktyvuokite <strong>PRO paketą</strong>.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-2xl border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div>
+              <span className="font-bold text-gray-900 block">PRO Mėnesinio Mokesčio Taisyklė:</span>
+              <span className="text-amber-900 font-extrabold">
+                1 nakvynės kaina per mėnesį užeinamam sklypui
+              </span>
+              <p className="text-[11px] text-gray-500">
+                Šiam naujam sklypui bei kitiems objektams PRO mokestis bus: <strong>€{pricePerNight} / mėn.</strong> (pagal nustatytą €{pricePerNight}/naktį kainą).
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setHostTier('pro')}
+              className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-xl text-xs shadow-md transition-all cursor-pointer flex items-center gap-1.5 shrink-0 active:scale-95"
+            >
+              <Zap className="w-4 h-4 fill-white" />
+              <span>Aktivuoti PRO paketą ir Tęsti</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Form Wizard Card */}
       <form onSubmit={handleSubmit} className="bg-white rounded-3xl border border-gray-150 p-6 sm:p-8 shadow-md space-y-6">
@@ -746,11 +814,74 @@ export const AddListingWizard: React.FC = () => {
                 <span>Atgal</span>
               </button>
               <button
+                type="button"
+                onClick={handleRegisterAndProceedToStep4}
+                className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md shadow-emerald-700/20 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+              >
+                <span>Registruoti ir Tęsti į 4 Žingsnį (Verifikacija)</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 4: HOST VERIFICATION & AUTO-APPROVAL */}
+        {step === 4 && (
+          <div className="space-y-6 animate-in fade-in duration-200 font-sans">
+            <div className="space-y-1">
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-black text-[10px] uppercase border border-emerald-300">
+                Paskutinis Etapas (4 Žingsnis) — Pateiktas Naujas Šeimininkas
+              </span>
+              <h2 className="text-2xl font-bold text-gray-900">4 Žingsnis: Verifikacija SMS / El. Paštu ir Automatinis Patvirtinimas</h2>
+              <p className="text-xs text-gray-600 leading-relaxed">
+                Jūsų skelbimas <strong>„{title || 'Privatus gamtos prieglobstis'}“</strong> sėkmingai pateiktas! Įveskite SMS arba el. pašto verifikacijos kodą žemiau. Įvedus kodą, skelbimas bus <strong>AUTOMATIŠKAI PATVIRTINTAS (Auto-Approved)</strong> ir iškart taps matomas žemėlapyje.
+              </p>
+            </div>
+
+            {/* Verification Module with OTP code entry */}
+            <HostVerificationSection onVerificationSuccess={() => {}} />
+
+            {/* Listing Summary Preview Box */}
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50/50 to-teal-50/30 border border-emerald-200/80 space-y-3">
+              <h4 className="font-extrabold text-xs text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                <span>📋 Pateikto Skelbimo Suvestinė</span>
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-gray-800 bg-white p-4 rounded-xl border border-emerald-100">
+                <div>
+                  <span className="font-bold text-gray-500 block">Pavadinimas:</span>
+                  <span className="font-bold text-gray-900">{title || 'Privatus gamtos prieglobstis'}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-gray-500 block">Vietovė:</span>
+                  <span className="font-bold text-gray-900">{location || 'Lietuva'}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-gray-500 block">Kaina už naktį:</span>
+                  <span className="font-black text-emerald-800">€{pricePerNight} / naktį</span>
+                </div>
+                <div>
+                  <span className="font-bold text-gray-500 block">Šeimininkas:</span>
+                  <span className="font-bold text-gray-900">{hostName || currentUser.name} ({hostEmail || currentUser.email})</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 flex justify-between items-center border-t border-gray-150">
+              <button
+                type="button"
+                onClick={() => setStep(3)}
+                className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl text-xs uppercase tracking-wider flex items-center gap-1 cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Atgal į 3 žingsnį</span>
+              </button>
+              
+              <button
                 type="submit"
-                className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider shadow-md shadow-emerald-700/20 transition-all flex items-center gap-2 cursor-pointer"
+                className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md shadow-emerald-700/20 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
               >
                 <CheckCircle className="w-5 h-5 text-white" />
-                <span>Paskelbti stovyklavietę</span>
+                <span>Baigti ir Atidaryti Šeimininko Skydą</span>
               </button>
             </div>
           </div>

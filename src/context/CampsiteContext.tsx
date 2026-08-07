@@ -79,6 +79,9 @@ interface CampsiteContextType {
   getChatThreadsForCampsite: (campsiteId: string) => ChatThread[];
   getChatThreadsForHost: (hostId: string) => ChatThread[];
   
+  confirmVisitStart: (bookingId: string) => void;
+  verifyHostPhoneOrEmail: (type: 'phone' | 'email', value: string) => void;
+  
   // Actions
   setView: (view: ViewState, campsiteId?: string) => void;
   selectCampsiteById: (id: string) => void;
@@ -290,6 +293,55 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setSelectedCampsite(fullCamp);
   };
 
+  const confirmVisitStart = (bookingId: string) => {
+    const nowIso = new Date().toISOString();
+    const releaseIso = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    setBookings(prev => prev.map(b => {
+      if (b.id === bookingId) {
+        return {
+          ...b,
+          visitConfirmedByGuest: true,
+          visitConfirmedAt: nowIso,
+          escrowPayoutReleaseAt: releaseIso,
+          stripePaymentStatus: 'succeeded_escrow_held',
+          escrowStatus: 'held_in_escrow'
+        };
+      }
+      return b;
+    }));
+  };
+
+  const verifyHostPhoneOrEmail = (type: 'phone' | 'email', value: string) => {
+    const updatedUser: UserProfile = {
+      ...currentUser,
+      ...(type === 'phone' 
+        ? { isPhoneVerified: true, verifiedPhone: value, phone: value } 
+        : { isEmailVerified: true, verifiedEmail: value, email: value })
+    };
+    setCurrentUser(updatedUser);
+    setUsersList(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+
+    // Automatically approve all campsites for this verified host
+    setCampsites(prev => prev.map(c => {
+      if (
+        c.host.id === updatedUser.id || 
+        c.host.name?.toLowerCase() === updatedUser.name?.toLowerCase() || 
+        (c.host as any).email?.toLowerCase() === updatedUser.email?.toLowerCase()
+      ) {
+        return {
+          ...c,
+          status: 'approved',
+          host: {
+            ...c.host,
+            isPhoneVerified: type === 'phone' ? true : c.host.isPhoneVerified,
+            isEmailVerified: type === 'email' ? true : c.host.isEmailVerified
+          }
+        };
+      }
+      return c;
+    }));
+  };
+
   const registerHostAndAddCampsite = (
     hostData: { name: string; email: string; phone?: string; avatar?: string; bio?: string },
     campsiteData: Omit<Campsite, 'id' | 'rating' | 'reviewCount' | 'reviews' | 'blockedDates' | 'host'>
@@ -322,6 +374,9 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setCurrentUser(hostUser);
     setUserMode('host');
 
+    // Auto approve if host is verified by email or phone
+    const isAutoApprovedHost = hostUser.isEmailVerified || hostUser.isPhoneVerified || currentUser.isEmailVerified || currentUser.isPhoneVerified;
+
     const id = `camp-${Date.now()}`;
     const fullCamp: Campsite = {
       ...campsiteData,
@@ -330,7 +385,7 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       reviewCount: 0,
       reviews: [],
       blockedDates: [],
-      status: campsiteData.status || 'pending',
+      status: campsiteData.status || (isAutoApprovedHost ? 'approved' : 'pending'),
       host: {
         id: hostUser.id,
         name: hostUser.name,
@@ -338,7 +393,9 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         isSuperhost: hostUser.isSuperhost || false,
         joinedDate: hostUser.joinedDate,
         responseRate: '100% per 1 valandą',
-        bio: hostUser.bio || ''
+        bio: hostUser.bio || '',
+        isEmailVerified: hostUser.isEmailVerified,
+        isPhoneVerified: hostUser.isPhoneVerified
       }
     };
 
@@ -723,6 +780,8 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         usersList,
         setCurrentUser,
         registerHostAndAddCampsite,
+        confirmVisitStart,
+        verifyHostPhoneOrEmail,
         chatThreads,
         sendMessageInThread,
         replyToThread,

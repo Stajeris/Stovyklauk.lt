@@ -12,6 +12,10 @@ export interface UserProfile {
   joinedDate: string;
   isAdmin: boolean;
   isSuperhost?: boolean;
+  isEmailVerified?: boolean;
+  isPhoneVerified?: boolean;
+  verifiedPhone?: string;
+  verifiedEmail?: string;
 }
 
 export interface Host {
@@ -23,6 +27,8 @@ export interface Host {
   responseRate: string;
   bio: string;
   tier?: 'free' | 'pro';
+  isEmailVerified?: boolean;
+  isPhoneVerified?: boolean;
 }
 
 export interface Review {
@@ -135,6 +141,11 @@ export interface Booking {
   status: 'pending' | 'approved' | 'rejected' | 'completed';
   createdAt: string;
   propertyType: PropertyType;
+  visitConfirmedByGuest?: boolean;
+  visitConfirmedAt?: string;
+  escrowPayoutReleaseAt?: string;
+  arrivalNotificationSent?: boolean;
+  arrivalNotificationSentAt?: string;
 }
 
 export interface SearchFilters {
