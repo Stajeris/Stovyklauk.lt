@@ -23,7 +23,7 @@ interface LocationPickerMapProps {
 
 export const LocationPickerMap: React.FC<LocationPickerMapProps> = ({
   latitude = 55.1694,
-  longitude = 25.4520,
+  longitude = 23.8813,
   onChangeLocation,
   height = '340px',
   showSearch = true,
@@ -34,7 +34,7 @@ export const LocationPickerMap: React.FC<LocationPickerMapProps> = ({
   const markerRef = useRef<L.Marker | null>(null);
 
   const [currentLat, setCurrentLat] = useState<number>(latitude && latitude !== 0 ? latitude : 55.1694);
-  const [currentLng, setCurrentLng] = useState<number>(longitude && longitude !== 0 ? longitude : 25.4520);
+  const [currentLng, setCurrentLng] = useState<number>(longitude && longitude !== 0 ? longitude : 23.8813);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);

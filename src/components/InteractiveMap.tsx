@@ -24,14 +24,17 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     if (!mapContainerRef.current) return;
 
     if (!mapInstanceRef.current) {
-      // Initialize Leaflet map
-      const initialLat = campsites.length > 0 ? campsites[0].latitude : 39.8283;
-      const initialLng = campsites.length > 0 ? campsites[0].longitude : -98.5795;
+      // Initialize Leaflet map centered on Lithuania
+      const LITHUANIA_CENTER_LAT = 55.1694;
+      const LITHUANIA_CENTER_LNG = 23.8813;
+
+      const initialLat = campsites.length > 0 ? campsites[0].latitude : LITHUANIA_CENTER_LAT;
+      const initialLng = campsites.length > 0 ? campsites[0].longitude : LITHUANIA_CENTER_LNG;
 
       const map = L.map(mapContainerRef.current, {
         zoomControl: true,
         scrollWheelZoom: true,
-      }).setView([initialLat, initialLng], 6);
+      }).setView([initialLat, initialLng], 7);
 
       // Add clean tile layer
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -123,6 +126,8 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
     if (campsites.length > 0 && map) {
       map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
+    } else if (map) {
+      map.setView([55.1694, 23.8813], 7);
     }
 
   }, [campsites, selectedCampsiteId, hoveredCampsiteId, onSelectCampsite]);
