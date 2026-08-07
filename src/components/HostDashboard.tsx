@@ -7,6 +7,7 @@ import { useCampsites } from '../context/CampsiteContext';
 import { Campsite, Review } from '../types';
 import { EditCampsiteModal } from './EditCampsiteModal';
 import { DisputeReviewModal } from './DisputeReviewModal';
+import { HostCalendarManager } from './HostCalendarManager';
 import { ProtectedChatMessage, maskContactInfoText } from '../utils/privacyFilter';
 
 export const HostDashboard: React.FC = () => {
@@ -23,7 +24,8 @@ export const HostDashboard: React.FC = () => {
     selectCampsiteById
   } = useCampsites();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'bookings' | 'listings' | 'payouts' | 'reviews' | 'chats'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'calendar' | 'payouts' | 'reviews' | 'chats'>('overview');
+  const [selectedCalendarCampsiteId, setSelectedCalendarCampsiteId] = useState<string | undefined>(undefined);
   const [editingCampsite, setEditingCampsite] = useState<Campsite | null>(null);
   const [disputingReview, setDisputingReview] = useState<{ campsiteId: string; review: Review } | null>(null);
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
@@ -176,6 +178,15 @@ export const HostDashboard: React.FC = () => {
           }`}
         >
           Mano Stovyklavietės ({userCampsites.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('calendar')}
+          className={`pb-3 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+            activeTab === 'calendar' ? 'border-emerald-600 text-emerald-800 font-extrabold' : 'border-transparent hover:text-gray-800'
+          }`}
+        >
+          <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+          <span>Kalendorius ir iCal Sync</span>
         </button>
         <button
           onClick={() => setActiveTab('payouts')}
@@ -384,11 +395,30 @@ export const HostDashboard: React.FC = () => {
                       <span>Peržiūrėti</span>
                     </button>
                   </div>
+
+                  <button
+                    onClick={() => {
+                      setSelectedCalendarCampsiteId(site.id);
+                      setActiveTab('calendar');
+                    }}
+                    className="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-2xs transition-all cursor-pointer mt-2"
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>Valdyti Kalendorių ir iCal Sync</span>
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         </div>
+      )}
+
+      {/* CALENDAR & iCAL MANAGER TAB */}
+      {activeTab === 'calendar' && (
+        <HostCalendarManager 
+          campsites={userCampsites} 
+          selectedCampsiteId={selectedCalendarCampsiteId} 
+        />
       )}
 
       {/* EDIT CAMPSITE MODAL DIALOG */}

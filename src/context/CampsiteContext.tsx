@@ -241,7 +241,12 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!camp) return false;
     
     // Check static blocked dates
-    if (camp.blockedDates.includes(dateStr)) return true;
+    if (camp.blockedDates?.includes(dateStr)) return true;
+
+    // Check imported iCal events
+    if (camp.importedEvents?.some(e => dateStr >= e.startDate && dateStr <= e.endDate)) {
+      return true;
+    }
 
     // Check approved or pending bookings
     return bookings.some(b => {
@@ -360,10 +365,14 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const addBooking = (bookingData: Omit<Booking, 'id' | 'createdAt' | 'status'>): Booking => {
+    const targetCampsite = campsites.find(c => c.id === bookingData.campsiteId);
     const pricing = calculateFullPricing(
       bookingData.nightlyRate,
       bookingData.totalNights,
-      bookingData.cleaningFee || 0
+      bookingData.cleaningFee || 0,
+      bookingData.checkIn,
+      bookingData.checkOut,
+      targetCampsite?.customPrices
     );
 
     const newBooking: Booking = {

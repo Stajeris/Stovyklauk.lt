@@ -40,7 +40,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const [confirmedBooking, setConfirmedBooking] = useState<Booking | null>(null);
 
   // Exact dynamic pricing calculation according to user formula
-  const pricing = calculateFullPricing(nightlyRate, totalNights, cleaningFee);
+  const pricing = calculateFullPricing(nightlyRate, totalNights, cleaningFee, checkIn, checkOut, campsite.customPrices);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

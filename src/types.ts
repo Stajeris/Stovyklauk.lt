@@ -48,6 +48,23 @@ export interface Amenity {
   category: 'essentials' | 'hookups' | 'activities' | 'rules';
 }
 
+export interface ICalSyncFeed {
+  id: string;
+  name: string;
+  url: string;
+  lastSynced?: string;
+  itemCount?: number;
+}
+
+export interface ImportedCalendarEvent {
+  id: string;
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  summary: string;
+  source?: string; // e.g. "Airbnb", "Booking.com", "Manual iCal"
+  uid?: string;
+}
+
 export interface Campsite {
   id: string;
   title: string;
@@ -71,6 +88,10 @@ export interface Campsite {
   terrainType: string;
   featured: boolean;
   blockedDates: string[]; // ISO date strings YYYY-MM-DD
+  customPrices?: Record<string, number>; // YYYY-MM-DD -> price override
+  icalSyncUrls?: ICalSyncFeed[];
+  importedEvents?: ImportedCalendarEvent[];
+  icalExportToken?: string;
   reviews: Review[];
   rules: string[];
   status?: 'approved' | 'pending' | 'rejected';

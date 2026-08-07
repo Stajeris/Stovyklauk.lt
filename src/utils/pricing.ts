@@ -50,9 +50,26 @@ export interface DetailedPricingBreakdown {
 export function calculateFullPricing(
   nightlyRate: number,
   totalNights: number,
-  cleaningFee: number = 0
+  cleaningFee: number = 0,
+  checkIn?: string,
+  checkOut?: string,
+  customPrices?: Record<string, number>
 ): DetailedPricingBreakdown {
-  const nightsSubtotal = nightlyRate * totalNights;
+  let nightsSubtotal = 0;
+
+  if (checkIn && checkOut && customPrices && Object.keys(customPrices).length > 0) {
+    let curr = new Date(checkIn);
+    const end = new Date(checkOut);
+    while (curr < end) {
+      const dateStr = curr.toISOString().split('T')[0];
+      const rate = customPrices[dateStr] ?? nightlyRate;
+      nightsSubtotal += rate;
+      curr.setDate(curr.getDate() + 1);
+    }
+  } else {
+    nightsSubtotal = nightlyRate * totalNights;
+  }
+
   const bookingSubtotal = nightsSubtotal + cleaningFee;
   
   const platformFeeCents = calculatePlatformFee(bookingSubtotal);
