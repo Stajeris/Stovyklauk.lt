@@ -99,6 +99,8 @@ interface CampsiteContextType {
   toggleUserMode: () => void;
   toggleFavorite: (campsiteId: string) => void;
   isDateBlocked: (campsiteId: string, dateStr: string) => boolean;
+  hostTier: 'free' | 'pro';
+  setHostTier: (tier: 'free' | 'pro') => void;
   setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
   t: (key: keyof typeof translations['lt'], params?: Record<string, string | number>) => string;
@@ -150,6 +152,22 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [searchFilters, setSearchFilters] = useState<SearchFilters>(DEFAULT_FILTERS);
   const [userMode, setUserMode] = useState<'guest' | 'host'>('guest');
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [hostTier, setHostTierState] = useState<'free' | 'pro'>('pro');
+
+  const setHostTier = (tier: 'free' | 'pro') => {
+    setHostTierState(tier);
+    setCampsites(prev => prev.map(c => {
+      if (c.host.id === 'host-1' || c.host.name.includes('Mantas')) {
+        return {
+          ...c,
+          isPro: tier === 'pro',
+          host: { ...c.host, tier }
+        };
+      }
+      return c;
+    }));
+  };
+
   const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem('stovyklauk_lang') as Language;
     return saved === 'en' ? 'en' : 'lt';
@@ -729,6 +747,8 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         toggleUserMode,
         toggleFavorite,
         isDateBlocked,
+        hostTier,
+        setHostTier,
         setLanguage,
         toggleLanguage,
         t,

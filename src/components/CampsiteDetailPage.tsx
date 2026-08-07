@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Star, MapPin, Heart, Share2, ShieldCheck, CheckCircle2, AlertCircle, 
   User, Calendar, Users, Flame, Waves, Zap, Wifi, ShowerHead, Sparkles, 
-  Tent, ShieldAlert, DollarSign, Info, ArrowLeft, MessageSquare, ChevronRight, X, Trees, AlertTriangle, MessageSquarePlus
+  Tent, ShieldAlert, DollarSign, Info, ArrowLeft, MessageSquare, ChevronRight, X, Trees, AlertTriangle, MessageSquarePlus, Crown
 } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
 import { Campsite, Booking, Review } from '../types';
@@ -96,9 +96,17 @@ export const CampsiteDetailPage: React.FC = () => {
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
-              {camp.title}
-            </h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
+                {camp.title}
+              </h1>
+              {camp.isPro && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-black uppercase tracking-wider rounded-full shadow-xs border border-amber-300 shrink-0">
+                  <Crown className="w-3.5 h-3.5 text-amber-100" />
+                  <span>PRO Rekomenduojama</span>
+                </span>
+              )}
+            </div>
             <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mt-2 font-sans">
               <span className="flex items-center gap-1 font-bold text-amber-500">
                 <Star className="w-3.5 h-3.5 fill-amber-500" />

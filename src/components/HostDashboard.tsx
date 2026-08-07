@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   DollarSign, Calendar, Star, Users, CheckCircle, XCircle, Sparkles, 
-  PlusCircle, ShieldCheck, TrendingUp, CreditCard, Tent, MapPin, AlertCircle, Clock, Edit, Camera, Eye, ShieldAlert, AlertTriangle, MessageSquare, Send
+  PlusCircle, ShieldCheck, TrendingUp, CreditCard, Tent, MapPin, AlertCircle, Clock, Edit, Camera, Eye, ShieldAlert, AlertTriangle, MessageSquare, Send, Crown, Zap, Check, BarChart3, Heart, MousePointer
 } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
 import { Campsite, Review } from '../types';
@@ -21,10 +21,12 @@ export const HostDashboard: React.FC = () => {
     releaseEscrowPayout,
     setView, 
     promoDaysRemaining,
-    selectCampsiteById
+    selectCampsiteById,
+    hostTier,
+    setHostTier
   } = useCampsites();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'calendar' | 'payouts' | 'reviews' | 'chats'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'calendar' | 'payouts' | 'reviews' | 'chats' | 'membership'>('overview');
   const [selectedCalendarCampsiteId, setSelectedCalendarCampsiteId] = useState<string | undefined>(undefined);
   const [editingCampsite, setEditingCampsite] = useState<Campsite | null>(null);
   const [disputingReview, setDisputingReview] = useState<{ campsiteId: string; review: Review } | null>(null);
@@ -213,6 +215,20 @@ export const HostDashboard: React.FC = () => {
         >
           <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
           <span>Poilsiautojų Žinutės ({chatThreads.filter(t => userCampsites.some(c => c.id === t.campsiteId)).length})</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('membership')}
+          className={`pb-3 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+            activeTab === 'membership' ? 'border-amber-600 text-amber-900 font-black' : 'border-transparent hover:text-gray-800'
+          }`}
+        >
+          <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+          <span>Narystė & PRO Paketas</span>
+          <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+            hostTier === 'pro' ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-gray-100 text-gray-700'
+          }`}>
+            {hostTier === 'pro' ? 'PRO Aktyvus' : 'Bazinė'}
+          </span>
         </button>
       </div>
 
@@ -831,6 +847,296 @@ export const HostDashboard: React.FC = () => {
               </div>
             );
           })()}
+        </div>
+      )}
+
+      {/* MEMBERSHIP & PRO TIER TAB */}
+      {activeTab === 'membership' && (
+        <div className="space-y-8 font-sans">
+          
+          {/* Active Plan Banner */}
+          <div className="bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 rounded-3xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
+            <div className="absolute top-0 right-0 transform translate-x-10 -translate-y-10 w-64 h-64 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="space-y-3 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 text-xs font-black uppercase tracking-wider">
+                  <Crown className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Šeimininkų Narystės Modelis</span>
+                </div>
+                
+                <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                  {hostTier === 'pro' ? (
+                    <span className="flex items-center gap-2">
+                      <span>Jūs naudojate</span>
+                      <span className="text-amber-400">PRO Paketą</span>
+                    </span>
+                  ) : (
+                    <span>Jūs naudojate <span className="text-emerald-300">Bazinę Versiją (Nemokamą)</span></span>
+                  )}
+                </h2>
+                
+                <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed">
+                  {hostTier === 'pro' 
+                    ? 'Jūsų skelbimai rodomi paieškos viršuje su „PRO / Rekomenduojama“ ženkleliu. iCal automatinis kalendorių sinchronizavimas su Airbnb ir Booking.com yra aktyvuotas!'
+                    : 'Bazinė versija leidžia kelti skelbimus nemokamai. Norėdami gauti prioritetinį rodymą paieškoje ir automatinę iCal sinchronizaciją, išbandykite PRO paketą.'
+                  }
+                </p>
+
+                <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-emerald-200 pt-2">
+                  <span className="flex items-center gap-1.5">
+                    <CheckCircle className="w-4 h-4 text-amber-400" />
+                    <span>Rinkvietės komisinis: 0% aktyviai akcijai</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <CheckCircle className="w-4 h-4 text-amber-400" />
+                    <span>Atsisakyti galite bet kada</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="shrink-0 space-y-2 bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/10 text-center sm:text-left">
+                <div className="text-xs text-emerald-200">Plano valdymas:</div>
+                {hostTier === 'pro' ? (
+                  <div className="space-y-3">
+                    <div className="text-amber-400 font-black text-xl flex items-center gap-1.5 justify-center sm:justify-start">
+                      <Zap className="w-5 h-5 fill-amber-400" />
+                      <span>25 € / mėn.</span>
+                    </div>
+                    <button
+                      onClick={() => setHostTier('free')}
+                      className="w-full py-2.5 px-4 bg-white/20 hover:bg-white/30 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                    >
+                      Perjungti į Bazinį Planą (Demonstracijai)
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="text-white font-extrabold text-lg">
+                      <span className="text-amber-300 text-2xl font-black">25 €</span> <span className="text-xs text-emerald-200">/ mėn.</span>
+                    </div>
+                    <button
+                      onClick={() => setHostTier('pro')}
+                      className="w-full py-3 px-6 bg-amber-400 hover:bg-amber-300 text-amber-950 rounded-xl text-xs font-black shadow-md transition cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <Crown className="w-4 h-4 text-amber-950 fill-amber-950" />
+                      <span>Aktivuoti PRO Paketą (14 d. Nemokamai)</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Detailed Pricing & Feature Comparison Table */}
+          <div className="space-y-4">
+            <div className="text-center max-w-xl mx-auto space-y-1">
+              <h3 className="text-xl font-extrabold text-gray-900">Palyginkite Narystės Planus</h3>
+              <p className="text-xs text-gray-500">Pasirinkite įrankius, atitinkančius jūsų stovyklavietės ar kemperio nuomos verslo apimtis.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+              
+              {/* Free Card */}
+              <div className={`bg-white rounded-3xl p-6 sm:p-8 border transition-all space-y-6 ${
+                hostTier === 'free' ? 'border-emerald-600 ring-2 ring-emerald-600/20 shadow-md' : 'border-gray-200'
+              }`}>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Startui Rinkvietėje</span>
+                    <h4 className="text-2xl font-black text-gray-900 mt-1">Bazinė Versija</h4>
+                    <p className="text-xs text-gray-500 mt-1">Idealu pradedantiems šeimininkams be finansinės rizikos.</p>
+                  </div>
+                  <span className="px-3 py-1 bg-gray-100 text-gray-700 font-black text-sm rounded-full">
+                    Nemokamai
+                  </span>
+                </div>
+
+                <div className="text-3xl font-black text-gray-900">
+                  0 € <span className="text-xs font-bold text-gray-400">/ mėnesį</span>
+                </div>
+
+                <button
+                  onClick={() => setHostTier('free')}
+                  disabled={hostTier === 'free'}
+                  className={`w-full py-3 px-4 rounded-xl text-xs font-bold transition ${
+                    hostTier === 'free'
+                      ? 'bg-gray-100 text-gray-500 cursor-default'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer'
+                  }`}
+                >
+                  {hostTier === 'free' ? 'Dabartinis Planas' : 'Pasirinkti Bazinį Planą'}
+                </button>
+
+                <div className="space-y-3 pt-4 border-t border-gray-100 text-xs">
+                  <div className="font-bold text-gray-900">Kas įskaičiuota nemokamai:</div>
+                  <ul className="space-y-2.5 text-gray-600">
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <span><strong>Standartinis skelbimas:</strong> Vieta kataloge su aprašymu ir koordinatėmis</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <span><strong>Nuotraukų galerija:</strong> Įkelkite iki 6 nuotraukų</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <span><strong>Rezervacijų užklausos:</strong> Tiesioginiai užsakymai ir atsiliepimai</span>
+                    </li>
+                    <li className="flex items-start gap-2 text-gray-400 line-through">
+                      <XCircle className="w-4 h-4 text-gray-300 shrink-0 mt-0.5" />
+                      <span>Prioritetinis rodymas paieškoje (rodoma po PRO skelbimų)</span>
+                    </li>
+                    <li className="flex items-start gap-2 text-gray-400 line-through">
+                      <XCircle className="w-4 h-4 text-gray-300 shrink-0 mt-0.5" />
+                      <span>iCal automatinis kalendorių sinchronizavimas</span>
+                    </li>
+                    <li className="flex items-start gap-2 text-gray-400 line-through">
+                      <XCircle className="w-4 h-4 text-gray-300 shrink-0 mt-0.5" />
+                      <span>Drono video ir išsami lankomumo statistika</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* PRO Card */}
+              <div className={`bg-gradient-to-b from-amber-500/10 via-white to-amber-50 rounded-3xl p-6 sm:p-8 border-2 transition-all space-y-6 relative overflow-hidden ${
+                hostTier === 'pro' ? 'border-amber-500 ring-2 ring-amber-500/30 shadow-xl' : 'border-amber-300 hover:border-amber-400'
+              }`}>
+                <div className="absolute top-4 right-4 px-3 py-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black text-[10px] uppercase tracking-wider rounded-full shadow-xs flex items-center gap-1">
+                  <Crown className="w-3 h-3 text-amber-100" />
+                  <span>Rekomenduojama Verslui</span>
+                </div>
+
+                <div>
+                  <span className="text-xs font-bold text-amber-800 uppercase tracking-wider">Maksimalus Užimtumas</span>
+                  <h4 className="text-2xl font-black text-gray-900 mt-1 flex items-center gap-2">
+                    <span>PRO Paketas</span>
+                    <Sparkles className="w-5 h-5 text-amber-500" />
+                  </h4>
+                  <p className="text-xs text-gray-600 mt-1">Aktyviems nuomotojams, siekiantiems didžiausio pamatomumo ir automatizacijos.</p>
+                </div>
+
+                <div className="flex items-baseline gap-2">
+                  <div className="text-3xl font-black text-gray-900">25 €</div>
+                  <div className="text-xs font-bold text-gray-500">/ mėn. sezono metu (arba 199 €/metams)</div>
+                </div>
+
+                <button
+                  onClick={() => setHostTier('pro')}
+                  disabled={hostTier === 'pro'}
+                  className={`w-full py-3 px-4 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 ${
+                    hostTier === 'pro'
+                      ? 'bg-amber-500 text-white cursor-default shadow-xs'
+                      : 'bg-amber-500 hover:bg-amber-600 text-white shadow-md cursor-pointer'
+                  }`}
+                >
+                  <Crown className="w-4 h-4 fill-white" />
+                  <span>{hostTier === 'pro' ? 'Jūsų Dabartinis PRO Planas' : 'Aktivuoti PRO Paketą'}</span>
+                </button>
+
+                <div className="space-y-3 pt-4 border-t border-amber-200/60 text-xs">
+                  <div className="font-bold text-gray-900">Visi PRO privalumai:</div>
+                  <ul className="space-y-2.5 text-gray-700 font-medium">
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <span><strong>Prioritetinis rodymas paieškoje:</strong> Skelbimai rodomi pirmi su <strong>„PRO / Rekomenduojama“</strong> ženkleliu</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <span><strong>iCal Kalendoriaus Sinchronizacija:</strong> Automatinis užimtumo suderinimas su Airbnb, Booking.com ir išvengimas dvigubų rezervacijų</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <span><strong>Išplėstinė galerija & Media:</strong> Neribotos nuotraukos ir Drono / Youtube video turas</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <span><strong>Išsami Lankomumo Analitika:</strong> Matote peržiūras, paieškos rodymus ir išsaugojimus į favoritus</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <span><strong>Pirmenybinis 24/7 palaikymas:</strong> Greitas techninių klausimų sprendimas</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* PRO ANALYTICS & STATISTICS PREVIEW */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-emerald-600" />
+                  <h3 className="text-xl font-extrabold text-gray-900">PRO Lankomumo Analitika ir Statistika</h3>
+                  {hostTier === 'free' && (
+                    <span className="px-2.5 py-0.5 bg-amber-100 text-amber-900 text-[10px] font-black uppercase rounded-full border border-amber-300">
+                      PRO Įrankis
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Pamatykite, kaip poilsiautojai randa jūsų stovyklavietę ir kiek užsakymų sulaukiate.</p>
+              </div>
+
+              {hostTier === 'free' && (
+                <button
+                  onClick={() => setHostTier('pro')}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                >
+                  <Crown className="w-3.5 h-3.5 fill-white" />
+                  <span>Atrakinti Analitiką</span>
+                </button>
+              )}
+            </div>
+
+            {/* Metrics cards */}
+            <div className={`grid grid-cols-1 sm:grid-cols-3 gap-4 ${hostTier === 'free' ? 'blur-xs opacity-60 pointer-events-none' : ''}`}>
+              <div className="bg-emerald-50/60 rounded-2xl p-5 border border-emerald-100 space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-emerald-800">
+                  <span>Skelbimo Peržiūros</span>
+                  <Eye className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div className="text-3xl font-black text-emerald-950">
+                  {userCampsites.reduce((sum, c) => sum + (c.stats?.views || 342), 0)}
+                </div>
+                <div className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1">
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  <span>+24% daugiau per pastarąsias 30 dienų</span>
+                </div>
+              </div>
+
+              <div className="bg-blue-50/60 rounded-2xl p-5 border border-blue-100 space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-blue-800">
+                  <span>Paieškos Rodymai</span>
+                  <MousePointer className="w-4 h-4 text-blue-600" />
+                </div>
+                <div className="text-3xl font-black text-blue-950">
+                  {userCampsites.reduce((sum, c) => sum + (c.stats?.searchImpressions || 1850), 0)}
+                </div>
+                <div className="text-[11px] font-semibold text-blue-700">
+                  Aukščiausioje paieškos pozicijoje
+                </div>
+              </div>
+
+              <div className="bg-rose-50/60 rounded-2xl p-5 border border-rose-100 space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-rose-800">
+                  <span>Įtraukimai į Favoritus</span>
+                  <Heart className="w-4 h-4 text-rose-600 fill-rose-600" />
+                </div>
+                <div className="text-3xl font-black text-rose-950">
+                  {userCampsites.reduce((sum, c) => sum + (c.stats?.wishlistCount || 28), 0)}
+                </div>
+                <div className="text-[11px] font-semibold text-rose-700">
+                  Didelis poilsiautojų susidomėjimas
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       )}
 

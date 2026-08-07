@@ -22,6 +22,7 @@ export interface Host {
   joinedDate: string;
   responseRate: string;
   bio: string;
+  tier?: 'free' | 'pro';
 }
 
 export interface Review {
@@ -95,6 +96,13 @@ export interface Campsite {
   reviews: Review[];
   rules: string[];
   status?: 'approved' | 'pending' | 'rejected';
+  isPro?: boolean;
+  videoUrl?: string;
+  stats?: {
+    views: number;
+    wishlistCount: number;
+    searchImpressions: number;
+  };
 }
 
 export interface Booking {

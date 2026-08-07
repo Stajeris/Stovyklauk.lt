@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Search, SlidersHorizontal, MapPin, Star, Heart, Tent, Sparkles, 
-  Trees, DollarSign, Filter, X, ArrowUpDown, ChevronRight, RotateCcw 
+  Trees, DollarSign, Filter, X, ArrowUpDown, ChevronRight, RotateCcw, Crown
 } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
 import { InteractiveMap } from './InteractiveMap';
@@ -58,10 +58,15 @@ export const SearchResultsPage: React.FC = () => {
     return true;
 
   }).sort((a, b) => {
+    if (sortBy === 'recommended') {
+      if (a.isPro && !b.isPro) return -1;
+      if (!a.isPro && b.isPro) return 1;
+      return b.rating - a.rating;
+    }
     if (sortBy === 'price-asc') return a.pricePerNight - b.pricePerNight;
     if (sortBy === 'price-desc') return b.pricePerNight - a.pricePerNight;
     if (sortBy === 'rating') return b.rating - a.rating;
-    return 0; // recommended
+    return 0;
   });
 
   return (
@@ -239,8 +244,16 @@ export const SearchResultsPage: React.FC = () => {
                         alt={site.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold capitalize">
-                        {site.propertyType === 'tent' ? 'Palapinėms' : site.propertyType === 'glamping' ? 'Glamping' : 'Kemperiams'}
+                      <div className="absolute top-3 left-3 flex flex-col gap-1 items-start">
+                        {site.isPro && (
+                          <div className="px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md border border-amber-300">
+                            <Crown className="w-3 h-3 text-amber-100" />
+                            <span>PRO Rekomenduojama</span>
+                          </div>
+                        )}
+                        <div className="px-2.5 py-1 rounded-full bg-emerald-600/90 backdrop-blur-xs text-white text-[10px] font-bold capitalize">
+                          {site.propertyType === 'tent' ? 'Palapinėms' : site.propertyType === 'glamping' ? 'Glamping' : 'Kemperiams'}
+                        </div>
                       </div>
                       <button
                         onClick={(e) => {

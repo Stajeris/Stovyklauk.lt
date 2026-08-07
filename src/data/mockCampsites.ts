@@ -36,6 +36,13 @@ export const INITIAL_CAMPSITES: Campsite[] = [
     cancellationPolicy: 'flexible',
     terrainType: 'Ežero pakrantė ir pušynas',
     featured: true,
+    isPro: true,
+    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    stats: {
+      views: 342,
+      wishlistCount: 28,
+      searchImpressions: 1850
+    },
     blockedDates: ['2026-08-10', '2026-08-11', '2026-08-12', '2026-08-20', '2026-08-21'],
     rules: [
       'Tylos valandos nuo 22:00 iki 07:00',

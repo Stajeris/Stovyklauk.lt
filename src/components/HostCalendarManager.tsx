@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { 
   Calendar as CalendarIcon, ChevronLeft, ChevronRight, Download, Upload, Link, 
   RefreshCw, Check, X, DollarSign, Lock, Unlock, AlertCircle, Plus, Trash2, 
-  FileText, Copy, Sparkles, ExternalLink, ShieldCheck, Tag, Info
+  FileText, Copy, Sparkles, ExternalLink, ShieldCheck, Tag, Info, Crown
 } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
 import { Campsite, ICalSyncFeed, ImportedCalendarEvent } from '../types';
@@ -22,7 +22,7 @@ export const HostCalendarManager: React.FC<HostCalendarManagerProps> = ({
   campsites, 
   selectedCampsiteId: initialCampsiteId 
 }) => {
-  const { updateCampsite, bookings, t } = useCampsites();
+  const { updateCampsite, bookings, hostTier, setHostTier, t } = useCampsites();
 
   // Active campsite selection
   const [activeCampsiteId, setActiveCampsiteId] = useState<string>(
@@ -443,11 +443,9 @@ export const HostCalendarManager: React.FC<HostCalendarManagerProps> = ({
         >
           <Upload className="w-4 h-4" />
           <span>iCal Importas & Sinchronizacija</span>
-          {activeCampsite.importedEvents && activeCampsite.importedEvents.length > 0 && (
-            <span className="px-1.5 py-0.2 bg-white text-emerald-800 rounded-full text-[10px] font-extrabold">
-              {activeCampsite.importedEvents.length}
-            </span>
-          )}
+          <span className="px-1.5 py-0.5 bg-amber-400 text-amber-950 rounded-full text-[9px] font-black uppercase tracking-wider flex items-center gap-0.5">
+            <Crown className="w-2.5 h-2.5" /> PRO
+          </span>
         </button>
 
         <button
@@ -460,6 +458,9 @@ export const HostCalendarManager: React.FC<HostCalendarManagerProps> = ({
         >
           <Download className="w-4 h-4" />
           <span>Eksportuoti iCal Nuorodą</span>
+          <span className="px-1.5 py-0.5 bg-amber-400 text-amber-950 rounded-full text-[9px] font-black uppercase tracking-wider flex items-center gap-0.5">
+            <Crown className="w-2.5 h-2.5" /> PRO
+          </span>
         </button>
 
         <button
