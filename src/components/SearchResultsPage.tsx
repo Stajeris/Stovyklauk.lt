@@ -199,7 +199,7 @@ export const SearchResultsPage: React.FC = () => {
       </div>
 
       {/* Main Split-Screen Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[650px]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[650px] items-start">
         
         {/* Left Side: Campsite Listings List */}
         <div className="lg:col-span-7 space-y-4">
@@ -317,8 +317,8 @@ export const SearchResultsPage: React.FC = () => {
 
         </div>
 
-        {/* Right Side: Interactive Leaflet Map */}
-        <div className="lg:col-span-5 h-[400px] lg:h-auto lg:sticky lg:top-24 rounded-2xl overflow-hidden border border-gray-150 shadow-sm">
+        {/* Right Side: Interactive Leaflet Map (Sticky on Desktop) */}
+        <div className="lg:col-span-5 h-[450px] lg:h-[calc(100vh-6rem)] lg:sticky lg:top-20 rounded-2xl overflow-hidden border border-gray-150 shadow-sm z-20">
           <InteractiveMap
             campsites={filteredCampsites}
             onSelectCampsite={selectCampsiteById}
