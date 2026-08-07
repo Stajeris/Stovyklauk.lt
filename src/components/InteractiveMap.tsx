@@ -83,30 +83,10 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
       const marker = L.marker([site.latitude, site.longitude], { icon: customIcon }).addTo(map);
 
-      // Popup HTML content with Host Photo and Host Name
+      // Popup HTML content
       const popupContent = document.createElement('div');
-      popupContent.className = 'p-1 max-w-[240px] font-sans text-gray-900';
+      popupContent.className = 'p-1 max-w-[220px] font-sans text-gray-900';
       popupContent.innerHTML = `
-        <!-- Host Info Card -->
-        <div class="flex items-center gap-2 mb-2 p-2 bg-slate-50/90 border border-slate-200/80 rounded-xl shadow-2xs">
-          <div class="relative shrink-0">
-            <img src="${site.host.avatar}" alt="${site.host.name}" class="w-9 h-9 rounded-full object-cover border-2 border-emerald-600 shadow-xs" />
-            ${site.host.superhost ? `<span class="absolute -bottom-1 -right-1 w-4 h-4 bg-amber-400 text-amber-950 rounded-full flex items-center justify-center text-[8px] font-black shadow-xs" title="Superšeimininkas">★</span>` : ''}
-          </div>
-          <div class="min-w-0 flex-1">
-            <div class="text-[9px] uppercase tracking-wider text-emerald-800 font-extrabold leading-none mb-0.5">
-              Šeimininkas (-ė)
-            </div>
-            <div class="text-xs font-black text-gray-900 truncate leading-tight flex items-center gap-1">
-              <span>${site.host.name}</span>
-            </div>
-            <div class="text-[10px] text-gray-500 truncate flex items-center gap-1 mt-0.5 font-medium">
-              ${site.host.tier === 'pro' || site.isPro ? '<span class="text-[9px] font-black text-amber-800 bg-amber-100 border border-amber-300 px-1 rounded uppercase tracking-tight">PRO</span>' : ''}
-              <span>${site.host.responseRate ? `Atsako ${site.host.responseRate}` : 'Atsako greitai'}</span>
-            </div>
-          </div>
-        </div>
-
         <!-- Campsite Photo & Badges -->
         <div class="relative rounded-xl overflow-hidden mb-2 shadow-xs bg-gray-100">
           <img src="${site.images[0]}" alt="${site.title}" class="w-full h-28 object-cover" />
