@@ -146,15 +146,12 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
           </div>
         </div>
 
-        <!-- Price & Action Button -->
+        <!-- Price Info -->
         <div class="flex items-center justify-between border-t border-gray-150 pt-1.5">
           <div>
             <span class="text-xs font-black text-emerald-900">€${site.pricePerNight}</span>
             <span class="text-[9px] font-normal text-gray-500"> / parai</span>
           </div>
-          <button id="tooltip-btn-${site.id}" class="px-2 py-0.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-bold cursor-pointer transition-colors shadow-2xs flex items-center gap-1">
-            <span>Peržiūrėti</span> →
-          </button>
         </div>
       `;
 
