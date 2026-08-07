@@ -53,4 +53,28 @@
   line-height: 1.4 !important;
 }
 
+/* Custom Hover Tooltip */
+.custom-map-hover-tooltip {
+  background-color: #FFFFFF !important;
+  color: #111827 !important;
+  border: 1px solid #E5E7EB !important;
+  border-radius: 0.875rem !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.08) !important;
+  padding: 0 !important;
+  pointer-events: auto !important;
+  z-index: 1000 !important;
+  max-width: 250px !important;
+}
+
+.custom-map-hover-tooltip::before,
+.custom-map-hover-tooltip::after {
+  border-top-color: #FFFFFF !important;
+  border-bottom-color: #FFFFFF !important;
+}
+
+.custom-map-hover-tooltip .leaflet-tooltip-content {
+  margin: 0 !important;
+  line-height: 1.3 !important;
+}
+
 

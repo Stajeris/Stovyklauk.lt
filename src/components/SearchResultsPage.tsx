@@ -317,8 +317,8 @@ export const SearchResultsPage: React.FC = () => {
 
         </div>
 
-        {/* Right Side: Interactive Leaflet Map (Sticky on Desktop) */}
-        <div className="lg:col-span-5 h-[450px] lg:h-[calc(100vh-6rem)] lg:sticky lg:top-20 rounded-2xl overflow-hidden border border-gray-150 shadow-sm z-20">
+        {/* Right Side: Interactive Leaflet Map */}
+        <div className="lg:col-span-5 h-[450px] lg:h-[calc(100vh-115px)] lg:sticky lg:top-24 rounded-2xl overflow-hidden border border-gray-150 shadow-sm self-start z-20">
           <InteractiveMap
             campsites={filteredCampsites}
             onSelectCampsite={selectCampsiteById}

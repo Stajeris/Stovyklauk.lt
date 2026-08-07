@@ -24,19 +24,14 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     if (!mapContainerRef.current) return;
 
     if (!mapInstanceRef.current) {
-      // Initialize Leaflet map centered on Lithuania
+      // Initialize Leaflet map centered on Lithuania territory
       const LITHUANIA_CENTER_LAT = 55.1694;
       const LITHUANIA_CENTER_LNG = 23.8813;
 
-      const initialLat = campsites.length > 0 ? campsites[0].latitude : LITHUANIA_CENTER_LAT;
-      const initialLng = campsites.length > 0 ? campsites[0].longitude : LITHUANIA_CENTER_LNG;
-
       const map = L.map(mapContainerRef.current, {
-        zoomControl: false,
+        zoomControl: true,
         scrollWheelZoom: true,
-      }).setView([initialLat, initialLng], 7);
-
-      L.control.zoom({ position: 'topright' }).addTo(map);
+      }).setView([LITHUANIA_CENTER_LAT, LITHUANIA_CENTER_LNG], 7.2);
 
       // Add clean tile layer
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -85,65 +80,95 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
       const marker = L.marker([site.latitude, site.longitude], { icon: customIcon }).addTo(map);
 
-      // Popup HTML content with Host Photo and Host Name
-      const popupContent = document.createElement('div');
-      popupContent.className = 'p-1 max-w-[240px] font-sans text-gray-900';
-      popupContent.innerHTML = `
-        <!-- Host Info Card -->
-        <div class="flex items-center gap-2 mb-2 p-2 bg-slate-50/90 border border-slate-200/80 rounded-xl shadow-2xs">
-          <div class="relative shrink-0">
-            <img src="${site.host.avatar}" alt="${site.host.name}" class="w-9 h-9 rounded-full object-cover border-2 border-emerald-600 shadow-xs" />
-            ${site.host.superhost ? `<span class="absolute -bottom-1 -right-1 w-4 h-4 bg-amber-400 text-amber-950 rounded-full flex items-center justify-center text-[8px] font-black shadow-xs" title="Superšeimininkas">★</span>` : ''}
-          </div>
-          <div class="min-w-0 flex-1">
-            <div class="text-[9px] uppercase tracking-wider text-emerald-800 font-extrabold leading-none mb-0.5">
-              Šeimininkas (-ė)
-            </div>
-            <div class="text-xs font-black text-gray-900 truncate leading-tight flex items-center gap-1">
-              <span>${site.host.name}</span>
-            </div>
-            <div class="text-[10px] text-gray-500 truncate flex items-center gap-1 mt-0.5 font-medium">
-              ${site.host.tier === 'pro' || site.isPro ? '<span class="text-[9px] font-black text-amber-800 bg-amber-100 border border-amber-300 px-1 rounded uppercase tracking-tight">PRO</span>' : ''}
-              <span>${site.host.responseRate ? `Atsako ${site.host.responseRate}` : 'Atsako greitai'}</span>
-            </div>
-          </div>
-        </div>
+      // Construct Tooltip HTML Content
+      const isProSite = site.isPro || site.host?.tier === 'pro';
+      const isSuperhost = site.host?.isSuperhost;
+      const propTypeLabel = site.propertyType === 'tent' ? 'Palapinė' : site.propertyType === 'glamping' ? 'Glamping' : 'Kemperiai';
 
+      const tooltipContent = document.createElement('div');
+      tooltipContent.className = 'p-2 w-[220px] font-sans text-gray-900 cursor-pointer select-none';
+      tooltipContent.innerHTML = `
         <!-- Campsite Photo & Badges -->
-        <div class="relative rounded-xl overflow-hidden mb-2 shadow-xs bg-gray-100">
-          <img src="${site.images[0]}" alt="${site.title}" class="w-full h-28 object-cover" />
-          <div class="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full bg-emerald-800/90 backdrop-blur-xs text-white text-[9px] font-bold uppercase tracking-wider">
-            ${site.propertyType === 'tent' ? 'Palapinė' : site.propertyType === 'glamping' ? 'Glamping' : 'Kemperiai'}
+        <div class="relative rounded-lg overflow-hidden mb-1.5 shadow-xs bg-gray-100">
+          <img src="${site.images[0]}" alt="${site.title}" class="w-full h-24 object-cover" />
+          
+          <div class="absolute top-1.5 left-1.5 flex items-center gap-1">
+            <span class="px-1.5 py-0.5 rounded-full bg-emerald-800/95 backdrop-blur-xs text-white text-[8px] font-extrabold uppercase tracking-wider shadow-xs">
+              ${propTypeLabel}
+            </span>
+            ${isProSite ? `
+              <span class="px-1.5 py-0.5 rounded-full bg-amber-500 text-white text-[8px] font-black uppercase tracking-wider flex items-center gap-0.5 shadow-xs border border-amber-300">
+                👑 PRO
+              </span>
+            ` : ''}
           </div>
-          <div class="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-xs text-amber-600 text-[9px] font-extrabold border border-gray-200 shadow-2xs flex items-center gap-0.5">
-            ★ ${site.rating}
+
+          <div class="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full bg-white/95 backdrop-blur-xs text-amber-600 text-[9px] font-black border border-gray-200 shadow-2xs flex items-center gap-0.5">
+            ★ ${site.rating} <span class="text-gray-400 font-normal text-[8px]">(${site.reviewCount})</span>
           </div>
         </div>
 
         <!-- Title & Location -->
-        <h4 class="font-black text-xs sm:text-sm text-gray-900 line-clamp-1 mb-0.5">${site.title}</h4>
-        <p class="text-[11px] text-gray-500 line-clamp-1 mb-2">${site.location}</p>
+        <div class="mb-1.5">
+          <h4 class="font-bold text-xs text-gray-900 line-clamp-1 leading-tight">${site.title}</h4>
+          <p class="text-[10px] text-gray-500 font-medium line-clamp-1">${site.location}</p>
+        </div>
+
+        <!-- Host Information Card -->
+        <div class="p-1.5 rounded-lg bg-gray-50 border border-gray-200/90 mb-1.5 flex items-center gap-2">
+          <div class="relative shrink-0">
+            <img src="${site.host?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'}" alt="${site.host?.name || 'Šeimininkas'}" class="w-7 h-7 rounded-full object-cover border-2 border-emerald-500 shadow-2xs" />
+            ${isSuperhost ? `
+              <div class="absolute -bottom-1 -right-1 bg-amber-400 text-emerald-950 w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-black shadow-xs border border-white" title="Superhost">
+                ★
+              </div>
+            ` : ''}
+          </div>
+
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-1 flex-wrap">
+              <span class="font-bold text-[11px] text-gray-900 truncate">${site.host?.name || 'Šeimininkas'}</span>
+              ${isSuperhost ? `
+                <span class="bg-amber-100 text-amber-900 border border-amber-300 text-[8px] font-extrabold px-1 py-0.2 rounded-full inline-flex items-center gap-0.5">
+                  ★ Superhost
+                </span>
+              ` : ''}
+              ${isProSite ? `
+                <span class="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[8px] font-extrabold px-1 py-0.2 rounded-full inline-flex items-center gap-0.5">
+                  PRO
+                </span>
+              ` : ''}
+            </div>
+
+            <p class="text-[9px] text-gray-500 font-medium truncate mt-0.5">
+              ⚡ Atsako: <strong class="text-emerald-700 font-bold">${site.host?.responseRate || '100%'}</strong>
+            </p>
+          </div>
+        </div>
 
         <!-- Price & Action Button -->
-        <div class="flex items-center justify-between border-t border-gray-100 pt-2">
+        <div class="flex items-center justify-between border-t border-gray-150 pt-1.5">
           <div>
             <span class="text-xs font-black text-emerald-900">€${site.pricePerNight}</span>
-            <span class="text-[10px] font-normal text-gray-500"> / parai</span>
+            <span class="text-[9px] font-normal text-gray-500"> / parai</span>
           </div>
-          <button id="popup-btn-${site.id}" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black cursor-pointer transition-colors shadow-xs flex items-center gap-1">
+          <button id="tooltip-btn-${site.id}" class="px-2 py-0.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-bold cursor-pointer transition-colors shadow-2xs flex items-center gap-1">
             <span>Peržiūrėti</span> →
           </button>
         </div>
       `;
 
-      marker.bindPopup(popupContent, {
-        closeButton: true,
-        className: 'custom-leaflet-popup'
+      marker.bindTooltip(tooltipContent, {
+        direction: 'auto',
+        offset: [0, -10],
+        opacity: 1,
+        interactive: true,
+        className: 'custom-map-hover-tooltip'
       });
 
       if (isSelected || isHovered) {
         setTimeout(() => {
-          marker.openPopup();
+          marker.openTooltip();
         }, 100);
       }
 
@@ -151,116 +176,52 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         onSelectCampsite(site.id);
       });
 
-      popupContent.addEventListener('click', (e) => {
-        if ((e.target as HTMLElement).closest(`[id^="popup-btn-"]`)) {
-          onSelectCampsite(site.id);
-        }
+      tooltipContent.addEventListener('click', () => {
+        onSelectCampsite(site.id);
       });
 
       markersRef.current[site.id] = marker;
     });
 
     if (campsites.length > 0 && map) {
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
+      map.fitBounds(bounds, { padding: [35, 35], maxZoom: 9 });
     } else if (map) {
-      map.setView([55.1694, 23.8813], 7);
+      map.setView([55.1694, 23.8813], 7.2);
     }
 
   }, [campsites, selectedCampsiteId, hoveredCampsiteId, onSelectCampsite]);
 
-  const activeCampsite = campsites.find(c => c.id === selectedCampsiteId) 
-    || campsites.find(c => c.id === hoveredCampsiteId) 
-    || campsites[0];
+  const handleCenterLithuania = () => {
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.flyTo([55.1694, 23.8813], 7.2, {
+        duration: 1
+      });
+    }
+  };
 
   return (
     <div className="w-full h-full relative min-h-[380px] lg:min-h-full rounded-2xl overflow-hidden border border-[#121212]/15 shadow-sm bg-[#E8E4D9]">
       <div ref={mapContainerRef} className="w-full h-full z-10" />
       
-      {/* Top Left Info Panel Overlay on Interactive Map */}
-      <div className="absolute top-4 left-4 z-[400] bg-white/95 backdrop-blur-md p-3 sm:p-3.5 rounded-2xl border border-gray-200/90 shadow-lg font-sans max-w-[280px] sm:max-w-[320px] transition-all">
-        {activeCampsite ? (
-          <div className="space-y-2.5">
-            <div className="flex items-center justify-between text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 border-b border-gray-100 pb-1.5">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>Pasirinkta vieta (Lietuva)</span>
-              </span>
-              <span className="bg-emerald-100 text-emerald-950 px-2 py-0.5 rounded-full font-black text-[11px]">
-                €{activeCampsite.pricePerNight}/p
-              </span>
-            </div>
-
-            <div className="flex items-start gap-2.5">
-              <img 
-                src={activeCampsite.images[0]} 
-                alt={activeCampsite.title} 
-                className="w-14 h-14 rounded-xl object-cover shrink-0 border border-gray-200 shadow-2xs" 
-              />
-              <div className="min-w-0 flex-1">
-                <h4 className="text-xs sm:text-sm font-black text-gray-900 truncate leading-snug">
-                  {activeCampsite.title}
-                </h4>
-                <p className="text-[11px] text-gray-500 truncate mt-0.5 flex items-center gap-1">
-                  <span>📍</span> {activeCampsite.location}
-                </p>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 flex items-center gap-0.5">
-                    ★ {activeCampsite.rating} ({activeCampsite.reviewCount})
-                  </span>
-                  {activeCampsite.isPro && (
-                    <span className="text-[9px] font-black text-amber-900 bg-amber-200 px-1.5 py-0.5 rounded uppercase">
-                      PRO
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Host Avatar & Name line */}
-            <div className="flex items-center gap-2 pt-1.5 border-t border-gray-100/90 bg-slate-50/80 p-2 rounded-xl">
-              <div className="relative shrink-0">
-                <img 
-                  src={activeCampsite.host.avatar} 
-                  alt={activeCampsite.host.name} 
-                  className="w-7 h-7 rounded-full object-cover border-2 border-emerald-600 shadow-2xs" 
-                />
-                {activeCampsite.host.superhost && (
-                  <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-amber-400 text-amber-950 rounded-full flex items-center justify-center text-[7px] font-black shadow-2xs">★</span>
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-[9px] text-emerald-800 uppercase font-black tracking-wider leading-none">Šeimininkas (-ė)</div>
-                <div className="text-xs font-black text-gray-900 truncate mt-0.5">{activeCampsite.host.name}</div>
-              </div>
-              <button 
-                onClick={() => onSelectCampsite(activeCampsite.id)}
-                className="text-[10px] font-black text-white bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1 rounded-lg cursor-pointer transition shadow-xs shrink-0"
-              >
-                Detalės →
-              </button>
-            </div>
+      {/* Map Legend Badge & Center Lithuania Button */}
+      <div className="absolute bottom-4 left-4 right-4 z-[400] flex items-center justify-between pointer-events-none gap-2">
+        <div className="pointer-events-auto bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gray-200 text-xs text-gray-800 shadow-md flex items-center gap-2 font-sans">
+          <div className="flex items-center gap-1.5 font-bold uppercase text-[10px] text-emerald-800">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse"></span>
+            <span>Lietuva</span>
           </div>
-        ) : (
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5 font-black text-xs text-gray-900">
-              <span className="text-emerald-700">🇱🇹</span>
-              <span>Lietuvos Stovyklavietės</span>
-            </div>
-            <p className="text-[11px] text-gray-600 leading-tight">
-              Atsiverskite žemėlapį ir spauskite ant stovyklavietės ar šeimininko.
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Map Legend Badge */}
-      <div className="absolute bottom-4 left-4 z-[400] bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gray-200 text-xs text-gray-800 shadow-md flex items-center gap-2 font-sans">
-        <div className="flex items-center gap-1.5 font-bold uppercase text-[10px] text-emerald-800">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
-          <span>Interaktyvus žemėlapis</span>
+          <span className="text-gray-300">|</span>
+          <span className="text-[10px] text-gray-500 font-semibold">Rasta: {campsites.length}</span>
         </div>
-        <span className="text-gray-300">|</span>
-        <span className="text-[10px] text-gray-500 font-semibold">Rasta stovyklaviečių: {campsites.length}</span>
+
+        <button
+          onClick={handleCenterLithuania}
+          className="pointer-events-auto bg-white/95 hover:bg-emerald-50 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gray-200 text-[11px] font-extrabold text-emerald-900 shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+          title="Centruoti žemėlapį ties Lietuva"
+        >
+          <span>📍</span>
+          <span>Centruoti Lietuvą</span>
+        </button>
       </div>
     </div>
   );
