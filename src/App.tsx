@@ -8,6 +8,7 @@ import { CampsiteDetailPage } from './components/CampsiteDetailPage';
 import { HostDashboard } from './components/HostDashboard';
 import { AddListingWizard } from './components/AddListingWizard';
 import { MyTripsPage } from './components/MyTripsPage';
+import { ClientDashboard } from './components/ClientDashboard';
 import { PendingRequestsPage } from './components/PendingRequestsPage';
 import { AdminPanel } from './components/AdminPanel';
 import { AuthModal } from './components/AuthModal';
@@ -23,6 +24,7 @@ const AppContainer: React.FC = () => {
         {currentView === 'landing' && <LandingPage />}
         {currentView === 'search' && <SearchResultsPage />}
         {currentView === 'detail' && <CampsiteDetailPage />}
+        {currentView === 'client-dashboard' && <ClientDashboard />}
         {currentView === 'host-dashboard' && <HostDashboard />}
         {currentView === 'pending-requests' && <PendingRequestsPage />}
         {currentView === 'add-listing' && <AddListingWizard />}

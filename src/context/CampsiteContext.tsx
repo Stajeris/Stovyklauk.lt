@@ -15,32 +15,49 @@ export const INITIAL_USERS: UserProfile[] = [
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
     bio: 'Platformos vyriausiasis administratorius ir Stovyklauk.lt įkūrėjas.',
     joinedDate: 'Rugpjūtis 2026',
+    userType: 'admin',
     isAdmin: true,
     isSuperhost: true,
     isEmailVerified: true
   },
   {
     id: 'host-mantas',
-    name: 'Mantas Giraitis',
+    name: 'Mantas Giraitis (Šeimininkas)',
     email: 'mantas@pusalis.lt',
     password: 'slaptazodis123',
     phone: '+370 611 11111',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
     bio: 'Aukštaitijos miškų šeimininkas, siūlantis privačią pakrantę.',
     joinedDate: 'Liepa 2026',
+    userType: 'host',
     isAdmin: false,
     isSuperhost: true,
     isEmailVerified: true
   },
   {
     id: 'host-rasa',
-    name: 'Rasa Nemunienė',
+    name: 'Rasa Nemunienė (Šeimininkė)',
     email: 'rasa@nemunokilpa.lt',
     password: 'slaptazodis123',
     phone: '+370 622 22222',
     avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
     bio: 'Dzūkijos sodybos ir pirtelės šeimininkė.',
     joinedDate: 'Birželis 2026',
+    userType: 'host',
+    isAdmin: false,
+    isSuperhost: false,
+    isEmailVerified: true
+  },
+  {
+    id: 'client-tadas',
+    name: 'Tadas Vaitkus (Keliautojas / Pirkėjas)',
+    email: 'tadas@keliautojas.lt',
+    password: 'slaptazodis123',
+    phone: '+370 633 33333',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
+    bio: 'Aktyvus žygeivis ir stovyklavimo entuziastas, ieškantis unikalių Lietuvos vietų.',
+    joinedDate: 'Rugpjūtis 2026',
+    userType: 'client',
     isAdmin: false,
     isSuperhost: false,
     isEmailVerified: true
@@ -73,7 +90,8 @@ interface CampsiteContextType {
   openAuthModal: (mode?: 'login' | 'register' | 'verify-email' | 'forgot-password' | 'forgot-email') => void;
   closeAuthModal: () => void;
   loginUser: (email: string, password?: string) => { success: boolean; reason?: 'user_not_found' | 'invalid_password'; user?: UserProfile };
-  registerUser: (userData: { name: string; email: string; password?: string; phone?: string; avatar?: string }) => { user: UserProfile; verificationCode: string };
+  registerUser: (userData: { name: string; email: string; password?: string; phone?: string; avatar?: string; userType?: 'client' | 'host' }) => { user: UserProfile; verificationCode: string };
+  switchUserRole: (newRole: 'client' | 'host' | 'admin') => void;
   verifyUserEmail: (userId: string) => void;
   requestPasswordResetCode: (email: string) => { success: boolean; code?: string; message?: string; userId?: string };
   resetUserPassword: (email: string, newPassword: string) => { success: boolean };
@@ -388,13 +406,15 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return { success: true, user: found };
   };
 
-  const registerUser = (userData: { name: string; email: string; password?: string; phone?: string; avatar?: string }) => {
+  const registerUser = (userData: { name: string; email: string; password?: string; phone?: string; avatar?: string; userType?: 'client' | 'host' }) => {
     const existing = usersList.find(u => u.email.trim().toLowerCase() === userData.email.trim().toLowerCase());
     if (existing) {
       const verificationCode = '4829';
       setCurrentUser(existing);
       return { user: existing, verificationCode };
     }
+
+    const assignedType = userData.userType || 'client';
 
     const newUser: UserProfile = {
       id: `user-${Date.now()}`,
@@ -403,8 +423,9 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       password: userData.password || 'slaptazodis123',
       phone: userData.phone || '',
       avatar: userData.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-      bio: 'Stovyklauk.lt vartotojas',
+      bio: assignedType === 'host' ? 'Stovyklavietės ir sodybos šeimininkas' : 'Stovyklautojas ir žygeivis',
       joinedDate: 'Rugpjūtis 2026',
+      userType: assignedType,
       isAdmin: false,
       isSuperhost: false,
       isEmailVerified: false
@@ -412,8 +433,31 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     setUsersList(prev => [...prev, newUser]);
     setCurrentUser(newUser);
+    
+    // Automatically set corresponding mode
+    if (assignedType === 'host') {
+      setUserMode('host');
+    } else {
+      setUserMode('guest');
+    }
+
     const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
     return { user: newUser, verificationCode };
+  };
+
+  const switchUserRole = (newRole: 'client' | 'host' | 'admin') => {
+    setCurrentUser(prev => ({
+      ...prev,
+      userType: newRole,
+      isAdmin: newRole === 'admin' ? true : prev.isAdmin
+    }));
+    setUsersList(prev => prev.map(u => u.id === currentUser.id ? { ...u, userType: newRole, isAdmin: newRole === 'admin' ? true : u.isAdmin } : u));
+    
+    if (newRole === 'host') {
+      setUserMode('host');
+    } else {
+      setUserMode('guest');
+    }
   };
 
   const verifyUserEmail = (userId: string) => {
@@ -939,6 +983,7 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         closeAuthModal,
         loginUser,
         registerUser,
+        switchUserRole,
         verifyUserEmail,
         requestPasswordResetCode,
         resetUserPassword,

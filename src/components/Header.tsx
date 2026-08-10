@@ -98,35 +98,50 @@ export const Header: React.FC = () => {
               )}
             </button>
 
+            {/* Dedicated Client Dashboard Button for Buyers */}
+            <button
+              id="nav-client-dashboard"
+              onClick={() => setView('client-dashboard')}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full transition-all relative ${
+                currentView === 'client-dashboard' 
+                  ? 'bg-emerald-600 text-white font-black shadow-sm' 
+                  : 'text-gray-700 hover:text-emerald-700 hover:bg-emerald-50'
+              }`}
+            >
+              <Compass className="w-4 h-4 text-emerald-500" />
+              <span>Keliautojo Skydelis</span>
+            </button>
+
+            {/* Host Dashboard Button */}
+            <button
+              id="nav-dashboard"
+              onClick={() => setView('host-dashboard')}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full transition-all relative ${
+                currentView === 'host-dashboard' 
+                  ? 'bg-emerald-800 text-white font-bold' 
+                  : 'text-gray-600 hover:text-emerald-600 hover:bg-gray-50'
+              }`}
+            >
+              <Briefcase className="w-4 h-4 text-emerald-600" />
+              <span>Šeimininko Skydas</span>
+            </button>
+
             <button
               id="nav-requests"
               onClick={() => setView('pending-requests')}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full transition-all relative ${
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full transition-all relative ${
                 currentView === 'pending-requests' 
                   ? 'bg-amber-100 text-amber-950 font-bold' 
                   : 'text-gray-600 hover:text-emerald-600 hover:bg-gray-50'
               }`}
             >
               <Clock className="w-4 h-4 text-amber-600" />
-              {t('pendingRequests')}
+              <span>Užklausos</span>
               {pendingBookingsCount > 0 && (
                 <span className="px-2 py-0.5 text-xs bg-amber-500 text-white rounded-full font-bold shadow-xs">
                   {pendingBookingsCount}
                 </span>
               )}
-            </button>
-
-            <button
-              id="nav-dashboard"
-              onClick={() => setView('host-dashboard')}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full transition-all relative ${
-                currentView === 'host-dashboard' 
-                  ? 'bg-emerald-50 text-emerald-800 font-bold' 
-                  : 'text-gray-600 hover:text-emerald-600 hover:bg-gray-50'
-              }`}
-            >
-              <Briefcase className="w-4 h-4 text-emerald-600" />
-              {t('dashboard')}
             </button>
 
             {/* Render Admin Panel button strictly for Admin users */}

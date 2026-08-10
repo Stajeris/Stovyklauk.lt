@@ -18,6 +18,8 @@ export const AdminPanel: React.FC = () => {
     chatThreads,
     replyToThread,
     currentUser,
+    usersList,
+    switchUserRole,
     approveCampsite, 
     rejectCampsite, 
     updateCampsiteStatus, 
@@ -29,7 +31,7 @@ export const AdminPanel: React.FC = () => {
     setView 
   } = useCampsites();
 
-  const [activeTab, setActiveTab] = useState<'pending' | 'all' | 'add-new' | 'reviews-disputes' | 'escrow-payouts' | 'chats'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'all' | 'add-new' | 'reviews-disputes' | 'escrow-payouts' | 'chats' | 'users'>('pending');
   const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'pending' | 'rejected'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPreviewCamp, setSelectedPreviewCamp] = useState<Campsite | null>(null);
@@ -431,6 +433,21 @@ export const AdminPanel: React.FC = () => {
             <span>💬 Pokalbiai pagal Skelbimą</span>
             <span className="px-2 py-0.5 text-[10px] font-extrabold bg-emerald-700 text-white rounded-full">
               {chatThreads.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`flex items-center gap-2 px-5 py-3 font-bold text-xs rounded-t-xl transition-all border-b-2 cursor-pointer shrink-0 ${
+              activeTab === 'users'
+                ? 'border-emerald-600 text-emerald-900 bg-emerald-50/80 font-extrabold'
+                : 'border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
+            }`}
+          >
+            <UserCheck className="w-4 h-4 text-emerald-600" />
+            <span>👥 Vartotojai ir Paskyrų Tipai</span>
+            <span className="px-2 py-0.5 text-[10px] font-extrabold bg-blue-600 text-white rounded-full">
+              {usersList?.length || 0}
             </span>
           </button>
         </div>
@@ -1726,6 +1743,150 @@ export const AdminPanel: React.FC = () => {
 
           </div>
 
+        </div>
+      )}
+
+      {/* TAB 7: USER MANAGEMENT & ROLE TYPES */}
+      {activeTab === 'users' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-2xs space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-extrabold text-gray-900 flex items-center gap-2">
+                  <UserCheck className="w-5 h-5 text-emerald-600" />
+                  <span>Platformos Vartotojai ir Paskyrų Tipai</span>
+                </h2>
+                <p className="text-xs text-gray-500 mt-1">
+                  Išskirstytos keliautojų (pirkėjų) ir šeimininkų (pardavėjų) paskyros. Galite akimirksniu pakeisti vartotojo tipą ar suteikti administratoriaus teises.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-2xl border border-gray-150">
+                <Search className="w-4 h-4 text-gray-400 ml-2" />
+                <input 
+                  type="text" 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Ieškoti pagal vardą ar el. paštą..." 
+                  className="bg-transparent text-xs font-medium focus:outline-none w-48 sm:w-64"
+                />
+              </div>
+            </div>
+
+            {/* Users Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-200 text-gray-400 font-extrabold uppercase text-[10px] tracking-wider bg-gray-50/50">
+                    <th className="p-3.5">Vartotojas</th>
+                    <th className="p-3.5">El. Paštas & Telefonas</th>
+                    <th className="p-3.5">Paskyros Tipas (Role)</th>
+                    <th className="p-3.5">Būsena / Verifikacija</th>
+                    <th className="p-3.5 text-right">Rolės Valdymas</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-150 font-medium">
+                  {usersList
+                    .filter(u => 
+                      !searchTerm || 
+                      u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                      u.email.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map(u => {
+                      const isClient = u.userType === 'client' || (!u.userType && !u.isAdmin && !u.isSuperhost);
+                      const isHost = u.userType === 'host' || (!u.userType && (u.isSuperhost || u.id.startsWith('host-')));
+                      const isAdmin = u.isAdmin || u.userType === 'admin';
+
+                      return (
+                        <tr key={u.id} className="hover:bg-gray-50/80 transition-colors">
+                          <td className="p-3.5">
+                            <div className="flex items-center gap-3">
+                              <img src={u.avatar} alt={u.name} className="w-9 h-9 rounded-full object-cover border border-gray-200" />
+                              <div>
+                                <p className="font-extrabold text-gray-900">{u.name}</p>
+                                <p className="text-[10px] text-gray-400">ID: {u.id}</p>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="p-3.5">
+                            <p className="font-bold text-gray-800">{u.email}</p>
+                            <p className="text-[11px] text-gray-500">{u.phone || 'Telefonas nenurodytas'}</p>
+                          </td>
+
+                          <td className="p-3.5">
+                            {isAdmin && (
+                              <span className="bg-purple-100 text-purple-900 border border-purple-200 text-[10px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 w-fit">
+                                <Shield className="w-3 h-3 text-purple-600" />
+                                <span>👑 Administratorius</span>
+                              </span>
+                            )}
+                            {isHost && !isAdmin && (
+                              <span className="bg-amber-100 text-amber-950 border border-amber-200 text-[10px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 w-fit">
+                                <span>🏡 Šeimininkas (Pardavėjas)</span>
+                              </span>
+                            )}
+                            {isClient && !isAdmin && !isHost && (
+                              <span className="bg-emerald-100 text-emerald-950 border border-emerald-200 text-[10px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 w-fit">
+                                <span>⛺ Keliautojas (Pirkėjas)</span>
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="p-3.5">
+                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1 ${
+                              u.isEmailVerified 
+                                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
+                                : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              <span>{u.isEmailVerified ? 'El. paštas patvirtintas' : 'Nepatvirtintas'}</span>
+                            </span>
+                          </td>
+
+                          <td className="p-3.5 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => {
+                                  switchUserRole('client');
+                                  setToastMessage(`Pakeista vartotojo ${u.name} rolė į Keliautoją / Pirkėją`);
+                                  setTimeout(() => setToastMessage(null), 3000);
+                                }}
+                                className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-bold text-[10px] rounded-lg transition cursor-pointer"
+                              >
+                                ⛺ Keliautojas
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  switchUserRole('host');
+                                  setToastMessage(`Pakeista vartotojo ${u.name} rolė į Šeimininką`);
+                                  setTimeout(() => setToastMessage(null), 3000);
+                                }}
+                                className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-[10px] rounded-lg transition cursor-pointer"
+                              >
+                                🏡 Šeimininkas
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  switchUserRole('admin');
+                                  setToastMessage(`Vartotojui ${u.name} suteiktos Admin teisės`);
+                                  setTimeout(() => setToastMessage(null), 3000);
+                                }}
+                                className="px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-900 font-bold text-[10px] rounded-lg transition cursor-pointer"
+                              >
+                                👑 Admin
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 

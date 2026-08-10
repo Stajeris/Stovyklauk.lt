@@ -2,6 +2,8 @@ export type PropertyType = 'tent' | 'rv' | 'glamping';
 
 export type CancellationPolicy = 'flexible' | 'moderate' | 'strict';
 
+export type UserType = 'client' | 'host' | 'admin';
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -11,6 +13,7 @@ export interface UserProfile {
   avatar: string;
   bio?: string;
   joinedDate: string;
+  userType?: UserType; // 'client' | 'host' | 'admin'
   isAdmin: boolean;
   isSuperhost?: boolean;
   isEmailVerified?: boolean;
@@ -162,7 +165,7 @@ export interface SearchFilters {
   firePit: boolean;
 }
 
-export type ViewState = 'landing' | 'search' | 'detail' | 'host-dashboard' | 'add-listing' | 'my-trips' | 'pending-requests' | 'admin';
+export type ViewState = 'landing' | 'search' | 'detail' | 'host-dashboard' | 'client-dashboard' | 'add-listing' | 'my-trips' | 'pending-requests' | 'admin';
 
 export interface ChatMessage {
   id: string;

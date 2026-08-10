@@ -37,6 +37,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [loginError, setLoginError] = useState('');
 
   // Register inputs
+  const [selectedUserType, setSelectedUserType] = useState<'client' | 'host'>('client');
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPhone, setRegPhone] = useState('');
@@ -106,7 +107,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       email: regEmail.trim(),
       password: regPassword.trim(),
       phone: regPhone.trim(),
-      avatar: regAvatar
+      avatar: regAvatar,
+      userType: selectedUserType
     });
 
     setPendingUserId(user.id);
@@ -365,6 +367,64 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <span>{regError}</span>
               </div>
             )}
+
+            {/* User Type Split Selection */}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-700 mb-1.5">
+                Pasirinkite Paskyros Tipą *
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setSelectedUserType('client')}
+                  className={`p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                    selectedUserType === 'client'
+                      ? 'bg-emerald-50/80 border-emerald-500 ring-2 ring-emerald-500/20 shadow-sm'
+                      : 'bg-white border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xl">⛺</span>
+                    {selectedUserType === 'client' && (
+                      <span className="bg-emerald-600 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full">
+                        Pasirinkta
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-extrabold text-gray-900">Keliautojas / Pirkėjas</h4>
+                    <p className="text-[10px] text-gray-500 mt-0.5 leading-tight">
+                      Ieškau ir rezervuoju stovyklavietes, pirtis bei baidarių stovyklas.
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedUserType('host')}
+                  className={`p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                    selectedUserType === 'host'
+                      ? 'bg-amber-50/80 border-amber-500 ring-2 ring-amber-500/20 shadow-sm'
+                      : 'bg-white border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xl">🏡</span>
+                    {selectedUserType === 'host' && (
+                      <span className="bg-amber-600 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full">
+                        Pasirinkta
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-extrabold text-gray-900">Šeimininkas / Pardavėjas</h4>
+                    <p className="text-[10px] text-gray-500 mt-0.5 leading-tight">
+                      Nuomoju savo privačią žemę, sodybą ar pakrantę stovyklautojams.
+                    </p>
+                  </div>
+                </button>
+              </div>
+            </div>
 
             <div>
               <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-700 mb-1">
