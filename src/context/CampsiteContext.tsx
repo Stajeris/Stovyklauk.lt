@@ -10,34 +10,40 @@ export const INITIAL_USERS: UserProfile[] = [
     id: 'admin-1',
     name: 'Giedrius Štajeris (Platformos Admin)',
     email: 'admin@stovyklauk.lt',
+    password: 'admin123',
     phone: '+370 600 00000',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
     bio: 'Platformos vyriausiasis administratorius ir Stovyklauk.lt įkūrėjas.',
     joinedDate: 'Rugpjūtis 2026',
     isAdmin: true,
-    isSuperhost: true
+    isSuperhost: true,
+    isEmailVerified: true
   },
   {
     id: 'host-mantas',
     name: 'Mantas Giraitis',
     email: 'mantas@pusalis.lt',
+    password: 'slaptazodis123',
     phone: '+370 611 11111',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
     bio: 'Aukštaitijos miškų šeimininkas, siūlantis privačią pakrantę.',
     joinedDate: 'Liepa 2026',
     isAdmin: false,
-    isSuperhost: true
+    isSuperhost: true,
+    isEmailVerified: true
   },
   {
     id: 'host-rasa',
     name: 'Rasa Nemunienė',
     email: 'rasa@nemunokilpa.lt',
+    password: 'slaptazodis123',
     phone: '+370 622 22222',
     avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
     bio: 'Dzūkijos sodybos ir pirtelės šeimininkė.',
     joinedDate: 'Birželis 2026',
     isAdmin: false,
-    isSuperhost: false
+    isSuperhost: false,
+    isEmailVerified: true
   }
 ];
 
@@ -61,6 +67,19 @@ interface CampsiteContextType {
     campsiteData: Omit<Campsite, 'id' | 'rating' | 'reviewCount' | 'reviews' | 'blockedDates' | 'host'>
   ) => Campsite;
 
+  // Auth System
+  isAuthModalOpen: boolean;
+  authModalInitialMode: 'login' | 'register' | 'verify-email' | 'forgot-password' | 'forgot-email';
+  openAuthModal: (mode?: 'login' | 'register' | 'verify-email' | 'forgot-password' | 'forgot-email') => void;
+  closeAuthModal: () => void;
+  loginUser: (email: string, password?: string) => { success: boolean; reason?: 'user_not_found' | 'invalid_password'; user?: UserProfile };
+  registerUser: (userData: { name: string; email: string; password?: string; phone?: string; avatar?: string }) => { user: UserProfile; verificationCode: string };
+  verifyUserEmail: (userId: string) => void;
+  requestPasswordResetCode: (email: string) => { success: boolean; code?: string; message?: string; userId?: string };
+  resetUserPassword: (email: string, newPassword: string) => { success: boolean };
+  recoverEmailByNameOrPhone: (query: string) => UserProfile[];
+  logoutUser: () => void;
+
   // Chat Management
   chatThreads: ChatThread[];
   sendMessageInThread: (
@@ -81,6 +100,7 @@ interface CampsiteContextType {
   
   confirmVisitStart: (bookingId: string) => void;
   verifyHostPhoneOrEmail: (type: 'phone' | 'email', value: string) => void;
+  updateUserProfile: (data: Partial<UserProfile>) => void;
   
   // Actions
   setView: (view: ViewState, campsiteId?: string) => void;
@@ -342,6 +362,133 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }));
   };
 
+  // Auth Modal State
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalInitialMode, setAuthModalInitialMode] = useState<'login' | 'register' | 'verify-email' | 'forgot-password' | 'forgot-email'>('login');
+
+  const openAuthModal = (mode: 'login' | 'register' | 'verify-email' | 'forgot-password' | 'forgot-email' = 'login') => {
+    setAuthModalInitialMode(mode);
+    setIsAuthModalOpen(true);
+  };
+
+  const closeAuthModal = () => {
+    setIsAuthModalOpen(false);
+  };
+
+  const loginUser = (email: string, password?: string) => {
+    const normalizedEmail = email.trim().toLowerCase();
+    const found = usersList.find(u => u.email.trim().toLowerCase() === normalizedEmail);
+    if (!found) {
+      return { success: false, reason: 'user_not_found' as const };
+    }
+    if (found.password && password && found.password !== password.trim()) {
+      return { success: false, reason: 'invalid_password' as const };
+    }
+    setCurrentUser(found);
+    return { success: true, user: found };
+  };
+
+  const registerUser = (userData: { name: string; email: string; password?: string; phone?: string; avatar?: string }) => {
+    const existing = usersList.find(u => u.email.trim().toLowerCase() === userData.email.trim().toLowerCase());
+    if (existing) {
+      const verificationCode = '4829';
+      setCurrentUser(existing);
+      return { user: existing, verificationCode };
+    }
+
+    const newUser: UserProfile = {
+      id: `user-${Date.now()}`,
+      name: userData.name || 'Naujas Vartotojas',
+      email: userData.email,
+      password: userData.password || 'slaptazodis123',
+      phone: userData.phone || '',
+      avatar: userData.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      bio: 'Stovyklauk.lt vartotojas',
+      joinedDate: 'Rugpjūtis 2026',
+      isAdmin: false,
+      isSuperhost: false,
+      isEmailVerified: false
+    };
+
+    setUsersList(prev => [...prev, newUser]);
+    setCurrentUser(newUser);
+    const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
+    return { user: newUser, verificationCode };
+  };
+
+  const verifyUserEmail = (userId: string) => {
+    setUsersList(prev => prev.map(u => u.id === userId ? { ...u, isEmailVerified: true } : u));
+    setCurrentUser(prev => prev.id === userId ? { ...prev, isEmailVerified: true } : prev);
+  };
+
+  const requestPasswordResetCode = (email: string) => {
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = usersList.find(u => u.email.trim().toLowerCase() === normalizedEmail);
+    if (!user) {
+      return { success: false, message: 'Vartotojas su šiuo el. paštu nerastas.' };
+    }
+    const code = Math.floor(1000 + Math.random() * 9000).toString();
+    return { success: true, code, userId: user.id };
+  };
+
+  const resetUserPassword = (email: string, newPassword: string) => {
+    const normalizedEmail = email.trim().toLowerCase();
+    setUsersList(prev => prev.map(u => {
+      if (u.email.trim().toLowerCase() === normalizedEmail) {
+        return { ...u, password: newPassword, isEmailVerified: true };
+      }
+      return u;
+    }));
+    setCurrentUser(prev => {
+      if (prev.email.trim().toLowerCase() === normalizedEmail) {
+        return { ...prev, password: newPassword, isEmailVerified: true };
+      }
+      return prev;
+    });
+    return { success: true };
+  };
+
+  const recoverEmailByNameOrPhone = (query: string) => {
+    const q = query.trim().toLowerCase();
+    return usersList.filter(u => 
+      u.name.toLowerCase().includes(q) || 
+      (u.phone && u.phone.includes(q))
+    );
+  };
+
+  const logoutUser = () => {
+    // Reset to default or first user
+    setCurrentUser(INITIAL_USERS[0]);
+  };
+
+  const updateUserProfile = (updatedData: Partial<UserProfile>) => {
+    const updatedUser: UserProfile = {
+      ...currentUser,
+      ...updatedData
+    };
+    setCurrentUser(updatedUser);
+    setUsersList(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+
+    if (updatedData.avatar || updatedData.name) {
+      setCampsites(prev => prev.map(c => {
+        if (
+          c.host.id === updatedUser.id ||
+          c.host.name?.toLowerCase() === updatedUser.name?.toLowerCase()
+        ) {
+          return {
+            ...c,
+            host: {
+              ...c.host,
+              ...(updatedData.name ? { name: updatedData.name } : {}),
+              ...(updatedData.avatar ? { avatar: updatedData.avatar } : {})
+            }
+          };
+        }
+        return c;
+      }));
+    }
+  };
+
   const registerHostAndAddCampsite = (
     hostData: { name: string; email: string; phone?: string; avatar?: string; bio?: string },
     campsiteData: Omit<Campsite, 'id' | 'rating' | 'reviewCount' | 'reviews' | 'blockedDates' | 'host'>
@@ -354,7 +501,11 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     let hostUser: UserProfile;
     if (existingHost) {
-      hostUser = existingHost;
+      hostUser = {
+        ...existingHost,
+        isEmailVerified: true,
+        isPhoneVerified: true
+      };
     } else {
       hostUser = {
         id: `host-${Date.now()}`,
@@ -365,7 +516,9 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         bio: hostData.bio?.trim() || 'Gamtos ir sodybos sklypo šeimininkas, džiaugiantis galėdamas priimti poilsiautojus.',
         joinedDate: 'Rugpjūtis 2026',
         isAdmin: false,
-        isSuperhost: false
+        isSuperhost: false,
+        isEmailVerified: true,
+        isPhoneVerified: true
       };
       setUsersList(prev => [...prev, hostUser]);
     }
@@ -373,9 +526,6 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // Set as active logged in user and switch mode to host
     setCurrentUser(hostUser);
     setUserMode('host');
-
-    // Auto approve if host is verified by email or phone
-    const isAutoApprovedHost = hostUser.isEmailVerified || hostUser.isPhoneVerified || currentUser.isEmailVerified || currentUser.isPhoneVerified;
 
     const id = `camp-${Date.now()}`;
     const fullCamp: Campsite = {
@@ -385,7 +535,7 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       reviewCount: 0,
       reviews: [],
       blockedDates: [],
-      status: campsiteData.status || (isAutoApprovedHost ? 'approved' : 'pending'),
+      status: 'approved',
       host: {
         id: hostUser.id,
         name: hostUser.name,
@@ -394,8 +544,8 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         joinedDate: hostUser.joinedDate,
         responseRate: '100% per 1 valandą',
         bio: hostUser.bio || '',
-        isEmailVerified: hostUser.isEmailVerified,
-        isPhoneVerified: hostUser.isPhoneVerified
+        isEmailVerified: true,
+        isPhoneVerified: true
       }
     };
 
@@ -782,6 +932,18 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         registerHostAndAddCampsite,
         confirmVisitStart,
         verifyHostPhoneOrEmail,
+        updateUserProfile,
+        isAuthModalOpen,
+        authModalInitialMode,
+        openAuthModal,
+        closeAuthModal,
+        loginUser,
+        registerUser,
+        verifyUserEmail,
+        requestPasswordResetCode,
+        resetUserPassword,
+        recoverEmailByNameOrPhone,
+        logoutUser,
         chatThreads,
         sendMessageInThread,
         replyToThread,

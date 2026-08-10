@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   DollarSign, Calendar, Star, Users, CheckCircle, XCircle, Sparkles, 
-  PlusCircle, ShieldCheck, TrendingUp, CreditCard, Tent, MapPin, AlertCircle, Clock, Edit, Camera, Eye, ShieldAlert, AlertTriangle, MessageSquare, Send, Crown, Zap, Check, BarChart3, Heart, MousePointer
+  PlusCircle, ShieldCheck, TrendingUp, CreditCard, Tent, MapPin, AlertCircle, Clock, Edit, Camera, Eye, ShieldAlert, AlertTriangle, MessageSquare, Send, Crown, Zap, Check, BarChart3, Heart, MousePointer, X
 } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
 import { Campsite, Review } from '../types';
@@ -10,6 +10,7 @@ import { DisputeReviewModal } from './DisputeReviewModal';
 import { HostCalendarManager } from './HostCalendarManager';
 import { HostVerificationSection } from './HostVerificationSection';
 import { VisitArrivalConfirmationCard } from './VisitArrivalConfirmationCard';
+import { HostPhotoUploader } from './HostPhotoUploader';
 import { ProtectedChatMessage, maskContactInfoText } from '../utils/privacyFilter';
 
 export const HostDashboard: React.FC = () => {
@@ -25,7 +26,8 @@ export const HostDashboard: React.FC = () => {
     promoDaysRemaining,
     selectCampsiteById,
     hostTier,
-    setHostTier
+    setHostTier,
+    updateUserProfile
   } = useCampsites();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'calendar' | 'payouts' | 'reviews' | 'chats' | 'membership'>('overview');
@@ -34,6 +36,8 @@ export const HostDashboard: React.FC = () => {
   const [disputingReview, setDisputingReview] = useState<{ campsiteId: string; review: Review } | null>(null);
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const [hostReplyText, setHostReplyText] = useState('');
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [tempAvatar, setTempAvatar] = useState(currentUser.avatar || '');
 
   // Filter campsites and bookings for current logged-in host if not admin
   const userCampsites = currentUser.isAdmin
@@ -61,23 +65,64 @@ export const HostDashboard: React.FC = () => {
   return (
     <div id="host-dashboard-page" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 bg-gray-50">
       
-      {/* Header & Title */}
+      {/* Header & Title with Host Profile Avatar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 pb-5 font-sans">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
-              Šeimininko Valdymo Skydas
-            </h1>
-            <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-wider border border-emerald-200">
-              Patvirtintas Šeimininkas
-            </span>
+        <div className="flex items-center gap-4">
+          
+          {/* Host Avatar Badge with Edit Trigger */}
+          <div className="relative group shrink-0">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-emerald-500 shadow-md bg-white flex items-center justify-center">
+              {currentUser.avatar ? (
+                <img
+                  src={currentUser.avatar}
+                  alt={currentUser.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-xl font-black text-emerald-800">
+                  {currentUser.name?.charAt(0) || 'Š'}
+                </span>
+              )}
+            </div>
+            <button
+              onClick={() => {
+                setTempAvatar(currentUser.avatar || '');
+                setShowAvatarModal(true);
+              }}
+              className="absolute -bottom-1 -right-1 p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-md border-2 border-white cursor-pointer transition-transform hover:scale-110 active:scale-95"
+              title="Įkelti ar keisti šeimininko nuotrauką"
+            >
+              <Camera className="w-3.5 h-3.5" />
+            </button>
           </div>
-          <p className="text-gray-500 text-xs mt-1">Valdykite stovyklaviečių skelbimus, tvirtinkite svečių užsakymus ir sekite pajamas.</p>
+
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+                {currentUser.name || 'Šeimininko Valdymo Skydas'}
+              </h1>
+              <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-wider border border-emerald-200">
+                Patvirtintas Šeimininkas
+              </span>
+            </div>
+            <p className="text-gray-500 text-xs mt-1">Valdykite stovyklaviečių skelbimus, tvirtinkite svečių užsakymus ir sekite pajamas.</p>
+            
+            <button
+              onClick={() => {
+                setTempAvatar(currentUser.avatar || '');
+                setShowAvatarModal(true);
+              }}
+              className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline inline-flex items-center gap-1 mt-1 cursor-pointer"
+            >
+              <Camera className="w-3 h-3" />
+              <span>Įkelti / keisti profilio nuotrauką →</span>
+            </button>
+          </div>
         </div>
 
         <button
           onClick={() => setView('add-listing')}
-          className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-2 shrink-0 cursor-pointer transition-all"
+          className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-2 shrink-0 cursor-pointer transition-all self-start md:self-center"
         >
           <PlusCircle className="w-4 h-4 text-white" />
           <span>Pridėti naują sklypą</span>
@@ -1264,6 +1309,61 @@ export const HostDashboard: React.FC = () => {
           campsiteId={disputingReview.campsiteId}
           review={disputingReview.review}
         />
+      )}
+
+      {/* RENDER HOST AVATAR UPLOAD MODAL */}
+      {showAvatarModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 font-sans animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 space-y-5 relative">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-emerald-100 text-emerald-800 rounded-xl">
+                  <Camera className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-gray-900">Įkelti / Keisti Šeimininko Nuotrauką</h3>
+                  <p className="text-xs text-gray-500">Pasirinkite failą iš įrenginio arba pavyzdinį avatarą</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAvatarModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <HostPhotoUploader
+              value={tempAvatar}
+              onChange={(newUrl) => setTempAvatar(newUrl)}
+              hostName={currentUser.name}
+              label="Nauja Profilio Nuotrauka"
+            />
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setShowAvatarModal(false)}
+                className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition cursor-pointer"
+              >
+                Atšaukti
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (tempAvatar) {
+                    updateUserProfile({ avatar: tempAvatar });
+                  }
+                  setShowAvatarModal(false);
+                }}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md shadow-emerald-700/20 transition cursor-pointer flex items-center gap-2 active:scale-95"
+              >
+                <Check className="w-4 h-4" />
+                <span>Išsaugoti Nuotrauką</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

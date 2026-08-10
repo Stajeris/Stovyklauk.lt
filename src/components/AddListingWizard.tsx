@@ -8,6 +8,7 @@ import { PropertyType, CancellationPolicy, TERRAIN_OPTIONS } from '../types';
 import { getAmenityConfig } from './AmenityBadge';
 import { LocationPickerMap } from './LocationPickerMap';
 import { HostVerificationSection } from './HostVerificationSection';
+import { HostPhotoUploader } from './HostPhotoUploader';
 
 export const AddListingWizard: React.FC = () => {
   const { registerHostAndAddCampsite, currentUser, setView, campsites, hostTier, setHostTier } = useCampsites();
@@ -135,19 +136,19 @@ export const AddListingWizard: React.FC = () => {
         cancellationPolicy,
         terrainType,
         featured: true,
-        status: 'pending',
         rules: [
           'Nepalikite pėdsakų taisyklių laikymasis',
           'Tylos valandos nuo 22:00 val.',
           'Kūrenti ugnį tik numatytoje laužavietėje'
-        ]
+        ],
+        status: 'approved'
       }
     );
 
     if (newCamp) {
       setCreatedCampsiteId(newCamp.id);
     }
-    setStep(4);
+    setIsSubmitted(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -352,19 +353,15 @@ export const AddListingWizard: React.FC = () => {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-600 mb-1">
-                    Šeimininko Nuotraukos URL
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="Nuotraukos nuoroda (http...)"
-                    value={hostAvatar}
-                    onChange={(e) => setHostAvatar(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-900 focus:ring-2 focus:ring-emerald-600 focus:outline-hidden"
-                  />
-                </div>
               </div>
+
+              {/* Host Photo / Avatar Upload Section */}
+              <HostPhotoUploader
+                value={hostAvatar}
+                onChange={setHostAvatar}
+                hostName={hostName || 'Naujas Šeimininkas'}
+                label="Šeimininko Nuotrauka / Profilio Avataras (Galima Įkelti Iš Įrenginio)"
+              />
 
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-600 mb-1">
@@ -818,8 +815,8 @@ export const AddListingWizard: React.FC = () => {
                 onClick={handleRegisterAndProceedToStep4}
                 className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md shadow-emerald-700/20 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
               >
-                <span>Registruoti ir Tęsti į 4 Žingsnį (Verifikacija)</span>
-                <ArrowRight className="w-4 h-4" />
+                <CheckCircle className="w-4 h-4 text-white" />
+                <span>Paskelbti ir Aktyvuoti Skelbimą</span>
               </button>
             </div>
           </div>

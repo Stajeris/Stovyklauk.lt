@@ -6,6 +6,7 @@ export interface UserProfile {
   id: string;
   name: string;
   email: string;
+  password?: string;
   phone?: string;
   avatar: string;
   bio?: string;

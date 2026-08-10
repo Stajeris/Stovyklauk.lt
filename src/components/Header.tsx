@@ -14,6 +14,7 @@ export const Header: React.FC = () => {
     currentUser, 
     usersList, 
     setCurrentUser, 
+    openAuthModal,
     t 
   } = useCampsites();
 
@@ -172,6 +173,16 @@ export const Header: React.FC = () => {
               <span className="sm:hidden">+ Naujas</span>
             </button>
 
+            {/* Quick Login / Sign Up Button */}
+            <button
+              onClick={() => openAuthModal('login')}
+              className="px-3.5 py-2 rounded-full bg-emerald-50 text-emerald-900 border border-emerald-200 hover:bg-emerald-100 font-extrabold text-xs transition cursor-pointer flex items-center gap-1.5 shrink-0"
+            >
+              <User className="w-3.5 h-3.5 text-emerald-700" />
+              <span className="hidden xl:inline">Prisijungti / Registruotis</span>
+              <span className="xl:hidden">Prisijungti</span>
+            </button>
+
             {/* User Profile Selector Dropdown */}
             <div className="relative">
               <button
@@ -197,7 +208,7 @@ export const Header: React.FC = () => {
 
               {/* Profile Dropdown Menu */}
               {showUserDropdown && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-gray-150 p-2 z-50 space-y-1 font-sans animate-in fade-in duration-150">
+                <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-150 p-2 z-50 space-y-1 font-sans animate-in fade-in duration-150">
                   <div className="px-3 py-2 border-b border-gray-100">
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Perjungti Paskyrą (Testing Switcher)</p>
                   </div>
@@ -222,15 +233,36 @@ export const Header: React.FC = () => {
                       {currentUser?.id === usr.id && <Check className="w-4 h-4 text-emerald-600 shrink-0" />}
                     </button>
                   ))}
-                  <div className="pt-1 border-t border-gray-100">
+
+                  <div className="pt-2 border-t border-gray-100 space-y-1">
                     <button
                       onClick={() => {
                         setShowUserDropdown(false);
-                        setView('add-listing');
+                        openAuthModal('login');
                       }}
-                      className="w-full text-center py-2 text-emerald-700 hover:bg-emerald-50 font-bold text-xs rounded-xl transition"
+                      className="w-full text-left px-3 py-2 text-emerald-900 hover:bg-emerald-50 font-bold text-xs rounded-xl transition flex items-center gap-2 cursor-pointer"
                     >
-                      + Registruoti Naują Šeimininką
+                      <span>🔑 Prisijungti su el. paštu ir slaptažodžiu</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setShowUserDropdown(false);
+                        openAuthModal('register');
+                      }}
+                      className="w-full text-left px-3 py-2 text-emerald-700 hover:bg-emerald-50 font-bold text-xs rounded-xl transition flex items-center gap-2 cursor-pointer"
+                    >
+                      <span>✨ Naujo Vartotojo Registracija</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setShowUserDropdown(false);
+                        openAuthModal('forgot-password');
+                      }}
+                      className="w-full text-left px-3 py-2 text-amber-800 hover:bg-amber-50 font-bold text-xs rounded-xl transition flex items-center gap-2 cursor-pointer"
+                    >
+                      <span>🔓 Pamiršau Slaptažodį / El. Paštą</span>
                     </button>
                   </div>
                 </div>
