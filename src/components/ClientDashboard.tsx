@@ -172,7 +172,10 @@ export const ClientDashboard: React.FC = () => {
 
           <div className="flex items-center gap-3 self-stretch md:self-auto justify-end">
             <button
-              onClick={() => switchUserRole('host')}
+              onClick={() => {
+                switchUserRole('host');
+                setView('host-dashboard');
+              }}
               className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-gray-900 font-extrabold text-xs uppercase tracking-wider transition shadow-md flex items-center gap-2 cursor-pointer"
             >
               <span>🏡 Noriu Nuomoti Sodybą (Tapti Šeimininku)</span>

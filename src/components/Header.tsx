@@ -9,6 +9,7 @@ export const Header: React.FC = () => {
     setView, 
     userMode, 
     toggleUserMode, 
+    switchUserRole,
     promoDaysRemaining, 
     bookings, 
     currentUser, 
@@ -168,30 +169,35 @@ export const Header: React.FC = () => {
 
           {/* Right Action Controls */}
           <div className="flex items-center gap-2.5">
-            {/* Host promo Pill */}
+            {/* Direct 'Become a Host' / 'Tapti Šeimininku' Button */}
             <button
-              onClick={() => setView('add-listing')}
-              className="hidden lg:flex items-center gap-2 px-3.5 py-2 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-100 hover:bg-emerald-100 transition text-xs font-bold cursor-pointer"
+              id="cta-become-host-btn"
+              onClick={() => {
+                switchUserRole('host');
+                setView('add-listing');
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-amber-400 hover:bg-amber-500 text-emerald-950 text-xs font-black shadow-sm transition-all cursor-pointer"
+              title="Perjungti į Šeimininko paskyrą ir registruoti sklypą"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>{t('becomeHost', { days: promoDaysRemaining })}</span>
+              <Sparkles className="w-4 h-4 text-emerald-950" />
+              <span>🏡 Tapti Šeimininku</span>
             </button>
 
             {/* Add Listing Button - Creates new user & campsite */}
             <button
               id="cta-add-listing"
               onClick={() => setView('add-listing')}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-700/20 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-700/20 transition-all cursor-pointer"
             >
               <PlusCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">Pridėti Skelbimą / Vartotoją</span>
-              <span className="sm:hidden">+ Naujas</span>
+              <span className="hidden sm:inline">Pridėti Skelbimą</span>
+              <span className="sm:hidden">+ Skelbimas</span>
             </button>
 
             {/* Quick Login / Sign Up Button */}
             <button
               onClick={() => openAuthModal('login')}
-              className="px-3.5 py-2 rounded-full bg-emerald-50 text-emerald-900 border border-emerald-200 hover:bg-emerald-100 font-extrabold text-xs transition cursor-pointer flex items-center gap-1.5 shrink-0"
+              className="px-3 py-2 rounded-full bg-emerald-50 text-emerald-900 border border-emerald-200 hover:bg-emerald-100 font-extrabold text-xs transition cursor-pointer flex items-center gap-1.5 shrink-0"
             >
               <User className="w-3.5 h-3.5 text-emerald-700" />
               <span className="hidden xl:inline">Prisijungti / Registruotis</span>
@@ -215,7 +221,7 @@ export const Header: React.FC = () => {
                     {currentUser?.name || 'Vartotojas'}
                   </span>
                   <span className="text-[9px] font-semibold text-emerald-700 block">
-                    {currentUser?.isAdmin ? '👑 Platform Admin' : '🏡 Šeimininkas'}
+                    {currentUser?.isAdmin ? '👑 Platform Admin' : currentUser?.userType === 'host' ? '🏡 Šeimininkas' : '⛺ Keliautojas'}
                   </span>
                 </div>
                 <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
@@ -223,9 +229,49 @@ export const Header: React.FC = () => {
 
               {/* Profile Dropdown Menu */}
               {showUserDropdown && (
-                <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-150 p-2 z-50 space-y-1 font-sans animate-in fade-in duration-150">
-                  <div className="px-3 py-2 border-b border-gray-100">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Perjungti Paskyrą (Testing Switcher)</p>
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-gray-150 p-2 z-50 space-y-1 font-sans animate-in fade-in duration-150">
+                  {/* Action to Become a Host or Switch Roles */}
+                  <div className="p-2.5 bg-gradient-to-r from-amber-50 to-emerald-50 border border-amber-200/80 rounded-xl space-y-2">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900">
+                      Paskyros Valdymas & Rolė
+                    </p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        onClick={() => {
+                          switchUserRole('host');
+                          setView('host-dashboard');
+                          setShowUserDropdown(false);
+                        }}
+                        className={`p-2 rounded-lg text-[11px] font-bold text-left transition flex items-center gap-1.5 cursor-pointer ${
+                          currentUser?.userType === 'host' 
+                            ? 'bg-amber-500 text-gray-950 font-black shadow-xs' 
+                            : 'bg-white hover:bg-amber-100 text-gray-800 border border-amber-200'
+                        }`}
+                      >
+                        <span className="text-sm">🏡</span>
+                        <span>Tapti Šeimininku</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          switchUserRole('client');
+                          setView('client-dashboard');
+                          setShowUserDropdown(false);
+                        }}
+                        className={`p-2 rounded-lg text-[11px] font-bold text-left transition flex items-center gap-1.5 cursor-pointer ${
+                          currentUser?.userType === 'client' 
+                            ? 'bg-emerald-600 text-white font-black shadow-xs' 
+                            : 'bg-white hover:bg-emerald-100 text-gray-800 border border-emerald-200'
+                        }`}
+                      >
+                        <span className="text-sm">⛺</span>
+                        <span>Keliautojas</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="px-3 py-1.5 border-b border-gray-100">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Perjungti Vartotoją (Testavimas)</p>
                   </div>
                   {usersList.map((usr) => (
                     <button
@@ -242,7 +288,9 @@ export const Header: React.FC = () => {
                         <img src={usr.avatar} alt={usr.name} className="w-6 h-6 rounded-full object-cover shrink-0" />
                         <div className="truncate">
                           <span className="block truncate font-bold">{usr.name}</span>
-                          <span className="text-[9px] text-gray-400 block truncate">{usr.isAdmin ? '👑 Admin' : '🏡 Šeimininkas'}</span>
+                          <span className="text-[9px] text-gray-400 block truncate">
+                            {usr.isAdmin ? '👑 Admin' : usr.userType === 'host' ? '🏡 Šeimininkas' : '⛺ Keliautojas'}
+                          </span>
                         </div>
                       </div>
                       {currentUser?.id === usr.id && <Check className="w-4 h-4 text-emerald-600 shrink-0" />}
