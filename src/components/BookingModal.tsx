@@ -120,7 +120,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
               </div>
             </div>
 
-            {/* Price Breakdown according to requested tiered formula */}
+            {/* Price Breakdown */}
             <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-2 text-xs">
               <div className="flex justify-between text-gray-600">
                 <span>{totalNights} nakt. × €{nightlyRate}</span>
@@ -134,24 +134,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 </div>
               )}
 
-              <div className="flex justify-between text-gray-700 font-bold border-t border-gray-200 pt-1.5">
-                <span>Užsakymo tarpinė suma (Subtotal)</span>
-                <span>€{pricing.bookingSubtotal}</span>
-              </div>
-
-              {/* Dynamic Tiered Platform Fee Calculation */}
-              <div className="flex justify-between items-center text-emerald-900 bg-emerald-50/80 p-2.5 rounded-xl border border-emerald-200/80">
-                <div>
-                  <span className="font-extrabold block">Platformos paslaugų mokestis ({pricing.feePercentageLabel})</span>
-                  <span className="text-[10px] text-emerald-700 font-medium">
-                    Stripe mokesčių apsaugos min. 5.00 EUR ({pricing.platformFeeCents} ct)
-                  </span>
-                </div>
-                <span className="font-black text-sm text-emerald-800">€{pricing.platformFeeEur}</span>
-              </div>
-
-              <div className="flex justify-between items-center pt-2 border-t border-gray-200 font-black text-base text-gray-900">
-                <span>Viso mokėti (Ašaldoma Escrow):</span>
+              <div className="flex justify-between items-center pt-2.5 border-t border-gray-200 font-black text-base text-gray-900">
+                <span>Viso mokėti (Šaldoma Escrow):</span>
                 <span className="text-xl text-emerald-700">€{pricing.totalGuestPrice}</span>
               </div>
             </div>

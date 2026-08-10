@@ -1,4 +1,16 @@
 /**
+ * Returns the effective cleaning fee for a campsite.
+ * By default: cleaning & preparation fee applies ONLY in the case of Camper/RV rental ('rv').
+ * If the Host explicitly sets `hasCleaningFee` (true/false) and/or `cleaningFee`, respect the host preference.
+ */
+export function getCampsiteCleaningFee(campsite: { propertyType?: string; hasCleaningFee?: boolean; cleaningFee?: number }): number {
+  if (campsite.hasCleaningFee !== undefined) {
+    return campsite.hasCleaningFee ? (campsite.cleaningFee ?? 15) : 0;
+  }
+  return campsite.propertyType === 'rv' ? (campsite.cleaningFee ?? 15) : 0;
+}
+
+/**
  * Calculates the platform service fee in cents based on booking subtotal (EUR).
  * Tiered pricing structure:
  * - >= 250 EUR: 5% fee

@@ -13,6 +13,7 @@ import { HostChatModal } from './HostChatModal';
 import { OrderApproxMap } from './OrderApproxMap';
 import { ReviewModal } from './ReviewModal';
 import { DisputeReviewModal } from './DisputeReviewModal';
+import { calculateFullPricing, getCampsiteCleaningFee } from '../utils/pricing';
 
 export const CampsiteDetailPage: React.FC = () => {
   const { selectedCampsite, setView, isDateBlocked, favorites, toggleFavorite, bookings, userMode } = useCampsites();
@@ -59,10 +60,9 @@ export const CampsiteDetailPage: React.FC = () => {
   };
 
   const nights = calculateNights();
-  const cleaningFee = 15;
-  const nightlyTotal = camp.pricePerNight * nights;
-  const platformFee = Math.round(nightlyTotal * 0.05); // 5% platform fee
-  const totalPrice = nightlyTotal + cleaningFee + platformFee;
+  const cleaningFee = getCampsiteCleaningFee(camp);
+  const pricing = calculateFullPricing(camp.pricePerNight, nights, cleaningFee, checkIn, checkOut, camp.customPrices);
+  const totalPrice = pricing.totalGuestPrice;
 
   // Check if selected date range has any blocked date
   const hasBlockedDateInRange = () => {
@@ -562,22 +562,18 @@ export const CampsiteDetailPage: React.FC = () => {
             <div className="space-y-2 text-xs border-t border-gray-100 pt-4 font-sans">
               <div className="flex justify-between text-gray-600">
                 <span>€{camp.pricePerNight} × {nights} nakt.</span>
-                <span className="font-semibold text-gray-900">€{nightlyTotal}</span>
+                <span className="font-semibold text-gray-900">€{pricing.nightsSubtotal}</span>
               </div>
-              <div className="flex justify-between text-gray-600">
-                <span>Švaros ir paruošimo mokestis</span>
-                <span className="font-semibold text-gray-900">€{cleaningFee}</span>
-              </div>
-              <div className="flex justify-between text-gray-600">
-                <span className="flex items-center gap-1">
-                  <span>5% Aptarnavimo mokestis</span>
-                </span>
-                <span className="font-semibold text-gray-900">€{platformFee}</span>
-              </div>
+              {cleaningFee > 0 && (
+                <div className="flex justify-between text-gray-600">
+                  <span>Valymo ir paruošimo mokestis</span>
+                  <span className="font-semibold text-gray-900">€{cleaningFee}</span>
+                </div>
+              )}
 
               <div className="flex justify-between pt-3 border-t border-gray-100 text-base font-bold text-gray-900">
                 <span>Viso mokėti</span>
-                <span className="font-black text-xl text-emerald-800">€{totalPrice}</span>
+                <span className="font-black text-xl text-emerald-800">€{pricing.totalGuestPrice}</span>
               </div>
             </div>
 
@@ -641,7 +637,7 @@ export const CampsiteDetailPage: React.FC = () => {
           totalNights={nights}
           nightlyRate={camp.pricePerNight}
           cleaningFee={cleaningFee}
-          serviceFee={platformFee}
+          serviceFee={pricing.platformFeeEur}
           totalPrice={totalPrice}
           onClose={() => setIsBookingModalOpen(false)}
         />

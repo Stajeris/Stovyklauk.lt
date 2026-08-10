@@ -42,6 +42,8 @@ export const AddListingWizard: React.FC = () => {
   const [longitude, setLongitude] = useState<number>(25.4520);
   const [terrainType, setTerrainType] = useState<string>(TERRAIN_OPTIONS[0]);
   const [propertyType, setPropertyType] = useState<PropertyType>('tent');
+  const [hasCleaningFee, setHasCleaningFee] = useState<boolean>(false);
+  const [cleaningFee, setCleaningFee] = useState<number>(15);
   const [pricePerNight, setPricePerNight] = useState(25);
   const [maxGuests, setMaxGuests] = useState(4);
   const [rvMaxLengthFt, setRvMaxLengthFt] = useState(30);
@@ -128,6 +130,8 @@ export const AddListingWizard: React.FC = () => {
         latitude,
         longitude,
         pricePerNight,
+        hasCleaningFee,
+        cleaningFee: hasCleaningFee ? cleaningFee : 0,
         propertyType,
         maxGuests,
         rvMaxLengthFt: propertyType === 'rv' ? rvMaxLengthFt : undefined,
@@ -541,7 +545,15 @@ export const AddListingWizard: React.FC = () => {
                   <button
                     key={item.id}
                     type="button"
-                    onClick={() => setPropertyType(item.id as any)}
+                    onClick={() => {
+                      const newType = item.id as PropertyType;
+                      setPropertyType(newType);
+                      if (newType === 'rv') {
+                        setHasCleaningFee(true);
+                      } else {
+                        setHasCleaningFee(false);
+                      }
+                    }}
                     className={`p-4 rounded-2xl border text-center flex flex-col items-center gap-2 transition-all cursor-pointer ${
                       propertyType === item.id
                         ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-bold ring-2 ring-emerald-600'
@@ -572,6 +584,42 @@ export const AddListingWizard: React.FC = () => {
               <p className="text-[10px] text-emerald-800">
                 Su 0% Šeimininko mokesčiu, jūs gaunate visus €{pricePerNight} už kiekvieną nakvynę!
               </p>
+            </div>
+
+            {/* Valymo ir Paruošimo Mokestis (Cleaning Fee Toggle) */}
+            <div className="p-4 rounded-2xl bg-white border border-gray-200 space-y-3 font-sans shadow-2xs">
+              <label className="flex items-start gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={hasCleaningFee}
+                  onChange={(e) => setHasCleaningFee(e.target.checked)}
+                  className="w-4 h-4 mt-0.5 rounded text-emerald-600 focus:ring-emerald-500 border-gray-300 cursor-pointer"
+                />
+                <div>
+                  <span className="text-xs font-extrabold text-gray-900 block">
+                    Taikyti valymo ir paruošimo mokestį
+                  </span>
+                  <span className="text-[10px] text-gray-500 font-medium leading-relaxed block mt-0.5">
+                    Pagal nutylėjimą šis mokestis taikomas tik Kemperių nuomai, bet galite pažymėti ir įvesti kainą bet kuriam objektui.
+                  </span>
+                </div>
+              </label>
+
+              {hasCleaningFee && (
+                <div className="pt-2 border-t border-gray-150 flex items-center justify-between gap-4">
+                  <label className="text-xs font-bold text-gray-700">Valymo / paruošimo mokesčio suma (€):</label>
+                  <div className="relative w-32">
+                    <input
+                      type="number"
+                      min={0}
+                      max={300}
+                      value={cleaningFee}
+                      onChange={(e) => setCleaningFee(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="w-full px-3 py-1.5 rounded-xl border border-gray-300 bg-white text-xs font-extrabold text-gray-900 focus:ring-2 focus:ring-emerald-600"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Capacity */}

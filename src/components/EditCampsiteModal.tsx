@@ -45,6 +45,10 @@ export const EditCampsiteModal: React.FC<EditCampsiteModalProps> = ({ campsite, 
   const [longitude, setLongitude] = useState<number>(campsite.longitude || 25.4520);
   const [terrainType, setTerrainType] = useState(campsite.terrainType);
   const [propertyType, setPropertyType] = useState<PropertyType>(campsite.propertyType);
+  const [hasCleaningFee, setHasCleaningFee] = useState<boolean>(
+    campsite.hasCleaningFee !== undefined ? campsite.hasCleaningFee : campsite.propertyType === 'rv'
+  );
+  const [cleaningFee, setCleaningFee] = useState<number>(campsite.cleaningFee ?? 15);
   const [pricePerNight, setPricePerNight] = useState(campsite.pricePerNight);
   const [maxGuests, setMaxGuests] = useState(campsite.maxGuests);
   const [rvMaxLengthFt, setRvMaxLengthFt] = useState(campsite.rvMaxLengthFt || 30);
@@ -162,6 +166,8 @@ export const EditCampsiteModal: React.FC<EditCampsiteModalProps> = ({ campsite, 
       longitude,
       terrainType,
       propertyType,
+      hasCleaningFee,
+      cleaningFee: hasCleaningFee ? cleaningFee : 0,
       pricePerNight,
       maxGuests,
       rvMaxLengthFt: propertyType === 'rv' ? rvMaxLengthFt : undefined,
@@ -591,7 +597,13 @@ export const EditCampsiteModal: React.FC<EditCampsiteModalProps> = ({ campsite, 
                   </label>
                   <select
                     value={propertyType}
-                    onChange={(e) => setPropertyType(e.target.value as PropertyType)}
+                    onChange={(e) => {
+                      const newType = e.target.value as PropertyType;
+                      setPropertyType(newType);
+                      if (campsite.hasCleaningFee === undefined) {
+                        setHasCleaningFee(newType === 'rv');
+                      }
+                    }}
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-xs font-bold text-gray-900 focus:ring-2 focus:ring-emerald-600 focus:outline-hidden"
                   >
                     <option value="tent">⛺ Palapinės</option>
@@ -599,6 +611,42 @@ export const EditCampsiteModal: React.FC<EditCampsiteModalProps> = ({ campsite, 
                     <option value="rv">🚐 Kemperiai</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Valymo ir Paruošimo Mokestis (Cleaning Fee Toggle) */}
+              <div className="p-4 rounded-2xl bg-white border border-gray-200 space-y-3 font-sans mt-2">
+                <label className="flex items-start gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={hasCleaningFee}
+                    onChange={(e) => setHasCleaningFee(e.target.checked)}
+                    className="w-4 h-4 mt-0.5 rounded text-emerald-600 focus:ring-emerald-500 border-gray-300 cursor-pointer"
+                  />
+                  <div>
+                    <span className="text-xs font-extrabold text-gray-900 block">
+                      Taikyti valymo ir paruošimo mokestį
+                    </span>
+                    <span className="text-[10px] text-gray-500 font-medium leading-relaxed block mt-0.5">
+                      Pagal nutylėjimą taikoma tik Kemperių nuomai, bet galite pasirinkti ir nustatyti ši mokestį bet kuriam objektui.
+                    </span>
+                  </div>
+                </label>
+
+                {hasCleaningFee && (
+                  <div className="pt-2 border-t border-gray-150 flex items-center justify-between gap-4">
+                    <label className="text-xs font-bold text-gray-700">Valymo / paruošimo mokesčio suma (€):</label>
+                    <div className="relative w-32">
+                      <input
+                        type="number"
+                        min={0}
+                        max={300}
+                        value={cleaningFee}
+                        onChange={(e) => setCleaningFee(Math.max(0, parseInt(e.target.value) || 0))}
+                        className="w-full px-3 py-1.5 rounded-xl border border-gray-300 bg-white text-xs font-extrabold text-gray-900 focus:ring-2 focus:ring-emerald-600"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {propertyType === 'rv' && (

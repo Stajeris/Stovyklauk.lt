@@ -90,6 +90,8 @@ export interface Campsite {
   longitude: number;
   arrivalInstructions?: string;
   pricePerNight: number;
+  hasCleaningFee?: boolean;
+  cleaningFee?: number;
   rating: number;
   reviewCount: number;
   propertyType: PropertyType;
