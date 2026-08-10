@@ -9,7 +9,7 @@ export const INITIAL_USERS: UserProfile[] = [
   // 1 Platform Admin
   {
     id: 'admin-1',
-    name: 'Giedrius Štajeris (Platformos Admin)',
+    name: 'Giedrius Štajeris',
     email: 'admin@stovyklauk.lt',
     password: 'admin123',
     phone: '+370 600 00000',
@@ -24,7 +24,7 @@ export const INITIAL_USERS: UserProfile[] = [
   // 8 Hosts in Lithuania
   {
     id: 'host-1',
-    name: 'Jonas Kazlauskas (Aukštaitijos Šeimininkas)',
+    name: 'Jonas Kazlauskas',
     email: 'jonas.kazlauskas@stovyklauk.lt',
     password: 'slaptazodis123',
     phone: '+370 611 12345',
@@ -38,7 +38,7 @@ export const INITIAL_USERS: UserProfile[] = [
   },
   {
     id: 'host-2',
-    name: 'Eglė Petrauskienė (Zarasų Glamping)',
+    name: 'Eglė Petrauskienė',
     email: 'egle.petrauskiene@stovyklauk.lt',
     password: 'slaptazodis123',
     phone: '+370 622 23456',
@@ -52,7 +52,7 @@ export const INITIAL_USERS: UserProfile[] = [
   },
   {
     id: 'host-3',
-    name: 'Gintaras Marcinkevičius (Dzūkijos Pušynai)',
+    name: 'Gintaras Marcinkevičius',
     email: 'gintaras.m@stovyklauk.lt',
     password: 'slaptazodis123',
     phone: '+370 633 34567',
@@ -66,7 +66,7 @@ export const INITIAL_USERS: UserProfile[] = [
   },
   {
     id: 'host-4',
-    name: 'Lina Jonaitienė (Žemaitijos Slėnis)',
+    name: 'Lina Jonaitienė',
     email: 'lina.jonaitiene@stovyklauk.lt',
     password: 'slaptazodis123',
     phone: '+370 644 45678',
@@ -80,7 +80,7 @@ export const INITIAL_USERS: UserProfile[] = [
   },
   {
     id: 'host-5',
-    name: 'Darius Stankevičius (Anykščių Šilelis)',
+    name: 'Darius Stankevičius',
     email: 'darius.stankevicius@stovyklauk.lt',
     password: 'slaptazodis123',
     phone: '+370 655 56789',
@@ -94,7 +94,7 @@ export const INITIAL_USERS: UserProfile[] = [
   },
   {
     id: 'host-6',
-    name: 'Dovilė Vasiliauskienė (Pajūrio Oazė)',
+    name: 'Dovilė Vasiliauskienė',
     email: 'dovile.vasiliauskiene@stovyklauk.lt',
     password: 'slaptazodis123',
     phone: '+370 666 67890',
@@ -108,7 +108,7 @@ export const INITIAL_USERS: UserProfile[] = [
   },
   {
     id: 'host-7',
-    name: 'Andrius Žukauskas (Nemuno Kilpos)',
+    name: 'Andrius Žukauskas',
     email: 'andrius.zukauskas@stovyklauk.lt',
     password: 'slaptazodis123',
     phone: '+370 677 78901',
@@ -122,7 +122,7 @@ export const INITIAL_USERS: UserProfile[] = [
   },
   {
     id: 'host-8',
-    name: 'Rūta Balčiūnaitė (Neries Vingiai)',
+    name: 'Rūta Balčiūnaitė',
     email: 'ruta.balciunaite@stovyklauk.lt',
     password: 'slaptazodis123',
     phone: '+370 688 89012',
@@ -457,7 +457,7 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
 
   const [usersList, setUsersList] = useState<UserProfile[]>(() => {
-    const DATASET_VER = 'v3_8hosts_15users';
+    const DATASET_VER = 'v4_seimininkas_keliautojas_badges';
     const savedVer = localStorage.getItem('campscape_users_ver');
     const local = localStorage.getItem('campscape_users');
     if (savedVer !== DATASET_VER || !local) {

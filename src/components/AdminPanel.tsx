@@ -3,13 +3,15 @@ import {
   ShieldCheck, CheckCircle2, XCircle, Clock, Search, MapPin, 
   Trash2, Eye, Plus, Sparkles, AlertCircle, Building2, User, 
   Check, X, RefreshCw, ChevronRight, ExternalLink, ShieldAlert, AlertTriangle, Star, MessageSquare,
-  CreditCard, DollarSign, Zap, Download, FileText, Lock, ChevronDown, ChevronUp, UserCheck, Shield
+  CreditCard, DollarSign, Zap, Download, FileText, Lock, ChevronDown, ChevronUp, UserCheck, Shield,
+  Calendar as CalendarIcon
 } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
 import { Campsite, PropertyType, Review, Booking } from '../types';
 import { OrderApproxMap } from './OrderApproxMap';
 import { LocationPickerMap } from './LocationPickerMap';
 import { ProtectedChatMessage } from '../utils/privacyFilter';
+import { HostCalendarManager } from './HostCalendarManager';
 
 export const AdminPanel: React.FC = () => {
   const { 
@@ -31,7 +33,7 @@ export const AdminPanel: React.FC = () => {
     setView 
   } = useCampsites();
 
-  const [activeTab, setActiveTab] = useState<'pending' | 'all' | 'add-new' | 'reviews-disputes' | 'escrow-payouts' | 'chats' | 'users'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'all' | 'add-new' | 'reviews-disputes' | 'escrow-payouts' | 'chats' | 'users' | 'calendar'>('pending');
   const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'pending' | 'rejected'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPreviewCamp, setSelectedPreviewCamp] = useState<Campsite | null>(null);
@@ -448,6 +450,21 @@ export const AdminPanel: React.FC = () => {
             <span>👥 Vartotojai ir Paskyrų Tipai</span>
             <span className="px-2 py-0.5 text-[10px] font-extrabold bg-blue-600 text-white rounded-full">
               {usersList?.length || 0}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('calendar')}
+            className={`flex items-center gap-2 px-5 py-3 font-bold text-xs rounded-t-xl transition-all border-b-2 cursor-pointer shrink-0 ${
+              activeTab === 'calendar'
+                ? 'border-emerald-600 text-emerald-900 bg-emerald-50/80 font-extrabold'
+                : 'border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
+            }`}
+          >
+            <CalendarIcon className="w-4 h-4 text-emerald-600" />
+            <span>📅 Rezervacijų Kalendorius</span>
+            <span className="px-2 py-0.5 text-[10px] font-extrabold bg-emerald-700 text-white rounded-full">
+              {bookings.length}
             </span>
           </button>
         </div>
@@ -1670,7 +1687,7 @@ export const AdminPanel: React.FC = () => {
                                             ? 'bg-amber-100 text-amber-900'
                                             : 'bg-blue-100 text-blue-900'
                                         }`}>
-                                          {isClient ? 'Poilsiautojas' : isAdmin ? '👑 Adminas' : 'Šeimininkas'}
+                                          {isClient ? 'Keliautojas' : isAdmin ? '👑 Adminas' : 'Šeimininkas'}
                                         </span>
                                       </div>
 
@@ -1823,12 +1840,12 @@ export const AdminPanel: React.FC = () => {
                             )}
                             {isHost && !isAdmin && (
                               <span className="bg-amber-100 text-amber-950 border border-amber-200 text-[10px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 w-fit">
-                                <span>🏡 Šeimininkas (Pardavėjas)</span>
+                                <span>🏡 Šeimininkas</span>
                               </span>
                             )}
                             {isClient && !isAdmin && !isHost && (
                               <span className="bg-emerald-100 text-emerald-950 border border-emerald-200 text-[10px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 w-fit">
-                                <span>⛺ Keliautojas (Pirkėjas)</span>
+                                <span>⛺ Keliautojas</span>
                               </span>
                             )}
                           </td>
@@ -1849,7 +1866,7 @@ export const AdminPanel: React.FC = () => {
                               <button
                                 onClick={() => {
                                   switchUserRole('client');
-                                  setToastMessage(`Pakeista vartotojo ${u.name} rolė į Keliautoją / Pirkėją`);
+                                  setToastMessage(`Pakeista vartotojo ${u.name} rolė į Keliautoją`);
                                   setTimeout(() => setToastMessage(null), 3000);
                                 }}
                                 className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-bold text-[10px] rounded-lg transition cursor-pointer"
@@ -1887,6 +1904,24 @@ export const AdminPanel: React.FC = () => {
               </table>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* TAB 8: RESERVATION CALENDAR */}
+      {activeTab === 'calendar' && (
+        <div className="space-y-6">
+          <div className="bg-emerald-950 text-white p-6 rounded-3xl border border-emerald-900 space-y-2">
+            <div className="flex items-center gap-2 text-amber-300 font-bold text-xs uppercase tracking-wider">
+              <ShieldCheck className="w-4 h-4 text-amber-400" />
+              <span>Platformos Užsakymų & Kalendorių Administravimas</span>
+            </div>
+            <h2 className="text-2xl font-black">Visų Lietuvos Stovyklaviečių Rezervacijų Kalendorius</h2>
+            <p className="text-xs text-emerald-200">
+              Tikrinkite visų šeimininkų skelbimus, stebėkite užsakymų užimtumą, užveskite pelės žymeklį ant rezervacijų, kad pamatytumėte svečio informaciją, ir patvirtinkite arba atšaukite užsakymus vienu spustelėjimu.
+            </p>
+          </div>
+
+          <HostCalendarManager campsites={campsites} isAdminView={true} />
         </div>
       )}
 

@@ -155,7 +155,7 @@ export const ClientDashboard: React.FC = () => {
                 <h1 className="text-2xl sm:text-3xl font-black">{currentUser.name}</h1>
                 <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full flex items-center gap-1">
                   <Compass className="w-3 h-3 text-emerald-400" />
-                  <span>Keliautojo / Pirkėjo Paskyra</span>
+                  <span>Keliautojo Paskyra</span>
                 </span>
                 {currentUser.isEmailVerified && (
                   <span className="bg-blue-500/20 text-blue-300 border border-blue-400/30 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -202,7 +202,7 @@ export const ClientDashboard: React.FC = () => {
             <p className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-200">Paskyros Būsena</p>
             <p className="text-sm font-bold text-emerald-300 mt-2 flex items-center gap-1">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>Aktyvus Pirkėjas</span>
+              <span>Aktyvus Keliautojas</span>
             </p>
           </div>
         </div>

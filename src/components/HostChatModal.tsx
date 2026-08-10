@@ -63,7 +63,7 @@ export const HostChatModal: React.FC<HostChatModalProps> = ({
 
     const sender = {
       id: currentUser.id || 'client-guest',
-      name: currentUser.name || 'Svečias / Poilsiautojas',
+      name: currentUser.name || 'Keliautojas',
       avatar: currentUser.avatar,
       email: currentUser.email,
       role: 'client' as const

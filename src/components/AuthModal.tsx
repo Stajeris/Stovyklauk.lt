@@ -392,7 +392,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     )}
                   </div>
                   <div>
-                    <h4 className="text-xs font-extrabold text-gray-900">Keliautojas / Pirkėjas</h4>
+                    <h4 className="text-xs font-extrabold text-gray-900">Keliautojas</h4>
                     <p className="text-[10px] text-gray-500 mt-0.5 leading-tight">
                       Ieškau ir rezervuoju stovyklavietes, pirtis bei baidarių stovyklas.
                     </p>
@@ -417,7 +417,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     )}
                   </div>
                   <div>
-                    <h4 className="text-xs font-extrabold text-gray-900">Šeimininkas / Pardavėjas</h4>
+                    <h4 className="text-xs font-extrabold text-gray-900">Šeimininkas</h4>
                     <p className="text-[10px] text-gray-500 mt-0.5 leading-tight">
                       Nuomoju savo privačią žemę, sodybą ar pakrantę stovyklautojams.
                     </p>
