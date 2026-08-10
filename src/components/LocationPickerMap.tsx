@@ -184,8 +184,8 @@ export const LocationPickerMap: React.FC<LocationPickerMapProps> = ({
   };
 
   // Address search query submit
-  const handleSearchSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearchSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!searchQuery.trim()) return;
 
     setIsSearching(true);
@@ -222,23 +222,30 @@ export const LocationPickerMap: React.FC<LocationPickerMapProps> = ({
       {/* Top Search & Actions Bar */}
       {showSearch && (
         <div className="flex flex-col sm:flex-row items-center gap-2">
-          <form onSubmit={handleSearchSubmit} className="relative flex-1 w-full">
+          <div className="relative flex-1 w-full">
             <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
             <input
               type="text"
               placeholder="Ieškoti adreso, ežero ar vietovės (pvz., Palūšė, Ignalina)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleSearchSubmit();
+                }
+              }}
               className="w-full pl-10 pr-24 py-2.5 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-900 focus:ring-2 focus:ring-emerald-600 focus:outline-hidden"
             />
             <button
-              type="submit"
+              type="button"
+              onClick={() => handleSearchSubmit()}
               disabled={isSearching}
               className="absolute right-1.5 top-1.5 bottom-1.5 px-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
             >
               {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>Ieškoti</span>}
             </button>
-          </form>
+          </div>
 
           <button
             type="button"
