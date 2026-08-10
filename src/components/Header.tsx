@@ -113,37 +113,41 @@ export const Header: React.FC = () => {
               <span>Keliautojo Skydelis</span>
             </button>
 
-            {/* Host Dashboard Button */}
-            <button
-              id="nav-dashboard"
-              onClick={() => setView('host-dashboard')}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full transition-all relative ${
-                currentView === 'host-dashboard' 
-                  ? 'bg-emerald-800 text-white font-bold' 
-                  : 'text-gray-600 hover:text-emerald-600 hover:bg-gray-50'
-              }`}
-            >
-              <Briefcase className="w-4 h-4 text-emerald-600" />
-              <span>Šeimininko Skydas</span>
-            </button>
+            {/* Host Dashboard & Requests Buttons - ONLY visible to Hosts or Admins */}
+            {(currentUser?.userType === 'host' || userMode === 'host' || currentUser?.isAdmin) && (
+              <>
+                <button
+                  id="nav-dashboard"
+                  onClick={() => setView('host-dashboard')}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full transition-all relative ${
+                    currentView === 'host-dashboard' 
+                      ? 'bg-emerald-800 text-white font-bold' 
+                      : 'text-gray-600 hover:text-emerald-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Briefcase className="w-4 h-4 text-emerald-600" />
+                  <span>Šeimininko Skydas</span>
+                </button>
 
-            <button
-              id="nav-requests"
-              onClick={() => setView('pending-requests')}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full transition-all relative ${
-                currentView === 'pending-requests' 
-                  ? 'bg-amber-100 text-amber-950 font-bold' 
-                  : 'text-gray-600 hover:text-emerald-600 hover:bg-gray-50'
-              }`}
-            >
-              <Clock className="w-4 h-4 text-amber-600" />
-              <span>Užklausos</span>
-              {pendingBookingsCount > 0 && (
-                <span className="px-2 py-0.5 text-xs bg-amber-500 text-white rounded-full font-bold shadow-xs">
-                  {pendingBookingsCount}
-                </span>
-              )}
-            </button>
+                <button
+                  id="nav-requests"
+                  onClick={() => setView('pending-requests')}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full transition-all relative ${
+                    currentView === 'pending-requests' 
+                      ? 'bg-amber-100 text-amber-950 font-bold' 
+                      : 'text-gray-600 hover:text-emerald-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Clock className="w-4 h-4 text-amber-600" />
+                  <span>Užklausos</span>
+                  {pendingBookingsCount > 0 && (
+                    <span className="px-2 py-0.5 text-xs bg-amber-500 text-white rounded-full font-bold shadow-xs">
+                      {pendingBookingsCount}
+                    </span>
+                  )}
+                </button>
+              </>
+            )}
 
             {/* Render Admin Panel button strictly for Admin users */}
             {currentUser?.isAdmin && (
@@ -169,30 +173,34 @@ export const Header: React.FC = () => {
 
           {/* Right Action Controls */}
           <div className="flex items-center gap-2.5">
-            {/* Direct 'Become a Host' / 'Tapti Šeimininku' Button */}
-            <button
-              id="cta-become-host-btn"
-              onClick={() => {
-                switchUserRole('host');
-                setView('add-listing');
-              }}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-amber-400 hover:bg-amber-500 text-emerald-950 text-xs font-black shadow-sm transition-all cursor-pointer"
-              title="Perjungti į Šeimininko paskyrą ir registruoti sklypą"
-            >
-              <Sparkles className="w-4 h-4 text-emerald-950" />
-              <span>🏡 Tapti Šeimininku</span>
-            </button>
+            {/* Direct 'Become a Host' CTA for Travelers/Clients */}
+            {currentUser?.userType !== 'host' && !currentUser?.isAdmin && (
+              <button
+                id="cta-become-host-btn"
+                onClick={() => {
+                  switchUserRole('host');
+                  setView('add-listing');
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-amber-400 hover:bg-amber-500 text-emerald-950 text-xs font-black shadow-sm transition-all cursor-pointer"
+                title="Perjungti į Šeimininko paskyrą ir registruoti sklypą"
+              >
+                <Sparkles className="w-4 h-4 text-emerald-950" />
+                <span>🏡 Tapti Šeimininku</span>
+              </button>
+            )}
 
-            {/* Add Listing Button - Creates new user & campsite */}
-            <button
-              id="cta-add-listing"
-              onClick={() => setView('add-listing')}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-700/20 transition-all cursor-pointer"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">Pridėti Skelbimą</span>
-              <span className="sm:hidden">+ Skelbimas</span>
-            </button>
+            {/* Add Listing Button for Hosts & Admins */}
+            {(currentUser?.userType === 'host' || currentUser?.isAdmin) && (
+              <button
+                id="cta-add-listing"
+                onClick={() => setView('add-listing')}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-700/20 transition-all cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span className="hidden sm:inline">Pridėti Skelbimą</span>
+                <span className="sm:hidden">+ Skelbimas</span>
+              </button>
+            )}
 
             {/* Quick Login / Sign Up Button */}
             <button
@@ -364,29 +372,35 @@ export const Header: React.FC = () => {
           <span>{t('search')}</span>
         </button>
         <button
-          onClick={() => setView('my-trips')}
-          className={`flex flex-col items-center gap-1 ${currentView === 'my-trips' ? 'text-emerald-700 font-extrabold' : 'text-gray-500'}`}
+          onClick={() => setView('client-dashboard')}
+          className={`flex flex-col items-center gap-1 ${currentView === 'client-dashboard' || currentView === 'my-trips' ? 'text-emerald-700 font-extrabold' : 'text-gray-500'}`}
         >
-          <Briefcase className="w-4 h-4" />
-          <span>{t('myTrips')}</span>
+          <Compass className="w-4 h-4" />
+          <span>Skydelis</span>
         </button>
-        <button
-          onClick={() => setView('pending-requests')}
-          className={`flex flex-col items-center gap-1 relative ${currentView === 'pending-requests' ? 'text-amber-700 font-extrabold' : 'text-gray-500'}`}
-        >
-          <Clock className="w-4 h-4 text-amber-600" />
-          <span>{t('pendingRequests')}</span>
-          {pendingBookingsCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
-          )}
-        </button>
-        <button
-          onClick={() => setView('host-dashboard')}
-          className={`flex flex-col items-center gap-1 ${currentView === 'host-dashboard' ? 'text-emerald-700 font-extrabold' : 'text-gray-500'}`}
-        >
-          <Briefcase className="w-4 h-4" />
-          <span>{t('dashboard')}</span>
-        </button>
+
+        {(currentUser?.userType === 'host' || userMode === 'host' || currentUser?.isAdmin) && (
+          <>
+            <button
+              onClick={() => setView('pending-requests')}
+              className={`flex flex-col items-center gap-1 relative ${currentView === 'pending-requests' ? 'text-amber-700 font-extrabold' : 'text-gray-500'}`}
+            >
+              <Clock className="w-4 h-4 text-amber-600" />
+              <span>{t('pendingRequests')}</span>
+              {pendingBookingsCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
+              )}
+            </button>
+            <button
+              onClick={() => setView('host-dashboard')}
+              className={`flex flex-col items-center gap-1 ${currentView === 'host-dashboard' ? 'text-emerald-700 font-extrabold' : 'text-gray-500'}`}
+            >
+              <Briefcase className="w-4 h-4" />
+              <span>Šeimininkas</span>
+            </button>
+          </>
+        )}
+
         {currentUser?.isAdmin && (
           <button
             onClick={() => setView('admin')}
