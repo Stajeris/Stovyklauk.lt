@@ -26,14 +26,14 @@ export const INITIAL_CAMPSITES: Campsite[] = [
     ],
     host: {
       id: 'host-1',
-      name: 'Mantas Lapinskas',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      name: 'Jonas Kazlauskas',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
       isSuperhost: true,
-      joinedDate: '2021 m. Gegužė',
+      joinedDate: '2026 m. Sausis',
       responseRate: '100% per 1 valandą',
-      phone: '+370 611 11111',
-      email: 'mantas@pusalis.lt',
-      bio: 'Gamta gyvenantis molėtiškis, baidarininkas ir žvejas. Mielai pasidalinsiu slaptomis ežero vietomis!'
+      phone: '+370 611 12345',
+      email: 'jonas.kazlauskas@stovyklauk.lt',
+      bio: 'Aukštaitijos ežerų ir miškų puoselėtojas. Siūlau privačias stovyklavietes Asvejos ir Lūšių pakrantėse.'
     },
     amenities: ['Laužavietė', 'Geriamas vanduo', 'Draugiška gyvūnams', 'Prie ežero', 'Pirtis krante', 'Pikniko stalas', 'Lauko tualetas'],
     cancellationPolicy: 'flexible',
@@ -99,14 +99,14 @@ export const INITIAL_CAMPSITES: Campsite[] = [
     ],
     host: {
       id: 'host-2',
-      name: 'Elena Petrauskienė',
+      name: 'Eglė Petrauskienė',
       avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
       isSuperhost: true,
-      joinedDate: '2022 m. Kovo',
+      joinedDate: '2026 m. Vasaris',
       responseRate: '98% per 30 min',
-      phone: '+370 622 22222',
-      email: 'elena@glamping.lt',
-      bio: 'Architektė ir gamtos mylėtoja, sukūrusi tvarią poilsio erdvę Zarasų krašte.'
+      phone: '+370 622 23456',
+      email: 'egle.petrauskiene@stovyklauk.lt',
+      bio: 'Architektė ir glamping sodybos įkūrėja Zarasų krašte prie ežero.'
     },
     amenities: ['Elektra', 'Šiltas dušas', 'Vandens tualetas', 'Wi-Fi', 'Karštas kubilas', 'Kava/Arbata', 'Laužavietė', 'Ežero pakrantė'],
     cancellationPolicy: 'moderate',
@@ -155,14 +155,14 @@ export const INITIAL_CAMPSITES: Campsite[] = [
     ],
     host: {
       id: 'host-3',
-      name: 'Gintaras ir Birutė',
+      name: 'Gintaras Marcinkevičius',
       avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80',
       isSuperhost: false,
-      joinedDate: '2023 m. Balandis',
+      joinedDate: '2026 m. Kovas',
       responseRate: '100% per 2 valandas',
-      phone: '+370 633 33333',
-      email: 'gintaras@dzukijassilas.lt',
-      bio: 'Dzūkijos senbuviai, džiaugsmingai priimantys keliautojus savo sodybos teritorijoje.'
+      phone: '+370 633 34567',
+      email: 'gintaras.m@stovyklauk.lt',
+      bio: 'Varėnos r. Marcinkonių kemperių ir palapinių aikštelės šeimininkas.'
     },
     amenities: ['Elektra', 'Geriamas vanduo', 'Wi-Fi', 'Draugiška gyvūnams', 'Nuotekų išpylimas', 'Pikniko stalas', 'Laužavietė'],
     cancellationPolicy: 'flexible',
@@ -209,12 +209,14 @@ export const INITIAL_CAMPSITES: Campsite[] = [
     ],
     host: {
       id: 'host-1',
-      name: 'Mantas Lapinskas',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      name: 'Jonas Kazlauskas',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
       isSuperhost: true,
-      joinedDate: '2021 m. Gegužė',
+      joinedDate: '2026 m. Sausis',
       responseRate: '100% per 1 valandą',
-      bio: 'Gamta gyvenantis molėtiškis ir gidas.'
+      phone: '+370 611 12345',
+      email: 'jonas.kazlauskas@stovyklauk.lt',
+      bio: 'Aukštaitijos ežerų ir miškų puoselėtojas.'
     },
     amenities: ['Prie ežero', 'Laužavietė', 'Geriamas vanduo', 'Draugiška gyvūnams', 'Pikniko stalas', 'Baidarės nemokamai'],
     cancellationPolicy: 'flexible',
@@ -259,13 +261,15 @@ export const INITIAL_CAMPSITES: Campsite[] = [
       'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?auto=format&fit=crop&w=800&q=80'
     ],
     host: {
-      id: 'host-4',
-      name: 'Saulius Gimžauskas',
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
-      isSuperhost: true,
-      joinedDate: '2020 m. Sausis',
+      id: 'host-5',
+      name: 'Darius Stankevičius',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
+      isSuperhost: false,
+      joinedDate: '2026 m. Gegužė',
       responseRate: '95% per 4 valandas',
-      bio: 'Saugau Anykščių šilelio sklypus tikriems minimalistinio poilsio mėgėjams.'
+      phone: '+370 655 56789',
+      email: 'darius.stankevicius@stovyklauk.lt',
+      bio: 'Aukštaitijos gamtos entuziastas, siūlantis laukines stovyklavietes prie Šventosios upės.'
     },
     amenities: ['Šaltinio vanduo', 'Draugiška gyvūnams', 'Žvaigždėtas dangus', 'Kompostinis tualetas'],
     cancellationPolicy: 'strict',
@@ -311,13 +315,15 @@ export const INITIAL_CAMPSITES: Campsite[] = [
       'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80'
     ],
     host: {
-      id: 'host-2',
-      name: 'Elena Petrauskienė',
-      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
+      id: 'host-6',
+      name: 'Dovilė Vasiliauskienė',
+      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
       isSuperhost: true,
-      joinedDate: '2022 m. Kovo',
+      joinedDate: '2026 m. Birželis',
       responseRate: '98% per 30 min',
-      bio: 'Pajūrio krašto architektė.'
+      phone: '+370 666 67890',
+      email: 'dovile.vasiliauskiene@stovyklauk.lt',
+      bio: 'Neringos ir Juodkrantės pajūrio oazės bei kemperių stovėjimo vietų šeimininkė.'
     },
     amenities: ['Elektra', 'Šiltas dušas', 'Vandens tualetas', 'Wi-Fi', 'Laužavietė', 'Draugiška gyvūnams'],
     cancellationPolicy: 'flexible',

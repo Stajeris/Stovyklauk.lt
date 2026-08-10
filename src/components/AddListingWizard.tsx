@@ -548,11 +548,6 @@ export const AddListingWizard: React.FC = () => {
                     onClick={() => {
                       const newType = item.id as PropertyType;
                       setPropertyType(newType);
-                      if (newType === 'rv') {
-                        setHasCleaningFee(true);
-                      } else {
-                        setHasCleaningFee(false);
-                      }
                     }}
                     className={`p-4 rounded-2xl border text-center flex flex-col items-center gap-2 transition-all cursor-pointer ${
                       propertyType === item.id

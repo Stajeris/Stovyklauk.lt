@@ -4,10 +4,10 @@
  * If the Host explicitly sets `hasCleaningFee` (true/false) and/or `cleaningFee`, respect the host preference.
  */
 export function getCampsiteCleaningFee(campsite: { propertyType?: string; hasCleaningFee?: boolean; cleaningFee?: number }): number {
-  if (campsite.hasCleaningFee !== undefined) {
-    return campsite.hasCleaningFee ? (campsite.cleaningFee ?? 15) : 0;
+  if (campsite.hasCleaningFee === true) {
+    return campsite.cleaningFee ?? 15;
   }
-  return campsite.propertyType === 'rv' ? (campsite.cleaningFee ?? 15) : 0;
+  return 0;
 }
 
 /**

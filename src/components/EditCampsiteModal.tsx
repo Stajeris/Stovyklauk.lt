@@ -46,7 +46,7 @@ export const EditCampsiteModal: React.FC<EditCampsiteModalProps> = ({ campsite, 
   const [terrainType, setTerrainType] = useState(campsite.terrainType);
   const [propertyType, setPropertyType] = useState<PropertyType>(campsite.propertyType);
   const [hasCleaningFee, setHasCleaningFee] = useState<boolean>(
-    campsite.hasCleaningFee !== undefined ? campsite.hasCleaningFee : campsite.propertyType === 'rv'
+    campsite.hasCleaningFee === true
   );
   const [cleaningFee, setCleaningFee] = useState<number>(campsite.cleaningFee ?? 15);
   const [pricePerNight, setPricePerNight] = useState(campsite.pricePerNight);
@@ -598,11 +598,7 @@ export const EditCampsiteModal: React.FC<EditCampsiteModalProps> = ({ campsite, 
                   <select
                     value={propertyType}
                     onChange={(e) => {
-                      const newType = e.target.value as PropertyType;
-                      setPropertyType(newType);
-                      if (campsite.hasCleaningFee === undefined) {
-                        setHasCleaningFee(newType === 'rv');
-                      }
+                      setPropertyType(e.target.value as PropertyType);
                     }}
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-xs font-bold text-gray-900 focus:ring-2 focus:ring-emerald-600 focus:outline-hidden"
                   >
