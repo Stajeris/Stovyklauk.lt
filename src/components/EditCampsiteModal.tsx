@@ -40,6 +40,7 @@ export const EditCampsiteModal: React.FC<EditCampsiteModalProps> = ({ campsite, 
   const [region, setRegion] = useState(campsite.region);
   const [addressLine, setAddressLine] = useState(campsite.addressLine || '');
   const [postalCode, setPostalCode] = useState(campsite.postalCode || '');
+  const [arrivalInstructions, setArrivalInstructions] = useState(campsite.arrivalInstructions || '');
   const [latitude, setLatitude] = useState<number>(campsite.latitude || 55.1694);
   const [longitude, setLongitude] = useState<number>(campsite.longitude || 25.4520);
   const [terrainType, setTerrainType] = useState(campsite.terrainType);
@@ -156,6 +157,7 @@ export const EditCampsiteModal: React.FC<EditCampsiteModalProps> = ({ campsite, 
       region,
       addressLine,
       postalCode,
+      arrivalInstructions,
       latitude,
       longitude,
       terrainType,
@@ -530,6 +532,19 @@ export const EditCampsiteModal: React.FC<EditCampsiteModalProps> = ({ campsite, 
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-xs font-medium text-gray-900 focus:ring-2 focus:ring-emerald-600 focus:outline-hidden"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-amber-900 mb-1 flex items-center gap-1">
+                  <span>🚗 Atvykimo & Navigacijos Nuorodos (Matoma tik patvirtintiems ir apmokėjusiems svečiams)</span>
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Pvz.: Privažiavimas nuo plento A14, posūkis ties 34 km žymekliu. Žvyrkeliu 1.5 km iki medinių vartų. Vartų kodas: 1234."
+                  value={arrivalInstructions}
+                  onChange={(e) => setArrivalInstructions(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-amber-300 bg-amber-50/60 text-xs font-medium text-gray-900 focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
                 />
               </div>
 

@@ -4,6 +4,7 @@ import { useCampsites } from '../context/CampsiteContext';
 import { OrderApproxMap } from './OrderApproxMap';
 import { ReviewModal } from './ReviewModal';
 import { VisitArrivalConfirmationCard } from './VisitArrivalConfirmationCard';
+import { ConfirmedBookingDetailsCard } from './ConfirmedBookingDetailsCard';
 import { Booking, Campsite } from '../types';
 
 export const MyTripsPage: React.FC = () => {
@@ -171,6 +172,13 @@ export const MyTripsPage: React.FC = () => {
                     </button>
                   </div>
                 </div>
+
+                {/* Confirmed Travel, Exact Location, Host Arrival Instructions & Navigation Card */}
+                {(bk.status === 'approved' || bk.status === 'completed') && camp && (
+                  <div className="pt-2">
+                    <ConfirmedBookingDetailsCard booking={bk} campsite={camp} defaultExpanded={true} />
+                  </div>
+                )}
 
                 {/* Visit Arrival Confirmation & Stripe Escrow 24h Payout Section */}
                 {(bk.status === 'approved' || bk.status === 'completed') && (

@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { MapPin, ShieldCheck, Navigation } from 'lucide-react';
+import { MapPin, ShieldCheck, Navigation, Maximize2, X } from 'lucide-react';
 
 interface OrderApproxMapProps {
   latitude: number;
@@ -21,18 +21,21 @@ export const OrderApproxMap: React.FC<OrderApproxMapProps> = ({
   className = ''
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const modalMapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const modalMapInstanceRef = useRef<L.Map | null>(null);
+  
+  const [isExpanded, setIsExpanded] = useState(false);
 
+  // Inline Map
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    // Clean up previous instance if exists
     if (mapInstanceRef.current) {
       mapInstanceRef.current.remove();
       mapInstanceRef.current = null;
     }
 
-    // Initialize Leaflet map centered on location
     const map = L.map(mapContainerRef.current, {
       zoomControl: false,
       attributionControl: false,
@@ -41,29 +44,25 @@ export const OrderApproxMap: React.FC<OrderApproxMapProps> = ({
       dragging: true,
     }).setView([latitude, longitude], 13);
 
-    // Add clean tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
     }).addTo(map);
 
-    // Add approximate location privacy circle (800 meters radius)
     const approxCircle = L.circle([latitude, longitude], {
-      radius: 800, // Explicit 800m radius
-      color: '#059669', // Emerald 600
+      radius: 800,
+      color: '#059669',
       weight: 2.5,
-      fillColor: '#10b981', // Emerald 500
+      fillColor: '#10b981',
       fillOpacity: 0.22,
       dashArray: '6, 6'
     }).addTo(map);
 
-    // Auto-fit map viewport to bounds of 800m circle with padding
     try {
       map.fitBounds(approxCircle.getBounds().pad(0.3));
     } catch (err) {
       // Fallback
     }
 
-    // Add central approximate zone marker (soft pulse indicator)
     const customIcon = L.divIcon({
       className: 'approx-map-center-pin',
       html: `<div class="relative flex items-center justify-center">
@@ -85,7 +84,6 @@ export const OrderApproxMap: React.FC<OrderApproxMapProps> = ({
 
     mapInstanceRef.current = map;
 
-    // Ensure proper rendering sizing
     const timer = setTimeout(() => {
       map.invalidateSize();
     }, 250);
@@ -99,46 +97,165 @@ export const OrderApproxMap: React.FC<OrderApproxMapProps> = ({
     };
   }, [latitude, longitude]);
 
+  // Modal Full Screen Map
+  useEffect(() => {
+    if (!isExpanded || !modalMapContainerRef.current) return;
+
+    if (modalMapInstanceRef.current) {
+      modalMapInstanceRef.current.remove();
+      modalMapInstanceRef.current = null;
+    }
+
+    const modalMap = L.map(modalMapContainerRef.current, {
+      zoomControl: true,
+      attributionControl: false,
+      scrollWheelZoom: true,
+      dragging: true,
+    }).setView([latitude, longitude], 14);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+    }).addTo(modalMap);
+
+    const approxCircle = L.circle([latitude, longitude], {
+      radius: 800,
+      color: '#059669',
+      weight: 3,
+      fillColor: '#10b981',
+      fillOpacity: 0.25,
+      dashArray: '8, 8'
+    }).addTo(modalMap);
+
+    try {
+      modalMap.fitBounds(approxCircle.getBounds().pad(0.3));
+    } catch (err) {}
+
+    const customIcon = L.divIcon({
+      className: 'approx-map-center-pin-modal',
+      html: `<div class="relative flex items-center justify-center">
+               <div class="absolute w-12 h-12 rounded-full bg-emerald-500/30 animate-pulse"></div>
+               <div class="w-10 h-10 rounded-full bg-emerald-800 text-white border-2 border-white shadow-xl flex items-center justify-center font-bold text-sm">
+                 ⛺
+               </div>
+             </div>`,
+      iconSize: [40, 40],
+      iconAnchor: [20, 20],
+    });
+
+    const marker = L.marker([latitude, longitude], { icon: customIcon }).addTo(modalMap);
+    marker.bindPopup(`
+      <div style="font-family: sans-serif; font-size: 13px; font-weight: 700; color: #064e3b; text-align: center; padding: 4px;">
+        <div>${campsiteTitle || 'Apytikslė Sklypo Zona'}</div>
+        <div style="font-size: 11px; color: #4b5563; font-weight: 500; margin-top: 2px;">
+          ${locationName} (~800m spindulys)
+        </div>
+      </div>
+    `).openPopup();
+
+    modalMapInstanceRef.current = modalMap;
+
+    const timer = setTimeout(() => {
+      modalMap.invalidateSize();
+    }, 300);
+
+    return () => {
+      clearTimeout(timer);
+      if (modalMapInstanceRef.current) {
+        modalMapInstanceRef.current.remove();
+        modalMapInstanceRef.current = null;
+      }
+    };
+  }, [isExpanded, latitude, longitude, campsiteTitle, locationName]);
+
   return (
-    <div className={`relative rounded-2xl overflow-hidden border border-emerald-200/80 bg-emerald-50/30 shadow-2xs font-sans ${className}`}>
-      
-      {/* Map Container */}
-      <div 
-        ref={mapContainerRef} 
-        style={{ height }} 
-        className="w-full z-0 bg-gray-100"
-      />
+    <>
+      <div className={`relative rounded-2xl overflow-hidden border border-emerald-200/80 bg-emerald-50/30 shadow-2xs font-sans ${className}`}>
+        
+        {/* Map Container */}
+        <div 
+          ref={mapContainerRef} 
+          style={{ height }} 
+          className="w-full z-0 bg-gray-100"
+        />
 
-      {/* Top Floating Badge - Approx Location Info */}
-      <div className="absolute top-2 left-2 right-2 z-10 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gray-200/80 shadow-xs flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span className="text-xs font-bold text-gray-900 truncate">
-            Apytikslė vieta: {locationName}
-          </span>
+        {/* Top Floating Badge & Expand Button */}
+        <div className="absolute top-2 left-2 right-2 z-10 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gray-200/80 shadow-xs flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span className="text-xs font-bold text-gray-900 truncate">
+              Apytikslė vieta: {locationName}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-[10px] font-extrabold uppercase tracking-wider hidden sm:inline">
+              ~800m spindulys
+            </span>
+
+            <button
+              type="button"
+              onClick={() => setIsExpanded(true)}
+              className="px-2 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-[10px] font-black transition flex items-center gap-1 cursor-pointer shadow-xs"
+              title="Išskleisti žemėlapį per visą ekraną"
+            >
+              <Maximize2 className="w-3 h-3" />
+              <span>Išskleisti</span>
+            </button>
+          </div>
         </div>
-        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-[10px] font-extrabold uppercase tracking-wider shrink-0">
-          ~800m spindulys
-        </span>
+
+        {/* Bottom Floating Notice */}
+        <div className="absolute bottom-2 left-2 right-2 z-10 bg-gray-900/90 text-white backdrop-blur-md px-3 py-1.5 rounded-xl text-[10px] font-medium flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span className="truncate">Tikslus adresas atveriamas patvirtinus rezervaciją</span>
+          </div>
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-amber-300 hover:text-amber-200 font-bold underline flex items-center gap-1 shrink-0"
+          >
+            <span>Žemėlapiai</span>
+            <Navigation className="w-3 h-3" />
+          </a>
+        </div>
+
       </div>
 
-      {/* Bottom Floating Notice */}
-      <div className="absolute bottom-2 left-2 right-2 z-10 bg-gray-900/90 text-white backdrop-blur-md px-3 py-1.5 rounded-xl text-[10px] font-medium flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-          <span className="truncate">Tikslus įvažiavimo adresas pateikiamas patvirtinus rezervaciją</span>
-        </div>
-        <a
-          href={`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-amber-300 hover:text-amber-200 font-bold underline flex items-center gap-1 shrink-0"
-        >
-          <span>Žemėlapiai</span>
-          <Navigation className="w-3 h-3" />
-        </a>
-      </div>
+      {/* Expanded Modal */}
+      {isExpanded && (
+        <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md p-3 sm:p-6 flex flex-col justify-center items-center font-sans animate-fade-in">
+          <div className="w-full max-w-5xl h-[85vh] bg-white rounded-3xl overflow-hidden shadow-2xl border-2 border-emerald-500/50 flex flex-col relative">
+            <div className="p-4 bg-emerald-950 text-white border-b border-emerald-800 flex items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="p-2 bg-emerald-700 rounded-xl text-white">
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm sm:text-base text-white truncate">
+                    {campsiteTitle || 'Apytikslė Sklypo Zona'}
+                  </h3>
+                  <p className="text-xs text-emerald-200 truncate">
+                    {locationName} (~800 m apsauginis spindulys)
+                  </p>
+                </div>
+              </div>
 
-    </div>
+              <button
+                type="button"
+                onClick={() => setIsExpanded(false)}
+                className="px-3.5 py-1.5 bg-amber-400 hover:bg-amber-500 text-emerald-950 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer shadow-sm shrink-0"
+              >
+                <X className="w-4 h-4" />
+                <span>Uždaryti Žemėlapį</span>
+              </button>
+            </div>
+
+            <div ref={modalMapContainerRef} className="w-full flex-1 z-0 bg-gray-100" />
+          </div>
+        </div>
+      )}
+    </>
   );
 };

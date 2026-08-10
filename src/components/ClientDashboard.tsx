@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
 import { VisitArrivalConfirmationCard } from './VisitArrivalConfirmationCard';
+import { ConfirmedBookingDetailsCard } from './ConfirmedBookingDetailsCard';
 
 export const ClientDashboard: React.FC = () => {
   const { 
@@ -361,6 +362,13 @@ export const ClientDashboard: React.FC = () => {
                           )}
                         </div>
                       </div>
+
+                      {/* Confirmed Travel, Exact Location, Host Arrival Instructions & Navigation */}
+                      {(b.status === 'approved' || b.status === 'completed') && camp && (
+                        <div className="pt-2">
+                          <ConfirmedBookingDetailsCard booking={b} campsite={camp} defaultExpanded={false} />
+                        </div>
+                      )}
                     </div>
                   );
                 })}

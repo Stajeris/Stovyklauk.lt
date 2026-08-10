@@ -37,6 +37,7 @@ export const AddListingWizard: React.FC = () => {
   const [region, setRegion] = useState('');
   const [addressLine, setAddressLine] = useState('');
   const [postalCode, setPostalCode] = useState('');
+  const [arrivalInstructions, setArrivalInstructions] = useState('');
   const [latitude, setLatitude] = useState<number>(55.1694);
   const [longitude, setLongitude] = useState<number>(25.4520);
   const [terrainType, setTerrainType] = useState<string>(TERRAIN_OPTIONS[0]);
@@ -123,6 +124,7 @@ export const AddListingWizard: React.FC = () => {
         region: region || 'Aukštaitija',
         addressLine: addressLine || undefined,
         postalCode: postalCode || undefined,
+        arrivalInstructions: arrivalInstructions.trim() || undefined,
         latitude,
         longitude,
         pricePerNight,

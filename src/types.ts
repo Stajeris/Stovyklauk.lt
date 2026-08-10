@@ -30,6 +30,8 @@ export interface Host {
   joinedDate: string;
   responseRate: string;
   bio: string;
+  phone?: string;
+  email?: string;
   tier?: 'free' | 'pro';
   isEmailVerified?: boolean;
   isPhoneVerified?: boolean;
@@ -86,6 +88,7 @@ export interface Campsite {
   postalCode?: string;
   latitude: number;
   longitude: number;
+  arrivalInstructions?: string;
   pricePerNight: number;
   rating: number;
   reviewCount: number;
