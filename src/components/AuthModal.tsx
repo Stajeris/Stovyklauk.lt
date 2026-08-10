@@ -232,7 +232,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           
           <p className="text-xs text-gray-500">
             {mode === 'login' && 'Įveskite el. paštą ir slaptažodį prisijungimui'}
-            {mode === 'register' && 'Sukurkite savo paskyrą Stovyklauk.lt platformoje'}
+            {mode === 'register' && 'Sukurkite savo paskyrą Campy.lt platformoje'}
             {mode === 'verify-email' && `Įveskite gautą verifikacijos kodą į ${pendingUserEmail}`}
             {mode === 'forgot-password' && 'Atstatykite prarastą slaptažodį per el. paštą'}
             {mode === 'forgot-email' && 'Raskite savo registruotą el. paštą pagal vardą arba telefoną'}
@@ -303,7 +303,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   type="email"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="vartotojas@stovyklauk.lt"
+                  placeholder="vartotojas@campy.lt"
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 text-xs font-bold focus:ring-2 focus:ring-emerald-500 bg-gray-50/30"
                   required
                 />

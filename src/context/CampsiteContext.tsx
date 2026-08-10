@@ -10,11 +10,11 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     id: 'admin-1',
     name: 'Giedrius Štajeris',
-    email: 'admin@stovyklauk.lt',
+    email: 'admin@campy.lt',
     password: 'admin123',
     phone: '+370 600 00000',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-    bio: 'Platformos vyriausiasis administratorius ir Stovyklauk.lt įkūrėjas.',
+    bio: 'Platformos vyriausiasis administratorius ir Campy.lt įkūrėjas.',
     joinedDate: 'Rugpjūtis 2026',
     userType: 'admin',
     isAdmin: true,
@@ -25,7 +25,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     id: 'host-1',
     name: 'Jonas Kazlauskas',
-    email: 'jonas.kazlauskas@stovyklauk.lt',
+    email: 'jonas.kazlauskas@campy.lt',
     password: 'slaptazodis123',
     phone: '+370 611 12345',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
@@ -39,7 +39,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     id: 'host-2',
     name: 'Eglė Petrauskienė',
-    email: 'egle.petrauskiene@stovyklauk.lt',
+    email: 'egle.petrauskiene@campy.lt',
     password: 'slaptazodis123',
     phone: '+370 622 23456',
     avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
@@ -53,7 +53,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     id: 'host-3',
     name: 'Gintaras Marcinkevičius',
-    email: 'gintaras.m@stovyklauk.lt',
+    email: 'gintaras.m@campy.lt',
     password: 'slaptazodis123',
     phone: '+370 633 34567',
     avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80',
@@ -67,7 +67,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     id: 'host-4',
     name: 'Lina Jonaitienė',
-    email: 'lina.jonaitiene@stovyklauk.lt',
+    email: 'lina.jonaitiene@campy.lt',
     password: 'slaptazodis123',
     phone: '+370 644 45678',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
@@ -81,7 +81,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     id: 'host-5',
     name: 'Darius Stankevičius',
-    email: 'darius.stankevicius@stovyklauk.lt',
+    email: 'darius.stankevicius@campy.lt',
     password: 'slaptazodis123',
     phone: '+370 655 56789',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
@@ -95,7 +95,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     id: 'host-6',
     name: 'Dovilė Vasiliauskienė',
-    email: 'dovile.vasiliauskiene@stovyklauk.lt',
+    email: 'dovile.vasiliauskiene@campy.lt',
     password: 'slaptazodis123',
     phone: '+370 666 67890',
     avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
@@ -109,7 +109,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     id: 'host-7',
     name: 'Andrius Žukauskas',
-    email: 'andrius.zukauskas@stovyklauk.lt',
+    email: 'andrius.zukauskas@campy.lt',
     password: 'slaptazodis123',
     phone: '+370 677 78901',
     avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=200&q=80',
@@ -123,7 +123,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     id: 'host-8',
     name: 'Rūta Balčiūnaitė',
-    email: 'ruta.balciunaite@stovyklauk.lt',
+    email: 'ruta.balciunaite@campy.lt',
     password: 'slaptazodis123',
     phone: '+370 688 89012',
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
@@ -844,7 +844,7 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       hostUser = {
         id: `host-${Date.now()}`,
         name: hostData.name.trim() || 'Naujas Šeimininkas',
-        email: hostData.email.trim() || 'seimininkas@stovyklauk.lt',
+        email: hostData.email.trim() || 'seimininkas@campy.lt',
         phone: hostData.phone?.trim() || '+370 600 00000',
         avatar: hostData.avatar?.trim() || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
         bio: hostData.bio?.trim() || 'Gamtos ir sodybos sklypo šeimininkas, džiaugiantis galėdamas priimti poilsiautojus.',
@@ -1200,7 +1200,7 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           hostAvatar: hostInfo?.avatar || camp?.host.avatar,
           clientId: sender.id,
           clientName: sender.name,
-          clientEmail: sender.email || 'klientas@stovyklauk.lt',
+          clientEmail: sender.email || 'klientas@campy.lt',
           clientAvatar: sender.avatar,
           lastMessage: text,
           lastMessageTimestamp: `Šiandien ${timeStr}`,

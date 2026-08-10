@@ -308,7 +308,7 @@ export const HostCalendarManager: React.FC<HostCalendarManagerProps> = ({
       endDate: sorted[sorted.length - 1],
       summary: manualEventSummary.trim(),
       source: 'Rankinis Įrašas',
-      uid: `manual-res-${Date.now()}@stovyklauk.lt`,
+      uid: `manual-res-${Date.now()}@campy.lt`,
     };
 
     const currentEvents = [...(activeCampsite.importedEvents || []), newEvent];
@@ -409,8 +409,8 @@ export const HostCalendarManager: React.FC<HostCalendarManagerProps> = ({
   }, [activeCampsite, campsites, activeBookings]);
 
   const liveICalExportUrl = activeCampsite 
-    ? `https://stovyklauk.lt/api/ical/${activeCampsite.id}.ics?token=${activeCampsite.icalExportToken || 'campsite-key-2026'}`
-    : `https://stovyklauk.lt/api/ical/all-properties.ics`;
+    ? `https://campy.lt/api/ical/${activeCampsite.id}.ics?token=${activeCampsite.icalExportToken || 'campsite-key-2026'}`
+    : `https://campy.lt/api/ical/all-properties.ics`;
 
   const copyToClipboard = (text: string, msg: string) => {
     navigator.clipboard.writeText(text);
@@ -1271,7 +1271,7 @@ export const HostCalendarManager: React.FC<HostCalendarManagerProps> = ({
             </div>
             <h3 className="text-2xl font-black">Eksportuoti užimtumą į Airbnb, Booking.com ar Google</h3>
             <p className="text-xs text-emerald-100 leading-relaxed max-w-2xl">
-              Nukopijuokite šią iCal nuorodą ir įklijuokite į savo Airbnb arba Booking.com valdymo skydą ("Import Calendar"). Jūsų Stovyklauk.lt rezervacijos ir užblokuotos datos automatiškai pasirodys kitose platformose!
+              Nukopijuokite šią iCal nuorodą ir įklijuokite į savo Airbnb arba Booking.com valdymo skydą ("Import Calendar"). Jūsų Campy.lt rezervacijos ir užblokuotos datos automatiškai pasirodys kitose platformose!
             </p>
           </div>
 

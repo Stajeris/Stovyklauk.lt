@@ -3,7 +3,7 @@ export type Language = 'lt' | 'en';
 export const translations = {
   lt: {
     // Header & Brand
-    brandName: 'Stovyklauk.lt',
+    brandName: 'Campy.lt',
     launchTag: '0% Mokestis',
     brandSub: 'Laukinės stovyklavietės & glampingas Lietuvoje',
     explore: 'Tyrinėti vietas',
@@ -35,7 +35,7 @@ export const translations = {
     viewAll: 'Rodyti visas',
     perNight: 'parai',
     hostBannerTitle: 'Turite sklypą prie ežero, upės ar miške?',
-    hostBannerDesc: 'Prisijunkite prie Stovyklauk.lt ir užsidirbkite nuomodami savo privačią teritoriją poilsiautojams. 0% komisinis pirmus 6 mėnesius!',
+    hostBannerDesc: 'Prisijunkite prie Campy.lt ir užsidirbkite nuomodami savo privačią teritoriją poilsiautojams. 0% komisinis pirmus 6 mėnesius!',
     startHosting: 'Pradėti nuomoti sklypą',
 
     // Search Page
@@ -121,7 +121,7 @@ export const translations = {
     bookingSuccessDesc: 'Jūsų užsakymo užklausa išsiųsta šeimininkui.',
 
     // Footer
-    footerDesc: 'Stovyklauk.lt – Pirmoji privačių stovyklaviečių ir glampingo platforma Lietuvoje.',
+    footerDesc: 'Campy.lt – Pirmoji privačių stovyklaviečių ir glampingo platforma Lietuvoje.',
     quickLinks: 'Greitos nuorodos',
     popularRegions: 'Populiariausi regionai',
     contact: 'Kontaktai & Pagalba',
@@ -132,7 +132,7 @@ export const translations = {
   },
   en: {
     // Header & Brand
-    brandName: 'Stovyklauk.lt',
+    brandName: 'Campy.lt',
     launchTag: '0% Fee',
     brandSub: 'Wild campsites & glamping in Lithuania',
     explore: 'Explore Spots',
@@ -164,7 +164,7 @@ export const translations = {
     viewAll: 'View All',
     perNight: 'night',
     hostBannerTitle: 'Have land by a lake, river or forest?',
-    hostBannerDesc: 'Join Stovyklauk.lt and earn income hosting campers on your private property. 0% commission for the first 6 months!',
+    hostBannerDesc: 'Join Campy.lt and earn income hosting campers on your private property. 0% commission for the first 6 months!',
     startHosting: 'Start Hosting Land',
 
     // Search Page
@@ -250,7 +250,7 @@ export const translations = {
     bookingSuccessDesc: 'Your booking request has been submitted to the host.',
 
     // Footer
-    footerDesc: 'Stovyklauk.lt – Lithuania\'s premier private campsite and glamping booking platform.',
+    footerDesc: 'Campy.lt – Lithuania\'s premier private campsite and glamping booking platform.',
     quickLinks: 'Quick Links',
     popularRegions: 'Popular Regions',
     contact: 'Contact & Support',

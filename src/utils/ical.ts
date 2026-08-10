@@ -43,7 +43,7 @@ export function getICalNowTimestamp(): string {
  */
 export function generateICalFeed(campsite: Campsite, bookings: Booking[] = []): string {
   const nowStamp = getICalNowTimestamp();
-  const prodId = `-//Stovyklauk.lt//Campsite ${campsite.id}//LT`;
+  const prodId = `-//Campy.lt//Campsite ${campsite.id}//LT`;
   
   let lines: string[] = [
     'BEGIN:VCALENDAR',
@@ -66,12 +66,12 @@ export function generateICalFeed(campsite: Campsite, bookings: Booking[] = []): 
 
     lines.push(
       'BEGIN:VEVENT',
-      `UID:booking-${bk.id}@stovyklauk.lt`,
+      `UID:booking-${bk.id}@campy.lt`,
       `DTSTAMP:${nowStamp}`,
       `DTSTART;VALUE=DATE:${dtStart}`,
       `DTEND;VALUE=DATE:${dtEnd}`,
       `SUMMARY:Užsakyta: ${bk.guestName} (${bk.guestsCount} asm.)`,
-      `DESCRIPTION:Stovyklavietės užsakymas per Stovyklauk.lt. Svečias: ${bk.guestName}, El. paštas: ${bk.guestEmail}. Bendra suma: €${bk.totalPrice}.`,
+      `DESCRIPTION:Stovyklavietės užsakymas per Campy.lt. Svečias: ${bk.guestName}, El. paštas: ${bk.guestEmail}. Bendra suma: €${bk.totalPrice}.`,
       `LOCATION:${campsite.location}`,
       'STATUS:CONFIRMED',
       'TRANSP:OPAQUE',
@@ -112,12 +112,12 @@ export function generateICalFeed(campsite: Campsite, bookings: Booking[] = []): 
 
       lines.push(
         'BEGIN:VEVENT',
-        `UID:blocked-${campsite.id}-${idx}-${dtStart}@stovyklauk.lt`,
+        `UID:blocked-${campsite.id}-${idx}-${dtStart}@campy.lt`,
         `DTSTAMP:${nowStamp}`,
         `DTSTART;VALUE=DATE:${dtStart}`,
         `DTEND;VALUE=DATE:${dtEnd}`,
         'SUMMARY:Šeimininko Užblokuota / Not Available',
-        'DESCRIPTION:Šią datą šeimininkas užblokavo (nerezervuojama per Stovyklauk.lt).',
+        'DESCRIPTION:Šią datą šeimininkas užblokavo (nerezervuojama per Campy.lt).',
         `LOCATION:${campsite.location}`,
         'STATUS:CONFIRMED',
         'TRANSP:OPAQUE',

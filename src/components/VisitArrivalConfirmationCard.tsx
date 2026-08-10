@@ -200,7 +200,7 @@ export const VisitArrivalConfirmationCard: React.FC<VisitArrivalConfirmationCard
             {/* Email Message Preview Box */}
             <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200 text-xs space-y-3 leading-relaxed text-gray-800">
               <div className="border-b border-gray-200 pb-2">
-                <span className="font-bold text-gray-500 block">Nuo: info@stovyklauk.lt</span>
+                <span className="font-bold text-gray-500 block">Nuo: info@campy.lt</span>
                 <span className="font-bold text-gray-900 block mt-0.5">Tema: ⛺ Sveiki atvykę į {booking.campsiteTitle}! Patvirtinkite apsilankymo pradžią</span>
               </div>
 

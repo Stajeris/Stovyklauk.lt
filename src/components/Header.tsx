@@ -41,7 +41,7 @@ export const Header: React.FC = () => {
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-2xl font-black tracking-tight text-emerald-900">
-                  Stovyklauk<span className="text-emerald-500">.lt</span>
+                  Campy<span className="text-emerald-500">.lt</span>
                 </span>
                 <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-400 text-emerald-950">
                   {t('launchTag')}

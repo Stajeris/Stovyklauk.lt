@@ -20,7 +20,7 @@ export const HostVerificationSection: React.FC<HostVerificationSectionProps> = (
   const [phoneError, setPhoneError] = useState('');
 
   // Email State
-  const [emailAddress, setEmailAddress] = useState(currentUser.email || 'seimininkas@stovyklauk.lt');
+  const [emailAddress, setEmailAddress] = useState(currentUser.email || 'seimininkas@campy.lt');
   const [emailCodeSent, setEmailCodeSent] = useState(true); // Default true so the verification code field is immediately visible
   const [emailOtp, setEmailOtp] = useState('');
   const [simulatedEmailCode, setSimulatedEmailCode] = useState('5914');
@@ -250,7 +250,7 @@ export const HostVerificationSection: React.FC<HostVerificationSectionProps> = (
                     type="email"
                     value={emailAddress}
                     onChange={(e) => setEmailAddress(e.target.value)}
-                    placeholder="seimininkas@stovyklauk.lt"
+                    placeholder="seimininkas@campy.lt"
                     className="flex-1 px-3.5 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 text-xs font-medium"
                     required
                   />

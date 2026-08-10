@@ -114,7 +114,7 @@ export const AddListingWizard: React.FC = () => {
     const newCamp = registerHostAndAddCampsite(
       {
         name: hostName.trim() || 'Naujas Šeimininkas',
-        email: hostEmail.trim() || 'seimininkas@stovyklauk.lt',
+        email: hostEmail.trim() || 'seimininkas@campy.lt',
         phone: hostPhone.trim() || '+370 600 00000',
         avatar: hostAvatar.trim() || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
         bio: hostBio.trim() || 'Gamtos ir sodybos sklypo šeimininkas.',
@@ -191,7 +191,7 @@ export const AddListingWizard: React.FC = () => {
             <span>Paskyros ir Prieigos informacija:</span>
           </div>
           <ul className="space-y-1.5 text-emerald-900">
-            <li>• <strong>Vartotojas:</strong> {hostName || 'Naujas Šeimininkas'} ({hostEmail || 'seimininkas@stovyklauk.lt'})</li>
+            <li>• <strong>Vartotojas:</strong> {hostName || 'Naujas Šeimininkas'} ({hostEmail || 'seimininkas@campy.lt'})</li>
             <li>• <strong>Būsena:</strong> Aktyvus Registruotas Šeimininkas (Prijungta)</li>
             <li>• <strong>Prieiga:</strong> Dedikuotas Šeimininko Valdymo Skydas & Viešosios svetainės dalys</li>
             <li>• <strong>Platformos Admin:</strong> Nepasiekiamas (Saugus atskyrimas)</li>
