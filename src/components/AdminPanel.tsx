@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { 
   ShieldCheck, CheckCircle2, XCircle, Clock, Search, MapPin, 
-  Trash2, Eye, Plus, Sparkles, AlertCircle, Building2, User, 
+  Trash2, Eye, EyeOff, Plus, Sparkles, AlertCircle, Building2, User, 
   Check, X, RefreshCw, ChevronRight, ExternalLink, ShieldAlert, AlertTriangle, Star, MessageSquare,
   CreditCard, DollarSign, Zap, Download, FileText, Lock, ChevronDown, ChevronUp, UserCheck, Shield, Crown,
-  Calendar as CalendarIcon, LogOut
+  Calendar as CalendarIcon, LogOut, Edit, Save, Key, Mail, Phone
 } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
-import { Campsite, PropertyType, Review, Booking } from '../types';
+import { Campsite, PropertyType, Review, Booking, UserProfile } from '../types';
 import { OrderApproxMap } from './OrderApproxMap';
 import { LocationPickerMap } from './LocationPickerMap';
 import { ProtectedChatMessage } from '../utils/privacyFilter';
@@ -26,6 +26,7 @@ export const AdminPanel: React.FC = () => {
     openAuthModal,
     switchUserRole,
     updateUserRoleInList,
+    updateUserProfileByAdmin,
     deleteUser,
     approveCampsite, 
     rejectCampsite, 
@@ -46,6 +47,8 @@ export const AdminPanel: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showFinancialReport, setShowFinancialReport] = useState(false);
   const [expandedHostName, setExpandedHostName] = useState<string | null>(null);
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [showModalPassword, setShowModalPassword] = useState(false);
 
   // Admin chat tab state
   const [selectedChatPropertyId, setSelectedChatPropertyId] = useState<string | null>(null);
@@ -1924,12 +1927,19 @@ export const AdminPanel: React.FC = () => {
                       const isAdmin = u.isAdmin || u.userType === 'admin';
 
                       return (
-                        <tr key={u.id} className="hover:bg-gray-50/80 transition-colors">
-                          <td className="p-3.5">
+                        <tr key={u.id} className="hover:bg-blue-50/50 transition-colors">
+                          <td 
+                            className="p-3.5 cursor-pointer group" 
+                            onClick={() => setEditingUser({ ...u })}
+                            title="Spustelėkite, norėdami redaguoti vartotojo informaciją"
+                          >
                             <div className="flex items-center gap-3">
-                              <img src={u.avatar} alt={u.name} className="w-9 h-9 rounded-full object-cover border border-gray-200" />
+                              <img src={u.avatar} alt={u.name} className="w-9 h-9 rounded-full object-cover border border-gray-200 group-hover:border-blue-400 transition" />
                               <div>
-                                <p className="font-extrabold text-gray-900">{u.name}</p>
+                                <p className="font-extrabold text-gray-900 group-hover:text-blue-700 transition flex items-center gap-1.5">
+                                  <span>{u.name}</span>
+                                  <span className="text-[10px] text-blue-600 opacity-0 group-hover:opacity-100 font-bold transition">✏️ Redaguoti</span>
+                                </p>
                                 <p className="text-[10px] text-gray-400">ID: {u.id}</p>
                               </div>
                             </div>
@@ -2096,6 +2106,15 @@ export const AdminPanel: React.FC = () => {
                               </button>
 
                               <button
+                                onClick={() => setEditingUser({ ...u })}
+                                className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] rounded-lg transition cursor-pointer flex items-center gap-1 shadow-xs"
+                                title="Redaguoti visą vartotojo informaciją"
+                              >
+                                <Edit className="w-3 h-3 text-white shrink-0" />
+                                <span>Redaguoti</span>
+                              </button>
+
+                              <button
                                 onClick={() => {
                                   if (window.confirm(`Ar tikrai norite ištrinti vartotoją "${u.name}" (${u.email}) iš sistemos?`)) {
                                     deleteUser(u.id);
@@ -2226,6 +2245,346 @@ export const AdminPanel: React.FC = () => {
               </div>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Full Edit User Modal */}
+      {editingUser && (
+        <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl border border-gray-100 my-8 space-y-6 max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <img 
+                  src={editingUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'} 
+                  alt={editingUser.name} 
+                  className="w-12 h-12 rounded-full object-cover border-2 border-emerald-500 shadow-sm" 
+                />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-black text-stone-900">{editingUser.name}</h3>
+                    <span className="text-xs bg-gray-100 font-mono text-gray-500 px-2 py-0.5 rounded-md">ID: {editingUser.id}</span>
+                  </div>
+                  <p className="text-xs text-gray-500 font-medium">✏️ Administratoriaus vartotojo valdymo langas</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setEditingUser(null)}
+                className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-700 transition cursor-pointer"
+                title="Uždaryti"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Form Fields Grid */}
+            <div className="space-y-6">
+              {/* Section 1: Basic Info */}
+              <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200/70 space-y-4">
+                <h4 className="font-extrabold text-xs uppercase text-stone-700 tracking-wider flex items-center gap-2">
+                  <User className="w-4 h-4 text-emerald-600" />
+                  <span>Pagrindinė Vartotojo Informacija</span>
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">Vardas ir Pavardė *</label>
+                    <input
+                      type="text"
+                      value={editingUser.name}
+                      onChange={e => setEditingUser({ ...editingUser, name: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-stone-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">El. Paštas *</label>
+                    <input
+                      type="email"
+                      value={editingUser.email}
+                      onChange={e => setEditingUser({ ...editingUser, email: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-stone-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">Telefonas</label>
+                    <input
+                      type="text"
+                      value={editingUser.phone || ''}
+                      onChange={e => setEditingUser({ ...editingUser, phone: e.target.value })}
+                      placeholder="+370 600 00000"
+                      className="w-full px-3 py-2 bg-white border border-stone-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">Registracijos Data</label>
+                    <input
+                      type="text"
+                      value={editingUser.joinedDate || ''}
+                      onChange={e => setEditingUser({ ...editingUser, joinedDate: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-stone-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-stone-700 mb-1">Avataro Nuotraukos URL</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={editingUser.avatar || ''}
+                        onChange={e => setEditingUser({ ...editingUser, avatar: e.target.value })}
+                        className="flex-1 px-3 py-2 bg-white border border-stone-300 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setEditingUser({ ...editingUser, avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80' })}
+                        className="px-3 py-2 bg-stone-200 hover:bg-stone-300 text-stone-800 text-xs font-bold rounded-xl cursor-pointer"
+                      >
+                        Pavyzdinis
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-stone-700 mb-1">Biografija / Aprašymas</label>
+                    <textarea
+                      value={editingUser.bio || ''}
+                      onChange={e => setEditingUser({ ...editingUser, bio: e.target.value })}
+                      rows={2}
+                      className="w-full px-3 py-2 bg-white border border-stone-300 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      placeholder="Trumpas vartotojo aprašymas..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 2: Security & Password */}
+              <div className="bg-amber-50/70 p-4 rounded-2xl border border-amber-200/80 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-extrabold text-xs uppercase text-amber-900 tracking-wider flex items-center gap-2">
+                    <Key className="w-4 h-4 text-amber-700" />
+                    <span>Slaptažodžiai ir Saugumo Nustatymai</span>
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const generated = `CAMPY-${Math.floor(100000 + Math.random() * 900000)}`;
+                      setEditingUser({ ...editingUser, password: generated, primaryPassword: generated });
+                      setToastMessage(`⚡ Sugeneruotas naujas slaptažodis: ${generated}`);
+                      setTimeout(() => setToastMessage(null), 4000);
+                    }}
+                    className="text-[11px] font-extrabold text-amber-900 bg-amber-200 hover:bg-amber-300 px-3 py-1 rounded-lg transition cursor-pointer"
+                  >
+                    ⚡ Sugeneruoti Naują Slaptažodį
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">Dabartinis / Naujas Slaptažodis</label>
+                    <div className="relative">
+                      <input
+                        type={showModalPassword ? "text" : "password"}
+                        value={editingUser.password || ''}
+                        onChange={e => setEditingUser({ ...editingUser, password: e.target.value })}
+                        className="w-full px-3 py-2 pr-10 bg-white border border-stone-300 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowModalPassword(!showModalPassword)}
+                        className="absolute right-3 top-2.5 text-stone-400 hover:text-stone-700 cursor-pointer"
+                      >
+                        {showModalPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">Pirminis Prisijungimo Slaptažodis</label>
+                    <input
+                      type="text"
+                      value={editingUser.primaryPassword || ''}
+                      onChange={e => setEditingUser({ ...editingUser, primaryPassword: e.target.value })}
+                      placeholder="Pirminis sugeneruotas slaptažodis"
+                      className="w-full px-3 py-2 bg-white border border-stone-300 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 3: Role & Plan Tier */}
+              <div className="bg-purple-50/70 p-4 rounded-2xl border border-purple-200/80 space-y-4">
+                <h4 className="font-extrabold text-xs uppercase text-purple-900 tracking-wider flex items-center gap-2">
+                  <Crown className="w-4 h-4 text-purple-700" />
+                  <span>Rolė ir Šeimininkystės Planas</span>
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">Paskyros Rolė (userType)</label>
+                    <select
+                      value={editingUser.userType || (editingUser.isAdmin ? 'admin' : 'client')}
+                      onChange={e => {
+                        const val = e.target.value as 'client' | 'host' | 'admin';
+                        setEditingUser({
+                          ...editingUser,
+                          userType: val,
+                          isAdmin: val === 'admin'
+                        });
+                      }}
+                      className="w-full px-3 py-2 bg-white border border-stone-300 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      <option value="client">⛺ Keliautojas (Client)</option>
+                      <option value="host">🏡 Šeimininkas (Host)</option>
+                      <option value="admin">👑 Administratorius (Admin)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">Šeimininko Narystės Planas (hostTier)</label>
+                    <select
+                      value={(editingUser as any).hostTier || (editingUser.isSuperhost ? 'pro' : 'free')}
+                      onChange={e => {
+                        const val = e.target.value as 'free' | 'pro' | 'premium';
+                        setEditingUser({
+                          ...editingUser,
+                          hostTier: val
+                        } as any);
+                      }}
+                      className="w-full px-3 py-2 bg-white border border-stone-300 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      <option value="free">FREE (0 €) - Pagrindinis</option>
+                      <option value="pro">PRO (29 €/mėn.) - Su skydeliu & kalendoriumi</option>
+                      <option value="premium">PREMIUM (6-10%) - Maksimalus matomumas</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 4: Verification Checkboxes & Status Flags */}
+              <div className="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-200/80 space-y-3">
+                <h4 className="font-extrabold text-xs uppercase text-emerald-950 tracking-wider flex items-center gap-2 mb-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+                  <span>Verifikacijos ir Saugumo Varnelės</span>
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <label className="flex items-center gap-2.5 bg-white p-3 rounded-xl border border-emerald-200/60 cursor-pointer hover:bg-emerald-50/50 transition">
+                    <input
+                      type="checkbox"
+                      checked={editingUser.isAdmin}
+                      onChange={e => setEditingUser({
+                        ...editingUser,
+                        isAdmin: e.target.checked,
+                        userType: e.target.checked ? 'admin' : (editingUser.userType === 'admin' ? 'client' : editingUser.userType)
+                      })}
+                      className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                    />
+                    <div className="text-xs">
+                      <p className="font-extrabold text-stone-900">👑 Administratorius</p>
+                      <p className="text-[10px] text-gray-500">Pilnos sistemos valdymo teisės</p>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center gap-2.5 bg-white p-3 rounded-xl border border-emerald-200/60 cursor-pointer hover:bg-emerald-50/50 transition">
+                    <input
+                      type="checkbox"
+                      checked={!!editingUser.isSuperhost}
+                      onChange={e => setEditingUser({ ...editingUser, isSuperhost: e.target.checked })}
+                      className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                    />
+                    <div className="text-xs">
+                      <p className="font-extrabold text-stone-900">⭐ Super-Šeimininkas</p>
+                      <p className="text-[10px] text-gray-500">Patikimo šeimininko žženklas</p>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center gap-2.5 bg-white p-3 rounded-xl border border-emerald-200/60 cursor-pointer hover:bg-emerald-50/50 transition">
+                    <input
+                      type="checkbox"
+                      checked={!!editingUser.isEmailVerified}
+                      onChange={e => setEditingUser({ ...editingUser, isEmailVerified: e.target.checked })}
+                      className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                    />
+                    <div className="text-xs">
+                      <p className="font-extrabold text-stone-900">✉️ El. Paštas Patvirtintas</p>
+                      <p className="text-[10px] text-gray-500">Verifikuotas el. pašto adresas</p>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center gap-2.5 bg-white p-3 rounded-xl border border-emerald-200/60 cursor-pointer hover:bg-emerald-50/50 transition">
+                    <input
+                      type="checkbox"
+                      checked={!!editingUser.isPhoneVerified}
+                      onChange={e => setEditingUser({ ...editingUser, isPhoneVerified: e.target.checked })}
+                      className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                    />
+                    <div className="text-xs">
+                      <p className="font-extrabold text-stone-900">📞 Telefonas Patvirtintas</p>
+                      <p className="text-[10px] text-gray-500">Patvirtintas mobilus numeris</p>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center gap-2.5 bg-white p-3 rounded-xl border border-emerald-200/60 cursor-pointer hover:bg-emerald-50/50 transition">
+                    <input
+                      type="checkbox"
+                      checked={!!editingUser.mustChangePassword}
+                      onChange={e => setEditingUser({ ...editingUser, mustChangePassword: e.target.checked })}
+                      className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                    />
+                    <div className="text-xs">
+                      <p className="font-extrabold text-stone-900">🔑 Privalo Keisti Slaptažodį</p>
+                      <p className="text-[10px] text-gray-500">Iššauks keitimo langą prisijungus</p>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center gap-2.5 bg-white p-3 rounded-xl border border-emerald-200/60 cursor-pointer hover:bg-emerald-50/50 transition">
+                    <input
+                      type="checkbox"
+                      checked={!!editingUser.isFirstLogin}
+                      onChange={e => setEditingUser({ ...editingUser, isFirstLogin: e.target.checked })}
+                      className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                    />
+                    <div className="text-xs">
+                      <p className="font-extrabold text-stone-900">🚀 Pirmojo Prisijungimo Būsena</p>
+                      <p className="text-[10px] text-gray-500">Naujo vartotojo pasveikinimas</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setEditingUser(null)}
+                className="px-5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs transition cursor-pointer"
+              >
+                Atšaukti
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  updateUserProfileByAdmin(editingUser.id, editingUser);
+                  if ((editingUser as any).hostTier) {
+                    updateHostTier(editingUser.id, (editingUser as any).hostTier);
+                  }
+                  setToastMessage(`💾 Vartotojo "${editingUser.name}" informacija sėkmingai atnaujinta!`);
+                  setTimeout(() => setToastMessage(null), 3500);
+                  setEditingUser(null);
+                }}
+                className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer flex items-center gap-2"
+              >
+                <Save className="w-4 h-4" />
+                <span>Išsaugoti Pakeitimus</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

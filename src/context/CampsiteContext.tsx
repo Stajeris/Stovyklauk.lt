@@ -381,6 +381,7 @@ interface CampsiteContextType {
   registerUser: (userData: { name: string; email: string; password?: string; phone?: string; avatar?: string; userType?: 'client' | 'host' }) => { user: UserProfile; verificationCode: string };
   switchUserRole: (newRole: 'client' | 'host' | 'admin') => void;
   updateUserRoleInList: (userId: string, newRole: 'client' | 'host' | 'admin') => void;
+  updateUserProfileByAdmin: (userId: string, updatedData: Partial<UserProfile>) => void;
   deleteUser: (userId: string) => void;
   verifyUserEmail: (userId: string) => void;
   requestPasswordResetCode: (email: string) => { success: boolean; code?: string; message?: string; userId?: string };
@@ -900,6 +901,19 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       } else {
         setUserMode('guest');
       }
+    }
+  };
+
+  const updateUserProfileByAdmin = (userId: string, updatedData: Partial<UserProfile>) => {
+    setUsersList(prev => prev.map(u => {
+      if (u.id === userId) {
+        return { ...u, ...updatedData };
+      }
+      return u;
+    }));
+
+    if (currentUser && currentUser.id === userId) {
+      setCurrentUser({ ...currentUser, ...updatedData });
     }
   };
 
@@ -1441,6 +1455,7 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         registerUser,
         switchUserRole,
         updateUserRoleInList,
+        updateUserProfileByAdmin,
         deleteUser,
         verifyUserEmail,
         requestPasswordResetCode,
