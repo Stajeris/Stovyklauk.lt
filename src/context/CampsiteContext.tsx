@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Campsite, Booking, SearchFilters, ViewState, PropertyType, Review, UserProfile, ChatThread, ChatMessage } from '../types';
+import { Campsite, Booking, SearchFilters, ViewState, PropertyType, Review, UserProfile, ChatThread, ChatMessage, HostTier } from '../types';
 import { INITIAL_CAMPSITES, INITIAL_BOOKINGS } from '../data/mockCampsites';
 import { INITIAL_CHAT_THREADS } from '../data/mockChats';
 import { translations, Language } from '../data/translations';
@@ -423,8 +423,9 @@ interface CampsiteContextType {
   toggleUserMode: () => void;
   toggleFavorite: (campsiteId: string) => void;
   isDateBlocked: (campsiteId: string, dateStr: string) => boolean;
-  hostTier: 'free' | 'pro';
-  setHostTier: (tier: 'free' | 'pro') => void;
+  hostTier: HostTier;
+  setHostTier: (tier: HostTier) => void;
+  updateHostTier: (hostId: string, newTier: HostTier) => void;
   setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
   t: (key: keyof typeof translations['lt'], params?: Record<string, string | number>) => string;
@@ -498,20 +499,63 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [searchFilters, setSearchFilters] = useState<SearchFilters>(DEFAULT_FILTERS);
   const [userMode, setUserMode] = useState<'guest' | 'host'>('guest');
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [hostTier, setHostTierState] = useState<'free' | 'pro'>('pro');
+  const [hostTier, setHostTierState] = useState<HostTier>('pro');
 
-  const setHostTier = (tier: 'free' | 'pro') => {
+  const updateHostTier = (hostId: string, newTier: HostTier) => {
+    // Update usersList
+    setUsersList(prev => {
+      const updated = prev.map(u => {
+        if (
+          u.id === hostId || 
+          u.email.toLowerCase() === hostId.toLowerCase() || 
+          u.name.toLowerCase() === hostId.toLowerCase()
+        ) {
+          return { ...u, hostTier: newTier };
+        }
+        return u;
+      });
+      localStorage.setItem('campscape_users', JSON.stringify(updated));
+      return updated;
+    });
+
+    // Update currentUser if matched
+    if (currentUser && (currentUser.id === hostId || currentUser.email.toLowerCase() === hostId.toLowerCase() || currentUser.name.toLowerCase() === hostId.toLowerCase())) {
+      setCurrentUser({ ...currentUser, hostTier: newTier });
+    }
+
+    // Update campsites
+    setCampsites(prev => {
+      const updated = prev.map(c => {
+        if (
+          c.host.id === hostId || 
+          c.host.name?.toLowerCase() === hostId.toLowerCase() || 
+          c.host.email?.toLowerCase() === hostId.toLowerCase() ||
+          (c.host as any).id === hostId
+        ) {
+          return {
+            ...c,
+            isPro: newTier === 'pro' || newTier === 'premium',
+            tier: newTier,
+            host: {
+              ...c.host,
+              tier: newTier
+            }
+          };
+        }
+        return c;
+      });
+      localStorage.setItem('campscape_campsites', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const setHostTier = (tier: HostTier) => {
     setHostTierState(tier);
-    setCampsites(prev => prev.map(c => {
-      if (c.host.id === 'host-1' || c.host.name.includes('Mantas')) {
-        return {
-          ...c,
-          isPro: tier === 'pro',
-          host: { ...c.host, tier }
-        };
-      }
-      return c;
-    }));
+    if (currentUser) {
+      updateHostTier(currentUser.id, tier);
+    } else {
+      updateHostTier('host-1', tier);
+    }
   };
 
   const [language, setLanguageState] = useState<Language>(() => {
@@ -1322,6 +1366,7 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         isDateBlocked,
         hostTier,
         setHostTier,
+        updateHostTier,
         setLanguage,
         toggleLanguage,
         t,

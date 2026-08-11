@@ -43,10 +43,23 @@ export const LandingPage: React.FC = () => {
 
   const publicCampsites = campsites.filter(c => !c.status || c.status === 'approved');
 
-  const filteredCampsites = publicCampsites.filter(c => {
-    if (activeTab === 'all') return true;
-    return c.propertyType === activeTab;
-  });
+  const filteredCampsites = publicCampsites
+    .filter(c => {
+      if (activeTab === 'all') return true;
+      return c.propertyType === activeTab;
+    })
+    .sort((a, b) => {
+      const getRank = (site: typeof a) => {
+        const tier = site.host?.tier || site.tier;
+        if (tier === 'pro' || site.isPro) return 1;
+        if (tier === 'premium') return 2;
+        return 3;
+      };
+      const rankA = getRank(a);
+      const rankB = getRank(b);
+      if (rankA !== rankB) return rankA - rankB;
+      return b.rating - a.rating;
+    });
 
   return (
     <div id="landing-page-container" className="space-y-16 pb-20 bg-gray-50">
@@ -249,10 +262,18 @@ export const LandingPage: React.FC = () => {
                       className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                     />
                     
-                    {/* Badge */}
-                    <span className="absolute top-4 left-4 bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-semibold capitalize shadow-xs">
-                      {site.propertyType === 'tent' ? 'Palapinėms' : site.propertyType === 'glamping' ? 'Glamping' : site.propertyType === 'rv' ? 'Kemperiams' : site.propertyType === 'cabin' ? 'Atostogų nameliai' : 'Kita'}
-                    </span>
+                    {/* Badges */}
+                    <div className="absolute top-4 left-4 flex flex-col items-start gap-1">
+                      <span className="bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-semibold capitalize shadow-xs">
+                        {site.propertyType === 'tent' ? 'Palapinėms' : site.propertyType === 'glamping' ? 'Glamping' : site.propertyType === 'rv' ? 'Kemperiams' : site.propertyType === 'cabin' ? 'Atostogų nameliai' : 'Kita'}
+                      </span>
+                      {(site.host?.tier === 'pro' || site.isPro) && (
+                        <span className="bg-amber-400 text-amber-950 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-xs flex items-center gap-1 border border-amber-500">
+                          <Sparkles className="w-3 h-3 fill-amber-950" />
+                          <span>PRO Šeimininkas</span>
+                        </span>
+                      )}
+                    </div>
 
                     {/* Favorite Heart Button */}
                     <button

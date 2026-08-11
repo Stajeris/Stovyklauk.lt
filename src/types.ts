@@ -4,6 +4,8 @@ export type CancellationPolicy = 'flexible' | 'moderate' | 'strict';
 
 export type UserType = 'client' | 'host' | 'admin';
 
+export type HostTier = 'free' | 'pro' | 'premium';
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -32,7 +34,7 @@ export interface Host {
   bio: string;
   phone?: string;
   email?: string;
-  tier?: 'free' | 'pro';
+  tier?: HostTier;
   isEmailVerified?: boolean;
   isPhoneVerified?: boolean;
 }

@@ -25,6 +25,18 @@ export const Header: React.FC = () => {
   const pendingBookingsCount = bookings.filter(b => b.status === 'pending').length;
   const pendingCampsitesCount = campsites.filter(c => c.status === 'pending').length;
 
+  const handleAddCampsiteClick = () => {
+    if (!currentUser) {
+      switchUserRole('host');
+      setView('add-listing');
+    } else {
+      if (currentUser.userType === 'client' && !currentUser.isAdmin) {
+        switchUserRole('host');
+      }
+      setView('add-listing');
+    }
+  };
+
   return (
     <header id="main-header" className="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -80,6 +92,21 @@ export const Header: React.FC = () => {
             >
               <Search className="w-4 h-4 text-emerald-600" />
               {t('search')}
+            </button>
+
+            {/* Pridėti Stovyklavietę - Main Menu Navigation Button */}
+            <button
+              id="nav-add-campsite"
+              onClick={handleAddCampsiteClick}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full transition-all ${
+                currentView === 'add-listing' 
+                  ? 'bg-amber-400 text-amber-950 font-black shadow-xs' 
+                  : 'text-emerald-900 bg-emerald-50 hover:bg-emerald-100 font-bold border border-emerald-200/80'
+              }`}
+              title="Pridėti naują stovyklavietę ir įtraukti šeimininką į sistemą"
+            >
+              <PlusCircle className="w-4 h-4 text-emerald-700" />
+              <span>Pridėti Stovyklavietę</span>
             </button>
 
             {/* Client Dashboard Buttons - ONLY for Logged-In Travelers */}
@@ -425,6 +452,14 @@ export const Header: React.FC = () => {
         >
           <Search className="w-4 h-4" />
           <span>{t('search')}</span>
+        </button>
+
+        <button
+          onClick={handleAddCampsiteClick}
+          className={`flex flex-col items-center gap-1 ${currentView === 'add-listing' ? 'text-emerald-700 font-extrabold' : 'text-emerald-800'}`}
+        >
+          <PlusCircle className="w-4 h-4 text-emerald-600" />
+          <span>+ Skelbti</span>
         </button>
 
         {/* Traveler Dashboard on Mobile (ONLY for Clients) */}

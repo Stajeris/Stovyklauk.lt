@@ -3,7 +3,7 @@ import {
   ShieldCheck, CheckCircle2, XCircle, Clock, Search, MapPin, 
   Trash2, Eye, Plus, Sparkles, AlertCircle, Building2, User, 
   Check, X, RefreshCw, ChevronRight, ExternalLink, ShieldAlert, AlertTriangle, Star, MessageSquare,
-  CreditCard, DollarSign, Zap, Download, FileText, Lock, ChevronDown, ChevronUp, UserCheck, Shield,
+  CreditCard, DollarSign, Zap, Download, FileText, Lock, ChevronDown, ChevronUp, UserCheck, Shield, Crown,
   Calendar as CalendarIcon, LogOut
 } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
@@ -33,6 +33,7 @@ export const AdminPanel: React.FC = () => {
     resolveReviewDispute,
     releaseEscrowPayout,
     selectCampsiteById,
+    updateHostTier,
     setView 
   } = useCampsites();
 
@@ -1312,8 +1313,64 @@ export const AdminPanel: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Host Financial Badge Group */}
+                    {/* Host Financial & Tier Badge Group */}
                     <div className="flex flex-wrap items-center gap-3 text-xs">
+                      {/* Host Plan Tier Switcher */}
+                      {(() => {
+                        const currentHostTier = group.campsites[0]?.host?.tier || group.campsites[0]?.tier || 'pro';
+                        return (
+                          <div className="bg-white p-2 rounded-2xl border border-gray-200 flex flex-col gap-1 text-[10px]">
+                            <div className="flex items-center justify-between gap-2 font-extrabold text-gray-500 uppercase tracking-wider text-[9px]">
+                              <span>Šeimininko Planas</span>
+                              <span className={`px-1.5 py-0.5 rounded font-black ${
+                                currentHostTier === 'pro' ? 'bg-amber-400 text-amber-950' :
+                                currentHostTier === 'premium' ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-800'
+                              }`}>
+                                {currentHostTier.toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => {
+                                  updateHostTier(group.hostName, 'free');
+                                  setToastMessage(`Pakeistas ${group.hostName} planas į FREE (0 €)`);
+                                  setTimeout(() => setToastMessage(null), 3000);
+                                }}
+                                className={`px-2 py-0.5 text-[10px] font-bold rounded cursor-pointer transition ${
+                                  currentHostTier === 'free' ? 'bg-gray-800 text-white font-extrabold' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                              >
+                                Free (0€)
+                              </button>
+                              <button
+                                onClick={() => {
+                                  updateHostTier(group.hostName, 'pro');
+                                  setToastMessage(`Pakeistas ${group.hostName} planas į PRO (29 €/mėn.)`);
+                                  setTimeout(() => setToastMessage(null), 3000);
+                                }}
+                                className={`px-2 py-0.5 text-[10px] font-bold rounded cursor-pointer transition ${
+                                  currentHostTier === 'pro' ? 'bg-amber-400 text-amber-950 font-extrabold shadow-xs' : 'bg-amber-50 text-amber-900 hover:bg-amber-100'
+                                }`}
+                              >
+                                Pro (29€)
+                              </button>
+                              <button
+                                onClick={() => {
+                                  updateHostTier(group.hostName, 'premium');
+                                  setToastMessage(`Pakeistas ${group.hostName} planas į PREMIUM (6-10%)`);
+                                  setTimeout(() => setToastMessage(null), 3000);
+                                }}
+                                className={`px-2 py-0.5 text-[10px] font-bold rounded cursor-pointer transition ${
+                                  currentHostTier === 'premium' ? 'bg-purple-600 text-white font-extrabold shadow-xs' : 'bg-purple-50 text-purple-900 hover:bg-purple-100'
+                                }`}
+                              >
+                                Premium (10%)
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
                       <div className="bg-white px-3 py-2 rounded-2xl border border-gray-200 space-y-0.5">
                         <span className="text-[10px] uppercase font-bold text-gray-400 block">Viso Šeimininko Uždarbis</span>
                         <span className="font-extrabold text-emerald-900 text-sm">€{group.totalHostPayout.toFixed(2)}</span>
@@ -1847,6 +1904,7 @@ export const AdminPanel: React.FC = () => {
                     <th className="p-3.5">Vartotojas</th>
                     <th className="p-3.5">El. Paštas & Telefonas</th>
                     <th className="p-3.5">Paskyros Tipas (Role)</th>
+                    <th className="p-3.5">Šeimininko Planas (Tier)</th>
                     <th className="p-3.5">Būsena / Verifikacija</th>
                     <th className="p-3.5 text-right">Rolės Valdymas</th>
                   </tr>
@@ -1896,6 +1954,81 @@ export const AdminPanel: React.FC = () => {
                               <span className="bg-emerald-100 text-emerald-950 border border-emerald-200 text-[10px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 w-fit">
                                 <span>⛺ Keliautojas</span>
                               </span>
+                            )}
+                          </td>
+
+                          <td className="p-3.5">
+                            {isHost || u.hostTier ? (
+                              <div className="space-y-1.5">
+                                <div className="flex items-center gap-1">
+                                  {(u.hostTier === 'pro' || (!u.hostTier && (u.id === 'host-1' || u.isSuperhost))) && (
+                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-amber-950 border border-amber-500 flex items-center gap-1">
+                                      <Crown className="w-3 h-3 fill-amber-950" />
+                                      <span>PRO (29 €/mėn.)</span>
+                                    </span>
+                                  )}
+                                  {u.hostTier === 'premium' && (
+                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-600 text-white border border-purple-700 flex items-center gap-1">
+                                      <Zap className="w-3 h-3 fill-white" />
+                                      <span>PREMIUM (6-10%)</span>
+                                    </span>
+                                  )}
+                                  {(u.hostTier === 'free' || (!u.hostTier && u.id !== 'host-1' && !u.isSuperhost)) && (
+                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-700 border border-gray-200">
+                                      FREE (0 €)
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => {
+                                      updateHostTier(u.id, 'free');
+                                      setToastMessage(`Pakeistas ${u.name} planas į FREE (0 €)`);
+                                      setTimeout(() => setToastMessage(null), 3000);
+                                    }}
+                                    className={`px-2 py-0.5 text-[9px] font-bold rounded border cursor-pointer transition ${
+                                      (u.hostTier === 'free' || (!u.hostTier && u.id !== 'host-1' && !u.isSuperhost))
+                                        ? 'bg-gray-800 text-white border-gray-900 font-extrabold'
+                                        : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200'
+                                    }`}
+                                  >
+                                    Free
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      updateHostTier(u.id, 'pro');
+                                      setToastMessage(`Pakeistas ${u.name} planas į PRO (29 €/mėn.)`);
+                                      setTimeout(() => setToastMessage(null), 3000);
+                                    }}
+                                    className={`px-2 py-0.5 text-[9px] font-bold rounded border cursor-pointer transition ${
+                                      (u.hostTier === 'pro' || (!u.hostTier && (u.id === 'host-1' || u.isSuperhost)))
+                                        ? 'bg-amber-400 text-amber-950 border-amber-500 font-extrabold shadow-xs'
+                                        : 'bg-amber-50 text-amber-900 hover:bg-amber-100 border-amber-200'
+                                    }`}
+                                  >
+                                    Pro
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      updateHostTier(u.id, 'premium');
+                                      setToastMessage(`Pakeistas ${u.name} planas į PREMIUM (6-10%)`);
+                                      setTimeout(() => setToastMessage(null), 3000);
+                                    }}
+                                    className={`px-2 py-0.5 text-[9px] font-bold rounded border cursor-pointer transition ${
+                                      u.hostTier === 'premium'
+                                        ? 'bg-purple-600 text-white border-purple-700 font-extrabold shadow-xs'
+                                        : 'bg-purple-50 text-purple-900 hover:bg-purple-100 border-purple-200'
+                                    }`}
+                                  >
+                                    Premium
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 text-[10px] italic">—</span>
                             )}
                           </td>
 

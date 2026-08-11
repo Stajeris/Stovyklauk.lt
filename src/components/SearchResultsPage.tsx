@@ -59,8 +59,10 @@ export const SearchResultsPage: React.FC = () => {
 
   }).sort((a, b) => {
     if (sortBy === 'recommended') {
-      if (a.isPro && !b.isPro) return -1;
-      if (!a.isPro && b.isPro) return 1;
+      const isProA = a.host?.tier === 'pro' || a.tier === 'pro' || a.isPro;
+      const isProB = b.host?.tier === 'pro' || b.tier === 'pro' || b.isPro;
+      if (isProA && !isProB) return -1;
+      if (!isProA && isProB) return 1;
       return b.rating - a.rating;
     }
     if (sortBy === 'price-asc') return a.pricePerNight - b.pricePerNight;
