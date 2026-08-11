@@ -119,9 +119,11 @@ export const SearchResultsPage: React.FC = () => {
           {/* Property Type Pills */}
           {[
             { id: 'all', label: 'Visi tipai' },
-            { id: 'tent', label: 'Su palapine' },
+            { id: 'tent', label: 'Palapinėms' },
             { id: 'glamping', label: 'Glamping' },
             { id: 'rv', label: 'Kemperiams' },
+            { id: 'cabin', label: 'Atostogų nameliai' },
+            { id: 'other', label: 'Kita' },
           ].map(type => (
             <button
               key={type.id}
@@ -252,7 +254,7 @@ export const SearchResultsPage: React.FC = () => {
                           </div>
                         )}
                         <div className="px-2.5 py-1 rounded-full bg-emerald-600/90 backdrop-blur-xs text-white text-[10px] font-bold capitalize">
-                          {site.propertyType === 'tent' ? 'Palapinėms' : site.propertyType === 'glamping' ? 'Glamping' : 'Kemperiams'}
+                          {site.propertyType === 'tent' ? 'Palapinėms' : site.propertyType === 'glamping' ? 'Glamping' : site.propertyType === 'rv' ? 'Kemperiams' : site.propertyType === 'cabin' ? 'Atostogų nameliai' : 'Kita'}
                         </div>
                       </div>
                       <button

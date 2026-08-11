@@ -119,7 +119,7 @@ export const CampsiteDetailPage: React.FC = () => {
               </span>
               <span>•</span>
               <span className="capitalize px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-xs border border-emerald-200">
-                {camp.propertyType === 'tent' ? 'Palapinėms' : camp.propertyType === 'glamping' ? 'Glamping' : 'Kemperiams'}
+                {camp.propertyType === 'tent' ? 'Palapinėms' : camp.propertyType === 'glamping' ? 'Glamping' : camp.propertyType === 'rv' ? 'Kemperiams' : camp.propertyType === 'cabin' ? 'Atostogų namelis' : 'Kita'}
               </span>
             </div>
           </div>

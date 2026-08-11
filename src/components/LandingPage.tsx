@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Search, Calendar, Users, MapPin, Tent, Sparkles, Star, Heart, 
-  ArrowRight, ShieldCheck, DollarSign, Trees, Flame, Waves, Compass 
+  ArrowRight, ShieldCheck, DollarSign, Trees, Flame, Waves, Compass, Home, TreePine
 } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
 import { PropertyType } from '../types';
@@ -114,6 +114,8 @@ export const LandingPage: React.FC = () => {
                   <option value="tent">{t('tent')}</option>
                   <option value="glamping">{t('glamping')}</option>
                   <option value="rv">{t('rv')}</option>
+                  <option value="cabin">{t('cabin')}</option>
+                  <option value="other">{t('other')}</option>
                 </select>
               </div>
             </div>
@@ -202,10 +204,12 @@ export const LandingPage: React.FC = () => {
           {/* Category Filter Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
             {[
-              { id: 'all', label: 'Visi būdai', icon: Compass },
+              { id: 'all', label: 'Visi tipai', icon: Compass },
               { id: 'tent', label: 'Palapinėms', icon: Tent },
               { id: 'glamping', label: 'Glamping', icon: Sparkles },
               { id: 'rv', label: 'Kemperiams', icon: Trees },
+              { id: 'cabin', label: 'Atostogų nameliai', icon: Home },
+              { id: 'other', label: 'Kita', icon: TreePine },
             ].map(tab => {
               const Icon = tab.icon;
               return (
@@ -247,7 +251,7 @@ export const LandingPage: React.FC = () => {
                     
                     {/* Badge */}
                     <span className="absolute top-4 left-4 bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-semibold capitalize shadow-xs">
-                      {site.propertyType === 'tent' ? 'Prie vandens' : site.propertyType === 'glamping' ? 'Glamping' : 'Kemperiams'}
+                      {site.propertyType === 'tent' ? 'Palapinėms' : site.propertyType === 'glamping' ? 'Glamping' : site.propertyType === 'rv' ? 'Kemperiams' : site.propertyType === 'cabin' ? 'Atostogų nameliai' : 'Kita'}
                     </span>
 
                     {/* Favorite Heart Button */}

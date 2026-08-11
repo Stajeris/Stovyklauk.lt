@@ -460,7 +460,7 @@ export const HostDashboard: React.FC = () => {
 
                     <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 items-start">
                       <span className="px-2.5 py-1 rounded-full bg-emerald-800 text-white text-[10px] font-bold uppercase tracking-wider">
-                        {site.propertyType === 'tent' ? '⛺ Palapinė' : site.propertyType === 'glamping' ? '✨ Glampingas' : '🚐 Kemperiai'}
+                        {site.propertyType === 'tent' ? '⛺ Palapinėms' : site.propertyType === 'glamping' ? '✨ Glamping' : site.propertyType === 'rv' ? '🚐 Kemperiams' : site.propertyType === 'cabin' ? '🏡 Atostogų namelis' : '🌲 Kita'}
                       </span>
                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border shadow-xs ${
                         (!site.status || site.status === 'approved')

@@ -11,6 +11,7 @@ import { MyTripsPage } from './components/MyTripsPage';
 import { ClientDashboard } from './components/ClientDashboard';
 import { PendingRequestsPage } from './components/PendingRequestsPage';
 import { AdminPanel } from './components/AdminPanel';
+import { RulesDownloadPage } from './components/RulesDownloadPage';
 import { AuthModal } from './components/AuthModal';
 import { ShieldAlert } from 'lucide-react';
 
@@ -29,6 +30,7 @@ const AppContainer: React.FC = () => {
         {currentView === 'pending-requests' && <PendingRequestsPage />}
         {currentView === 'add-listing' && <AddListingWizard />}
         {currentView === 'my-trips' && <MyTripsPage />}
+        {currentView === 'rules' && <RulesDownloadPage />}
         {currentView === 'admin' && (
           currentUser?.isAdmin ? (
             <AdminPanel />

@@ -1,4 +1,4 @@
-export type PropertyType = 'tent' | 'rv' | 'glamping';
+export type PropertyType = 'tent' | 'glamping' | 'rv' | 'cabin' | 'other';
 
 export type CancellationPolicy = 'flexible' | 'moderate' | 'strict';
 
@@ -170,7 +170,7 @@ export interface SearchFilters {
   firePit: boolean;
 }
 
-export type ViewState = 'landing' | 'search' | 'detail' | 'host-dashboard' | 'client-dashboard' | 'add-listing' | 'my-trips' | 'pending-requests' | 'admin';
+export type ViewState = 'landing' | 'search' | 'detail' | 'host-dashboard' | 'client-dashboard' | 'add-listing' | 'my-trips' | 'pending-requests' | 'admin' | 'rules';
 
 export interface ChatMessage {
   id: string;

@@ -602,9 +602,11 @@ export const EditCampsiteModal: React.FC<EditCampsiteModalProps> = ({ campsite, 
                     }}
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-xs font-bold text-gray-900 focus:ring-2 focus:ring-emerald-600 focus:outline-hidden"
                   >
-                    <option value="tent">⛺ Palapinės</option>
-                    <option value="glamping">✨ Glampingas</option>
-                    <option value="rv">🚐 Kemperiai</option>
+                    <option value="tent">⛺ Palapinėms</option>
+                    <option value="glamping">✨ Glamping</option>
+                    <option value="rv">🚐 Kemperiams</option>
+                    <option value="cabin">🏡 Atostogų nameliai</option>
+                    <option value="other">🌲 Kita</option>
                   </select>
                 </div>
               </div>

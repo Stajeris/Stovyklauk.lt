@@ -344,6 +344,88 @@ export const INITIAL_CAMPSITES: Campsite[] = [
         comment: 'Švariausias dušas ir patogiausia vieta Juodkrantėje. Labai geras internetas ryšiui palei marias.'
       }
     ]
+  },
+  {
+    id: 'camp-7',
+    title: 'Labanoro Girios Atostogų Namelis ir Pirtis',
+    description: 'Jaukus medinis atostogų namelis giliai Labanoro girioje prie švaraus ežero. Įrengta virtuvėlė, židinys, erdvi terasa ir asmeninė pirtelė prie kranto.',
+    location: 'Švenčionių r., Labanoras',
+    region: 'Aukštaitija',
+    addressLine: 'Šilo g. 22, Labanoras',
+    postalCode: 'LT-18201',
+    latitude: 55.267,
+    longitude: 25.772,
+    arrivalInstructions: 'Atvykite keliu 114 (Molėtai–Kaltanėnai), pasukite į Labanoro miestelį ir sekite nuorodas "Miško Oazė".',
+    status: 'approved',
+    pricePerNight: 80,
+    rating: 4.97,
+    reviewCount: 35,
+    propertyType: 'cabin',
+    maxGuests: 4,
+    images: [
+      'https://images.unsplash.com/photo-1587061949409-02df41d5e562?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80'
+    ],
+    host: {
+      id: 'host-1',
+      name: 'Jonas Kazlauskas',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+      isSuperhost: true,
+      joinedDate: '2026 m. Sausis',
+      responseRate: '100% per 1 valandą',
+      phone: '+370 611 12345',
+      email: 'jonas.kazlauskas@stovyklauk.lt',
+      bio: 'Aukštaitijos ežerų ir miškų puoselėtojas.'
+    },
+    amenities: ['Pirtis krante', 'Elektra', 'Geriamas vanduo', 'Židinys', 'Vandens tualetas', 'Prie ežero'],
+    cancellationPolicy: 'moderate',
+    terrainType: 'Gili giria ir ežero pakrantė',
+    featured: true,
+    isPro: true,
+    blockedDates: [],
+    rules: ['Tylos valandos nuo 22:00', 'Vidinėje patalpoje nerūkoma'],
+    reviews: []
+  },
+  {
+    id: 'camp-8',
+    title: 'Aukštutinio Medžio Namelis (Treehouse Oazė)',
+    description: 'Unikalus medžio namelis iškeltas 5 metrų aukštyje tarp šimtametės pušų viršūnių. Išskirtinė patirtis ieškantiems unikalios ramybės gamtos prieglobstyje.',
+    location: 'Plungės r., Platelių ežeras',
+    region: 'Žemaitija',
+    addressLine: 'Platelių g. 45, Paežerė',
+    postalCode: 'LT-90102',
+    latitude: 56.042,
+    longitude: 21.821,
+    arrivalInstructions: 'Platelių lankytojų centro kryptimi, posūkis ties "Pušyno Oazės" ženklu.',
+    status: 'approved',
+    pricePerNight: 110,
+    rating: 5.0,
+    reviewCount: 19,
+    propertyType: 'other',
+    maxGuests: 2,
+    images: [
+      'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=800&q=80'
+    ],
+    host: {
+      id: 'host-2',
+      name: 'Rasa ir Mantas',
+      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
+      isSuperhost: true,
+      joinedDate: '2026 m. Vasaris',
+      responseRate: '100% per 15 min',
+      phone: '+370 622 98765',
+      email: 'rasa.mantas@stovyklauk.lt',
+      bio: 'Unikalių medžio namelių bei architektūrinių lauko erdvių kūrėjai Žemaitijoje.'
+    },
+    amenities: ['Elektra', 'Balcony / Terasa', 'Laužavietė', 'Panoraminis vaizdas', 'Kava/Arbata'],
+    cancellationPolicy: 'strict',
+    terrainType: 'Pušyno viršūnės',
+    featured: true,
+    isPro: true,
+    blockedDates: [],
+    rules: ['Būtina laikytis saugumo instrukcijų ant laiptų', 'Saugoti mišką'],
+    reviews: []
   }
 ];
 

@@ -58,7 +58,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
       const isProSite = site.isPro || site.host?.tier === 'pro';
       const isSuperhost = site.host?.isSuperhost;
-      const propTypeLabel = site.propertyType === 'tent' ? 'Palapinė' : site.propertyType === 'glamping' ? 'Glamping' : 'Kemperiai';
+      const propTypeLabel = site.propertyType === 'tent' ? 'Palapinėms' : site.propertyType === 'glamping' ? 'Glamping' : site.propertyType === 'rv' ? 'Kemperiams' : site.propertyType === 'cabin' ? 'Atostogų namelis' : 'Kita';
 
       // Build Interactive Popup/Tooltip HTML Container
       const createPopupElement = () => {

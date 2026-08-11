@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Tent, Sparkles, Trees, DollarSign, MapPin, CheckCircle, ArrowRight, 
-  ArrowLeft, Plus, Image as ImageIcon, ShieldAlert, Check, Clock, User, Phone, Mail, FileText, Crown, Zap 
+  ArrowLeft, Plus, Image as ImageIcon, ShieldAlert, Check, Clock, User, Phone, Mail, FileText, Crown, Zap, Home, TreePine 
 } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
 import { PropertyType, CancellationPolicy, TERRAIN_OPTIONS } from '../types';
@@ -534,11 +534,13 @@ export const AddListingWizard: React.FC = () => {
             </div>
 
             {/* Property Type Radio Cards */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               {[
-                { id: 'tent', label: 'Palapinė', icon: Tent },
-                { id: 'glamping', label: 'Glamping Namelis', icon: Sparkles },
-                { id: 'rv', label: 'Kemperis', icon: Trees },
+                { id: 'tent', label: 'Palapinėms', icon: Tent },
+                { id: 'glamping', label: 'Glamping', icon: Sparkles },
+                { id: 'rv', label: 'Kemperiams', icon: Trees },
+                { id: 'cabin', label: 'Atostogų Namelis', icon: Home },
+                { id: 'other', label: 'Kita', icon: TreePine },
               ].map(item => {
                 const Icon = item.icon;
                 return (

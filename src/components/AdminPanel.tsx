@@ -523,7 +523,7 @@ export const AdminPanel: React.FC = () => {
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <div>
                             <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                              {site.propertyType === 'tent' ? '⛺ Palapinių sklypas' : site.propertyType === 'glamping' ? '✨ Glampingas' : '🚐 Kemperiai'}
+                              {site.propertyType === 'tent' ? '⛺ Palapinių sklypas' : site.propertyType === 'glamping' ? '✨ Glampingas' : site.propertyType === 'rv' ? '🚐 Kemperiai' : site.propertyType === 'cabin' ? '🏡 Atostogų namelis' : '🌲 Kita'}
                             </span>
                             <h3 className="text-xl font-extrabold text-gray-900 mt-1">{site.title}</h3>
                             
@@ -665,7 +665,7 @@ export const AdminPanel: React.FC = () => {
                             <div>
                               <span className="font-extrabold text-gray-900 block line-clamp-1">{site.title}</span>
                               <span className="text-[10px] text-gray-400 capitalize">
-                                {site.propertyType === 'tent' ? 'Palapinė' : site.propertyType === 'glamping' ? 'Glampingas' : 'Kemperis'}
+                                {site.propertyType === 'tent' ? 'Palapinėms' : site.propertyType === 'glamping' ? 'Glamping' : site.propertyType === 'rv' ? 'Kemperiams' : site.propertyType === 'cabin' ? 'Atostogų namelis' : 'Kita'}
                               </span>
                             </div>
                           </div>
@@ -865,9 +865,11 @@ export const AdminPanel: React.FC = () => {
                   onChange={e => setNewType(e.target.value as PropertyType)}
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-xs font-bold text-gray-900 focus:ring-2 focus:ring-emerald-600 focus:outline-hidden cursor-pointer"
                 >
-                  <option value="tent">⛺ Palapinės</option>
-                  <option value="glamping">✨ Glampingas</option>
-                  <option value="rv">🚐 Kemperiai</option>
+                  <option value="tent">⛺ Palapinėms</option>
+                  <option value="glamping">✨ Glamping</option>
+                  <option value="rv">🚐 Kemperiams</option>
+                  <option value="cabin">🏡 Atostogų nameliai</option>
+                  <option value="other">🌲 Kita</option>
                 </select>
               </div>
 
@@ -1310,7 +1312,7 @@ export const AdminPanel: React.FC = () => {
                               />
                               <div className="min-w-0 flex-1">
                                 <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-emerald-100 text-emerald-800 inline-block mb-1">
-                                  {camp.propertyType === 'tent' ? 'Palapinė' : camp.propertyType === 'rv' ? 'Kiemas / Namelis' : 'Glamping'}
+                                  {camp.propertyType === 'tent' ? 'Palapinėms' : camp.propertyType === 'glamping' ? 'Glamping' : camp.propertyType === 'rv' ? 'Kemperiams' : camp.propertyType === 'cabin' ? 'Atostogų namelis' : 'Kita'}
                                 </span>
                                 <h6 className="font-bold text-xs text-gray-900 truncate">{camp.title}</h6>
                                 <p className="text-[11px] text-gray-500 flex items-center gap-1">

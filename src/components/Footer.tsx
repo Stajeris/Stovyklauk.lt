@@ -65,6 +65,11 @@ export const Footer: React.FC = () => {
                   {t('dashboard')}
                 </button>
               </li>
+              <li>
+                <button onClick={() => setView('rules')} className="hover:text-emerald-400 transition-colors text-amber-400 font-semibold flex items-center gap-1">
+                  <span>Taisyklės ir Atsisiuntimai</span>
+                </button>
+              </li>
             </ul>
           </div>
 
