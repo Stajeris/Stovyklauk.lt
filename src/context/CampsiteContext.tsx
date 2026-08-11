@@ -863,13 +863,26 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const switchUserRole = (newRole: 'client' | 'host' | 'admin') => {
     if (!currentUser) return;
+    const isPromotingToAdmin = newRole === 'admin';
     const updatedUser: UserProfile = {
       ...currentUser,
       userType: newRole,
-      isAdmin: newRole === 'admin'
+      isAdmin: isPromotingToAdmin
     };
     setCurrentUser(updatedUser);
-    setUsersList(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+    setUsersList(prev => prev.map(u => {
+      if (u.id === currentUser.id) {
+        return updatedUser;
+      }
+      if (isPromotingToAdmin) {
+        return {
+          ...u,
+          isAdmin: false,
+          userType: u.userType === 'admin' ? 'client' : u.userType
+        };
+      }
+      return u;
+    }));
     
     if (newRole === 'host') {
       setUserMode('host');
@@ -879,41 +892,89 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const updateUserRoleInList = (userId: string, newRole: 'client' | 'host' | 'admin') => {
+    const isPromotingToAdmin = newRole === 'admin';
+
     setUsersList(prev => prev.map(u => {
       if (u.id === userId) {
         return {
           ...u,
           userType: newRole,
-          isAdmin: newRole === 'admin'
+          isAdmin: isPromotingToAdmin
+        };
+      }
+      if (isPromotingToAdmin) {
+        return {
+          ...u,
+          isAdmin: false,
+          userType: u.userType === 'admin' ? 'client' : u.userType
         };
       }
       return u;
     }));
 
-    if (currentUser && currentUser.id === userId) {
-      setCurrentUser({
-        ...currentUser,
-        userType: newRole,
-        isAdmin: newRole === 'admin'
-      });
-      if (newRole === 'host') {
-        setUserMode('host');
-      } else {
-        setUserMode('guest');
+    if (currentUser) {
+      if (currentUser.id === userId) {
+        setCurrentUser({
+          ...currentUser,
+          userType: newRole,
+          isAdmin: isPromotingToAdmin
+        });
+        if (newRole === 'host') {
+          setUserMode('host');
+        } else {
+          setUserMode('guest');
+        }
+      } else if (isPromotingToAdmin && currentUser.isAdmin) {
+        setCurrentUser({
+          ...currentUser,
+          isAdmin: false,
+          userType: currentUser.userType === 'admin' ? 'client' : currentUser.userType
+        });
       }
     }
   };
 
   const updateUserProfileByAdmin = (userId: string, updatedData: Partial<UserProfile>) => {
+    const isPromotingToAdmin = updatedData.isAdmin === true || updatedData.userType === 'admin';
+
     setUsersList(prev => prev.map(u => {
       if (u.id === userId) {
-        return { ...u, ...updatedData };
+        const finalIsAdmin = isPromotingToAdmin ? true : (updatedData.isAdmin !== undefined ? updatedData.isAdmin : u.isAdmin);
+        const finalUserType = updatedData.userType || (finalIsAdmin ? 'admin' : (finalIsAdmin === false && u.userType === 'admin' ? 'client' : u.userType));
+        return {
+          ...u,
+          ...updatedData,
+          isAdmin: finalIsAdmin,
+          userType: finalUserType
+        };
+      }
+      if (isPromotingToAdmin) {
+        return {
+          ...u,
+          isAdmin: false,
+          userType: u.userType === 'admin' ? 'client' : u.userType
+        };
       }
       return u;
     }));
 
-    if (currentUser && currentUser.id === userId) {
-      setCurrentUser({ ...currentUser, ...updatedData });
+    if (currentUser) {
+      if (currentUser.id === userId) {
+        const finalIsAdmin = isPromotingToAdmin ? true : (updatedData.isAdmin !== undefined ? updatedData.isAdmin : currentUser.isAdmin);
+        const finalUserType = updatedData.userType || (finalIsAdmin ? 'admin' : (finalIsAdmin === false && currentUser.userType === 'admin' ? 'client' : currentUser.userType));
+        setCurrentUser({
+          ...currentUser,
+          ...updatedData,
+          isAdmin: finalIsAdmin,
+          userType: finalUserType
+        });
+      } else if (isPromotingToAdmin && currentUser.isAdmin) {
+        setCurrentUser({
+          ...currentUser,
+          isAdmin: false,
+          userType: currentUser.userType === 'admin' ? 'client' : currentUser.userType
+        });
+      }
     }
   };
 
