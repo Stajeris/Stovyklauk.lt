@@ -13,10 +13,21 @@ import { PendingRequestsPage } from './components/PendingRequestsPage';
 import { AdminPanel } from './components/AdminPanel';
 import { RulesDownloadPage } from './components/RulesDownloadPage';
 import { AuthModal } from './components/AuthModal';
+import { ChangePasswordModal } from './components/ChangePasswordModal';
 import { ShieldAlert } from 'lucide-react';
 
 const AppContainer: React.FC = () => {
-  const { currentView, currentUser, setView, isAuthModalOpen, closeAuthModal, authModalInitialMode } = useCampsites();
+  const { 
+    currentView, 
+    currentUser, 
+    setView, 
+    isAuthModalOpen, 
+    closeAuthModal, 
+    authModalInitialMode,
+    isChangePasswordModalOpen,
+    closeChangePasswordModal,
+    isFirstLoginChangePrompt
+  } = useCampsites();
 
   return (
     <div className="min-h-screen flex flex-col bg-stone-50 text-stone-900 font-sans selection:bg-emerald-200 selection:text-emerald-950">
@@ -60,6 +71,13 @@ const AppContainer: React.FC = () => {
         isOpen={isAuthModalOpen}
         onClose={closeAuthModal}
         initialMode={authModalInitialMode}
+      />
+
+      {/* Pop Up Modal Tab to Create / Change Password */}
+      <ChangePasswordModal
+        isOpen={isChangePasswordModalOpen}
+        onClose={closeChangePasswordModal}
+        isFirstLoginPrompt={isFirstLoginChangePrompt}
       />
     </div>
   );

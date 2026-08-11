@@ -367,11 +367,16 @@ interface CampsiteContextType {
     campsiteData: Omit<Campsite, 'id' | 'rating' | 'reviewCount' | 'reviews' | 'blockedDates' | 'host'>
   ) => Campsite;
 
-  // Auth System
+  // Auth & Password Change System
   isAuthModalOpen: boolean;
   authModalInitialMode: 'login' | 'register' | 'verify-email' | 'forgot-password' | 'forgot-email';
   openAuthModal: (mode?: 'login' | 'register' | 'verify-email' | 'forgot-password' | 'forgot-email') => void;
   closeAuthModal: () => void;
+  isChangePasswordModalOpen: boolean;
+  isFirstLoginChangePrompt: boolean;
+  openChangePasswordModal: (isFirstLoginPrompt?: boolean) => void;
+  closeChangePasswordModal: () => void;
+  changeUserPassword: (userId: string, newPassword: string) => { success: boolean; message?: string };
   loginUser: (email: string, password?: string) => { success: boolean; reason?: 'user_not_found' | 'invalid_password'; user?: UserProfile };
   registerUser: (userData: { name: string; email: string; password?: string; phone?: string; avatar?: string; userType?: 'client' | 'host' }) => { user: UserProfile; verificationCode: string };
   switchUserRole: (newRole: 'client' | 'host' | 'admin') => void;
@@ -733,6 +738,10 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalInitialMode, setAuthModalInitialMode] = useState<'login' | 'register' | 'verify-email' | 'forgot-password' | 'forgot-email'>('login');
 
+  // Change Password Pop-Up Modal State
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+  const [isFirstLoginChangePrompt, setIsFirstLoginChangePrompt] = useState(false);
+
   const openAuthModal = (mode: 'login' | 'register' | 'verify-email' | 'forgot-password' | 'forgot-email' = 'login') => {
     setAuthModalInitialMode(mode);
     setIsAuthModalOpen(true);
@@ -742,16 +751,67 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setIsAuthModalOpen(false);
   };
 
+  const openChangePasswordModal = (isFirstLoginPrompt = false) => {
+    setIsFirstLoginChangePrompt(isFirstLoginPrompt);
+    setIsChangePasswordModalOpen(true);
+  };
+
+  const closeChangePasswordModal = () => {
+    setIsChangePasswordModalOpen(false);
+    setIsFirstLoginChangePrompt(false);
+  };
+
+  const changeUserPassword = (userId: string, newPassword: string) => {
+    setUsersList(prev => prev.map(u => {
+      if (u.id === userId) {
+        return {
+          ...u,
+          password: newPassword,
+          primaryPassword: undefined,
+          mustChangePassword: false,
+          isFirstLogin: false
+        };
+      }
+      return u;
+    }));
+
+    if (currentUser && currentUser.id === userId) {
+      const updatedUser: UserProfile = {
+        ...currentUser,
+        password: newPassword,
+        primaryPassword: undefined,
+        mustChangePassword: false,
+        isFirstLogin: false
+      };
+      setCurrentUser(updatedUser);
+    }
+
+    return { success: true };
+  };
+
   const loginUser = (email: string, password?: string) => {
     const normalizedEmail = email.trim().toLowerCase();
     const found = usersList.find(u => u.email.trim().toLowerCase() === normalizedEmail);
     if (!found) {
       return { success: false, reason: 'user_not_found' as const };
     }
-    if (found.password && password && found.password !== password.trim()) {
+
+    const entered = password ? password.trim() : '';
+    const isPassValid = (found.password && found.password === entered) || (found.primaryPassword && found.primaryPassword === entered);
+    
+    if (found.password && entered && !isPassValid) {
       return { success: false, reason: 'invalid_password' as const };
     }
+
     setCurrentUser(found);
+
+    // If logging in with primary password or mustChangePassword flag is true, trigger password change pop-up
+    if (found.mustChangePassword || (found.primaryPassword && found.password === found.primaryPassword)) {
+      setTimeout(() => {
+        openChangePasswordModal(true);
+      }, 350);
+    }
+
     return { success: true, user: found };
   };
 
@@ -764,12 +824,14 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     const assignedType = userData.userType || 'client';
+    const primaryPass = userData.password || `CAMPY-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const newUser: UserProfile = {
       id: `user-${Date.now()}`,
       name: userData.name || 'Naujas Vartotojas',
       email: userData.email,
-      password: userData.password || 'slaptazodis123',
+      password: primaryPass,
+      primaryPassword: primaryPass,
       phone: userData.phone || '',
       avatar: userData.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
       bio: assignedType === 'host' ? 'Stovyklavietės ir sodybos šeimininkas' : 'Stovyklautojas ir žygeivis',
@@ -777,7 +839,9 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       userType: assignedType,
       isAdmin: false,
       isSuperhost: false,
-      isEmailVerified: false
+      isEmailVerified: false,
+      mustChangePassword: true,
+      isFirstLogin: true
     };
 
     setUsersList(prev => [...prev, newUser]);
@@ -1332,6 +1396,11 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         authModalInitialMode,
         openAuthModal,
         closeAuthModal,
+        isChangePasswordModalOpen,
+        isFirstLoginChangePrompt,
+        openChangePasswordModal,
+        closeChangePasswordModal,
+        changeUserPassword,
         loginUser,
         registerUser,
         switchUserRole,

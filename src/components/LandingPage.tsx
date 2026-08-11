@@ -17,6 +17,8 @@ export const LandingPage: React.FC = () => {
     favorites, 
     toggleFavorite,
     promoDaysRemaining,
+    currentUser,
+    openAuthModal,
     t
   } = useCampsites();
 
@@ -181,14 +183,26 @@ export const LandingPage: React.FC = () => {
           <div className="relative z-10 md:w-1/3 text-right w-full shrink-0 flex flex-col sm:flex-row md:flex-col gap-3">
             <button
               id="banner-list-land-btn"
-              onClick={() => setView('add-listing')}
+              onClick={() => {
+                if (!currentUser) {
+                  openAuthModal('login');
+                } else {
+                  setView('add-listing');
+                }
+              }}
               className="w-full bg-amber-400 hover:bg-amber-300 text-emerald-950 px-8 py-4 rounded-xl font-extrabold transition shadow-lg text-base cursor-pointer"
             >
               Registruoti sklypą nemokamai
             </button>
             <button
               id="banner-dashboard-btn"
-              onClick={() => setView('host-dashboard')}
+              onClick={() => {
+                if (!currentUser) {
+                  openAuthModal('login');
+                } else {
+                  setView('host-dashboard');
+                }
+              }}
               className="w-full bg-emerald-900/80 hover:bg-emerald-900 text-white border border-emerald-600/40 px-6 py-3 rounded-xl font-bold transition text-xs cursor-pointer"
             >
               Šeimininko Valdymo Skydas

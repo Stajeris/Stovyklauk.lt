@@ -1317,7 +1317,7 @@ export const AdminPanel: React.FC = () => {
                     <div className="flex flex-wrap items-center gap-3 text-xs">
                       {/* Host Plan Tier Switcher */}
                       {(() => {
-                        const currentHostTier = group.campsites[0]?.host?.tier || group.campsites[0]?.tier || 'pro';
+                        const currentHostTier = group.campsites[0]?.host?.tier || (group.campsites[0] as any)?.tier || 'pro';
                         return (
                           <div className="bg-white p-2 rounded-2xl border border-gray-200 flex flex-col gap-1 text-[10px]">
                             <div className="flex items-center justify-between gap-2 font-extrabold text-gray-500 uppercase tracking-wider text-[9px]">

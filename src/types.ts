@@ -22,6 +22,9 @@ export interface UserProfile {
   isPhoneVerified?: boolean;
   verifiedPhone?: string;
   verifiedEmail?: string;
+  mustChangePassword?: boolean;
+  isFirstLogin?: boolean;
+  primaryPassword?: string;
 }
 
 export interface Host {
