@@ -380,6 +380,8 @@ interface CampsiteContextType {
   loginUser: (email: string, password?: string) => { success: boolean; reason?: 'user_not_found' | 'invalid_password'; user?: UserProfile };
   registerUser: (userData: { name: string; email: string; password?: string; phone?: string; avatar?: string; userType?: 'client' | 'host' }) => { user: UserProfile; verificationCode: string };
   switchUserRole: (newRole: 'client' | 'host' | 'admin') => void;
+  updateUserRoleInList: (userId: string, newRole: 'client' | 'host' | 'admin') => void;
+  deleteUser: (userId: string) => void;
   verifyUserEmail: (userId: string) => void;
   requestPasswordResetCode: (email: string) => { success: boolean; code?: string; message?: string; userId?: string };
   resetUserPassword: (email: string, newPassword: string) => { success: boolean };
@@ -863,7 +865,7 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const updatedUser: UserProfile = {
       ...currentUser,
       userType: newRole,
-      isAdmin: newRole === 'admin' ? true : currentUser.isAdmin
+      isAdmin: newRole === 'admin'
     };
     setCurrentUser(updatedUser);
     setUsersList(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
@@ -872,6 +874,40 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setUserMode('host');
     } else {
       setUserMode('guest');
+    }
+  };
+
+  const updateUserRoleInList = (userId: string, newRole: 'client' | 'host' | 'admin') => {
+    setUsersList(prev => prev.map(u => {
+      if (u.id === userId) {
+        return {
+          ...u,
+          userType: newRole,
+          isAdmin: newRole === 'admin'
+        };
+      }
+      return u;
+    }));
+
+    if (currentUser && currentUser.id === userId) {
+      setCurrentUser({
+        ...currentUser,
+        userType: newRole,
+        isAdmin: newRole === 'admin'
+      });
+      if (newRole === 'host') {
+        setUserMode('host');
+      } else {
+        setUserMode('guest');
+      }
+    }
+  };
+
+  const deleteUser = (userId: string) => {
+    setUsersList(prev => prev.filter(u => u.id !== userId));
+    if (currentUser && currentUser.id === userId) {
+      setCurrentUser(null);
+      setCurrentView('landing');
     }
   };
 
@@ -1404,6 +1440,8 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         loginUser,
         registerUser,
         switchUserRole,
+        updateUserRoleInList,
+        deleteUser,
         verifyUserEmail,
         requestPasswordResetCode,
         resetUserPassword,

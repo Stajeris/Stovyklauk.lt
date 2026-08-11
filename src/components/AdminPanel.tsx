@@ -25,6 +25,8 @@ export const AdminPanel: React.FC = () => {
     logoutUser,
     openAuthModal,
     switchUserRole,
+    updateUserRoleInList,
+    deleteUser,
     approveCampsite, 
     rejectCampsite, 
     updateCampsiteStatus, 
@@ -2047,35 +2049,65 @@ export const AdminPanel: React.FC = () => {
                             <div className="flex items-center justify-end gap-1.5">
                               <button
                                 onClick={() => {
-                                  switchUserRole('client');
-                                  setToastMessage(`Pakeista vartotojo ${u.name} rolė į Keliautoją`);
+                                  updateUserRoleInList(u.id, 'client');
+                                  setToastMessage(`Pakeista vartotojo ${u.name} rolė į Keliautoją (pašalintos Admin teisės)`);
                                   setTimeout(() => setToastMessage(null), 3000);
                                 }}
-                                className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-bold text-[10px] rounded-lg transition cursor-pointer"
+                                className={`px-2.5 py-1.5 text-[10px] rounded-lg transition cursor-pointer font-bold ${
+                                  isClient && !isAdmin
+                                    ? 'bg-emerald-600 text-white shadow-xs font-extrabold'
+                                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900'
+                                }`}
+                                title="Pakeisti rolę į Keliautoją"
                               >
                                 ⛺ Keliautojas
                               </button>
 
                               <button
                                 onClick={() => {
-                                  switchUserRole('host');
-                                  setToastMessage(`Pakeista vartotojo ${u.name} rolė į Šeimininką`);
+                                  updateUserRoleInList(u.id, 'host');
+                                  setToastMessage(`Pakeista vartotojo ${u.name} rolė į Šeimininką (pašalintos Admin teisės)`);
                                   setTimeout(() => setToastMessage(null), 3000);
                                 }}
-                                className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-[10px] rounded-lg transition cursor-pointer"
+                                className={`px-2.5 py-1.5 text-[10px] rounded-lg transition cursor-pointer font-bold ${
+                                  isHost && !isAdmin
+                                    ? 'bg-amber-500 text-amber-950 shadow-xs font-extrabold'
+                                    : 'bg-amber-50 hover:bg-amber-100 text-amber-900'
+                                }`}
+                                title="Pakeisti rolę į Šeimininką"
                               >
                                 🏡 Šeimininkas
                               </button>
 
                               <button
                                 onClick={() => {
-                                  switchUserRole('admin');
+                                  updateUserRoleInList(u.id, 'admin');
                                   setToastMessage(`Vartotojui ${u.name} suteiktos Admin teisės`);
                                   setTimeout(() => setToastMessage(null), 3000);
                                 }}
-                                className="px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-900 font-bold text-[10px] rounded-lg transition cursor-pointer"
+                                className={`px-2.5 py-1.5 text-[10px] rounded-lg transition cursor-pointer font-bold ${
+                                  isAdmin
+                                    ? 'bg-purple-700 text-white shadow-xs font-extrabold'
+                                    : 'bg-purple-50 hover:bg-purple-100 text-purple-900'
+                                }`}
+                                title="Suteikti Administratoriaus teises"
                               >
                                 👑 Admin
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  if (window.confirm(`Ar tikrai norite ištrinti vartotoją "${u.name}" (${u.email}) iš sistemos?`)) {
+                                    deleteUser(u.id);
+                                    setToastMessage(`🗑️ Vartotojas "${u.name}" sėkmingai ištrintas.`);
+                                    setTimeout(() => setToastMessage(null), 3000);
+                                  }
+                                }}
+                                className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[10px] rounded-lg transition cursor-pointer flex items-center gap-1 border border-rose-200"
+                                title="Ištrinti vartotoją iš sistemos"
+                              >
+                                <Trash2 className="w-3 h-3 text-rose-600 shrink-0" />
+                                <span>Ištrinti</span>
                               </button>
                             </div>
                           </td>
