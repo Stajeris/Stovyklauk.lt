@@ -82,40 +82,44 @@ export const Header: React.FC = () => {
               {t('search')}
             </button>
 
-            <button
-              id="nav-trips"
-              onClick={() => setView('my-trips')}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full transition-all relative ${
-                currentView === 'my-trips' 
-                  ? 'bg-emerald-50 text-emerald-800 font-bold' 
-                  : 'text-gray-600 hover:text-emerald-600 hover:bg-gray-50'
-              }`}
-            >
-              <Briefcase className="w-4 h-4 text-emerald-600" />
-              {t('myTrips')}
-              {bookings.length > 0 && (
-                <span className="ml-1 px-2 py-0.5 text-xs bg-emerald-600 text-white rounded-full font-bold">
-                  {bookings.length}
-                </span>
-              )}
-            </button>
+            {/* Client Dashboard Buttons - ONLY for Logged-In Travelers */}
+            {currentUser && currentUser.userType === 'client' && !currentUser.isAdmin && (
+              <>
+                <button
+                  id="nav-trips"
+                  onClick={() => setView('my-trips')}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-full transition-all relative ${
+                    currentView === 'my-trips' 
+                      ? 'bg-emerald-50 text-emerald-800 font-bold' 
+                      : 'text-gray-600 hover:text-emerald-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Briefcase className="w-4 h-4 text-emerald-600" />
+                  {t('myTrips')}
+                  {bookings.length > 0 && (
+                    <span className="ml-1 px-2 py-0.5 text-xs bg-emerald-600 text-white rounded-full font-bold">
+                      {bookings.length}
+                    </span>
+                  )}
+                </button>
 
-            {/* Dedicated Client Dashboard Button for Buyers */}
-            <button
-              id="nav-client-dashboard"
-              onClick={() => setView('client-dashboard')}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full transition-all relative ${
-                currentView === 'client-dashboard' 
-                  ? 'bg-emerald-600 text-white font-black shadow-sm' 
-                  : 'text-gray-700 hover:text-emerald-700 hover:bg-emerald-50'
-              }`}
-            >
-              <Compass className="w-4 h-4 text-emerald-500" />
-              <span>Keliautojo Skydelis</span>
-            </button>
+                <button
+                  id="nav-client-dashboard"
+                  onClick={() => setView('client-dashboard')}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full transition-all relative ${
+                    currentView === 'client-dashboard' 
+                      ? 'bg-emerald-600 text-white font-black shadow-sm' 
+                      : 'text-gray-700 hover:text-emerald-700 hover:bg-emerald-50'
+                  }`}
+                >
+                  <Compass className="w-4 h-4 text-emerald-500" />
+                  <span>Keliautojo Skydelis</span>
+                </button>
+              </>
+            )}
 
-            {/* Host Dashboard & Requests Buttons - ONLY visible to Hosts or Admins */}
-            {(currentUser?.userType === 'host' || userMode === 'host' || currentUser?.isAdmin) && (
+            {/* Host Dashboard & Requests Buttons - ONLY for Logged-In Hosts */}
+            {currentUser && currentUser.userType === 'host' && !currentUser.isAdmin && (
               <>
                 <button
                   id="nav-dashboard"
@@ -150,8 +154,8 @@ export const Header: React.FC = () => {
               </>
             )}
 
-            {/* Render Admin Panel button strictly for Admin users */}
-            {currentUser?.isAdmin && (
+            {/* Admin Panel button - ONLY for Logged-In Admins */}
+            {currentUser && currentUser.isAdmin && (
               <button
                 id="nav-admin"
                 onClick={() => setView('admin')}
@@ -174,8 +178,8 @@ export const Header: React.FC = () => {
 
           {/* Right Action Controls */}
           <div className="flex items-center gap-2.5">
-            {/* Direct 'Become a Host' CTA for Travelers/Clients */}
-            {currentUser?.userType !== 'host' && !currentUser?.isAdmin && (
+            {/* Direct 'Become a Host' CTA for Logged-In Travelers */}
+            {currentUser && currentUser.userType === 'client' && !currentUser.isAdmin && (
               <button
                 id="cta-become-host-btn"
                 onClick={() => {
@@ -190,21 +194,8 @@ export const Header: React.FC = () => {
               </button>
             )}
 
-            {/* Add Listing Button for Hosts & Admins */}
-            {(currentUser?.userType === 'host' || currentUser?.isAdmin) && (
-              <button
-                id="cta-add-listing"
-                onClick={() => setView('add-listing')}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-700/20 transition-all cursor-pointer"
-              >
-                <PlusCircle className="w-4 h-4" />
-                <span className="hidden sm:inline">Pridėti Skelbimą</span>
-                <span className="sm:hidden">+ Skelbimas</span>
-              </button>
-            )}
-
-            {/* Add Listing Button for Hosts & Admins */}
-            {(currentUser?.userType === 'host' || currentUser?.isAdmin) && (
+            {/* Add Listing Button for Logged-In Hosts & Admins */}
+            {currentUser && (currentUser.userType === 'host' || currentUser.isAdmin) && (
               <button
                 id="cta-add-listing"
                 onClick={() => setView('add-listing')}
@@ -435,15 +426,20 @@ export const Header: React.FC = () => {
           <Search className="w-4 h-4" />
           <span>{t('search')}</span>
         </button>
-        <button
-          onClick={() => setView('client-dashboard')}
-          className={`flex flex-col items-center gap-1 ${currentView === 'client-dashboard' || currentView === 'my-trips' ? 'text-emerald-700 font-extrabold' : 'text-gray-500'}`}
-        >
-          <Compass className="w-4 h-4" />
-          <span>Skydelis</span>
-        </button>
 
-        {(currentUser?.userType === 'host' || userMode === 'host' || currentUser?.isAdmin) && (
+        {/* Traveler Dashboard on Mobile (ONLY for Clients) */}
+        {currentUser && currentUser.userType === 'client' && !currentUser.isAdmin && (
+          <button
+            onClick={() => setView('client-dashboard')}
+            className={`flex flex-col items-center gap-1 ${currentView === 'client-dashboard' || currentView === 'my-trips' ? 'text-emerald-700 font-extrabold' : 'text-gray-500'}`}
+          >
+            <Compass className="w-4 h-4" />
+            <span>Skydelis</span>
+          </button>
+        )}
+
+        {/* Host Dashboard on Mobile (ONLY for Hosts) */}
+        {currentUser && currentUser.userType === 'host' && !currentUser.isAdmin && (
           <>
             <button
               onClick={() => setView('pending-requests')}
@@ -465,7 +461,8 @@ export const Header: React.FC = () => {
           </>
         )}
 
-        {currentUser?.isAdmin && (
+        {/* Admin Dashboard on Mobile (ONLY for Admins) */}
+        {currentUser && currentUser.isAdmin && (
           <button
             onClick={() => setView('admin')}
             className={`flex flex-col items-center gap-1 relative ${currentView === 'admin' ? 'text-emerald-950 font-black' : 'text-gray-700'}`}
