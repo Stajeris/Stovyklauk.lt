@@ -3,7 +3,7 @@ import {
   Calendar, MapPin, Heart, MessageSquare, User, ShieldCheck, 
   Key, Phone, Mail, CheckCircle2, AlertCircle, ArrowRight, 
   ExternalLink, QrCode, Sparkles, RefreshCw, Send, Lock, Compass,
-  ChevronRight, Star, Clock, AlertTriangle, Shield
+  ChevronRight, Star, Clock, AlertTriangle, Shield, LogOut
 } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
 import { VisitArrivalConfirmationCard } from './VisitArrivalConfirmationCard';
@@ -12,6 +12,8 @@ import { ConfirmedBookingDetailsCard } from './ConfirmedBookingDetailsCard';
 export const ClientDashboard: React.FC = () => {
   const { 
     currentUser, 
+    logoutUser,
+    openAuthModal,
     bookings, 
     campsites, 
     favorites, 
@@ -36,9 +38,9 @@ export const ClientDashboard: React.FC = () => {
   const [chatInput, setChatInput] = useState('');
 
   // Profile Edit Form State
-  const [editName, setEditName] = useState(currentUser.name);
-  const [editPhone, setEditPhone] = useState(currentUser.phone || '');
-  const [editBio, setEditBio] = useState(currentUser.bio || '');
+  const [editName, setEditName] = useState(currentUser?.name || '');
+  const [editPhone, setEditPhone] = useState(currentUser?.phone || '');
+  const [editBio, setEditBio] = useState(currentUser?.bio || '');
   const [profileSuccessMsg, setProfileSuccessMsg] = useState('');
 
   // Password Update State
@@ -53,6 +55,26 @@ export const ClientDashboard: React.FC = () => {
   const [simulatedOtp, setSimulatedOtp] = useState('4829');
   const [showEmailVerifyBox, setShowEmailVerifyBox] = useState(false);
   const [verifyMsg, setVerifyMsg] = useState('');
+
+  if (!currentUser) {
+    return (
+      <div className="max-w-md mx-auto my-16 bg-white p-8 rounded-3xl border border-stone-200 shadow-xl text-center space-y-5 font-sans">
+        <div className="w-16 h-16 bg-emerald-50 text-emerald-700 rounded-full flex items-center justify-center mx-auto text-2xl font-black">
+          🔒
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900">Esate atsijungę iš paskyros</h2>
+        <p className="text-gray-600 text-xs leading-relaxed">
+          Norėdami matyti savo rezervacijas, susirašinėjimus bei valdyti profilio nustatymus, prisijunkite prie savo keliautojo paskyros.
+        </p>
+        <button
+          onClick={() => openAuthModal('login')}
+          className="w-full py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-2xl font-bold text-xs shadow-md transition cursor-pointer"
+        >
+          🔑 Prisijungti prie paskyros
+        </button>
+      </div>
+    );
+  }
 
   // Filter client's bookings
   const clientBookings = bookings.filter(b => 
@@ -171,7 +193,7 @@ export const ClientDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 self-stretch md:self-auto justify-end">
+          <div className="flex items-center gap-3 self-stretch md:self-auto justify-end flex-wrap">
             <button
               onClick={() => {
                 switchUserRole('host');
@@ -179,7 +201,16 @@ export const ClientDashboard: React.FC = () => {
               }}
               className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-gray-900 font-extrabold text-xs uppercase tracking-wider transition shadow-md flex items-center gap-2 cursor-pointer"
             >
-              <span>🏡 Noriu Nuomoti Sodybą (Tapti Šeimininku)</span>
+              <span>🏡 Noriu Nuomoti Sodybą</span>
+            </button>
+
+            <button
+              onClick={() => logoutUser()}
+              className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs transition shadow-md flex items-center gap-1.5 cursor-pointer"
+              title="Atsijungti iš paskyros (Unlogin)"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Atsijungti</span>
             </button>
           </div>
         </div>

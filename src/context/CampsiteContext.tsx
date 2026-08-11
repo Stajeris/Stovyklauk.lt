@@ -359,9 +359,9 @@ interface CampsiteContextType {
   language: Language;
 
   // User & Host Management
-  currentUser: UserProfile;
+  currentUser: UserProfile | null;
   usersList: UserProfile[];
-  setCurrentUser: (user: UserProfile) => void;
+  setCurrentUser: (user: UserProfile | null) => void;
   registerHostAndAddCampsite: (
     hostData: { name: string; email: string; phone?: string; avatar?: string; bio?: string },
     campsiteData: Omit<Campsite, 'id' | 'rating' | 'reviewCount' | 'reviews' | 'blockedDates' | 'host'>
@@ -468,10 +468,25 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return JSON.parse(local);
   });
 
-  const [currentUser, setCurrentUser] = useState<UserProfile>(() => {
+  const [currentUser, setCurrentUserRaw] = useState<UserProfile | null>(() => {
     const local = localStorage.getItem('campscape_current_user');
-    return local ? JSON.parse(local) : INITIAL_USERS[0];
+    if (!local) return INITIAL_USERS[0]; // Default to initial admin on first load
+    if (local === 'null') return null;
+    try {
+      return JSON.parse(local);
+    } catch {
+      return null;
+    }
   });
+
+  const setCurrentUser = (user: UserProfile | null) => {
+    setCurrentUserRaw(user);
+    if (user) {
+      localStorage.setItem('campscape_current_user', JSON.stringify(user));
+    } else {
+      localStorage.setItem('campscape_current_user', 'null');
+    }
+  };
 
   const [chatThreads, setChatThreads] = useState<ChatThread[]>(() => {
     const local = localStorage.getItem('stovyklauk_chat_threads');
@@ -736,12 +751,14 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const switchUserRole = (newRole: 'client' | 'host' | 'admin') => {
-    setCurrentUser(prev => ({
-      ...prev,
+    if (!currentUser) return;
+    const updatedUser: UserProfile = {
+      ...currentUser,
       userType: newRole,
-      isAdmin: newRole === 'admin' ? true : prev.isAdmin
-    }));
-    setUsersList(prev => prev.map(u => u.id === currentUser.id ? { ...u, userType: newRole, isAdmin: newRole === 'admin' ? true : u.isAdmin } : u));
+      isAdmin: newRole === 'admin' ? true : currentUser.isAdmin
+    };
+    setCurrentUser(updatedUser);
+    setUsersList(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
     
     if (newRole === 'host') {
       setUserMode('host');
@@ -752,7 +769,9 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const verifyUserEmail = (userId: string) => {
     setUsersList(prev => prev.map(u => u.id === userId ? { ...u, isEmailVerified: true } : u));
-    setCurrentUser(prev => prev.id === userId ? { ...prev, isEmailVerified: true } : prev);
+    if (currentUser && currentUser.id === userId) {
+      setCurrentUser({ ...currentUser, isEmailVerified: true });
+    }
   };
 
   const requestPasswordResetCode = (email: string) => {
@@ -773,12 +792,9 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
       return u;
     }));
-    setCurrentUser(prev => {
-      if (prev.email.trim().toLowerCase() === normalizedEmail) {
-        return { ...prev, password: newPassword, isEmailVerified: true };
-      }
-      return prev;
-    });
+    if (currentUser && currentUser.email.trim().toLowerCase() === normalizedEmail) {
+      setCurrentUser({ ...currentUser, password: newPassword, isEmailVerified: true });
+    }
     return { success: true };
   };
 
@@ -791,11 +807,12 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const logoutUser = () => {
-    // Reset to default or first user
-    setCurrentUser(INITIAL_USERS[0]);
+    setCurrentUser(null);
+    setCurrentView('landing');
   };
 
   const updateUserProfile = (updatedData: Partial<UserProfile>) => {
+    if (!currentUser) return;
     const updatedUser: UserProfile = {
       ...currentUser,
       ...updatedData

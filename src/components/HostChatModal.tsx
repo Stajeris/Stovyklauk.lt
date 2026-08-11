@@ -33,7 +33,7 @@ export const HostChatModal: React.FC<HostChatModalProps> = ({
 
   // Find existing thread or construct virtual thread
   const activeThread = chatThreads.find(
-    t => t.campsiteId === campsite.id && (t.clientId === currentUser.id || t.clientId === 'client-guest')
+    t => t.campsiteId === campsite.id && (t.clientId === currentUser?.id || t.clientId === 'client-guest')
   );
 
   const displayMessages = activeThread ? activeThread.messages : [
@@ -62,10 +62,10 @@ export const HostChatModal: React.FC<HostChatModalProps> = ({
     if (!text) return;
 
     const sender = {
-      id: currentUser.id || 'client-guest',
-      name: currentUser.name || 'Keliautojas',
-      avatar: currentUser.avatar,
-      email: currentUser.email,
+      id: currentUser?.id || 'client-guest',
+      name: currentUser?.name || 'Svečias Keliautojas',
+      avatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      email: currentUser?.email || 'svecias@campy.lt',
       role: 'client' as const
     };
 

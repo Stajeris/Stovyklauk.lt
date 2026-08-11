@@ -13,10 +13,22 @@ import { HostPhotoUploader } from './HostPhotoUploader';
 export const AddListingWizard: React.FC = () => {
   const { registerHostAndAddCampsite, currentUser, setView, campsites, hostTier, setHostTier } = useCampsites();
 
+  const effectiveUser = currentUser || {
+    id: 'guest-host',
+    name: 'Svečias Šeimininkas',
+    email: '',
+    phone: '',
+    bio: '',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    joinedDate: '2026',
+    userType: 'host' as const,
+    isAdmin: false
+  };
+
   const userCampsites = campsites.filter(
-    c => c.host?.id === currentUser.id || 
-         c.host?.name?.toLowerCase() === currentUser.name?.toLowerCase() ||
-         (c.host as any)?.email === currentUser.email
+    c => c.host?.id === effectiveUser.id || 
+         c.host?.name?.toLowerCase() === effectiveUser.name?.toLowerCase() ||
+         (c.host as any)?.email === effectiveUser.email
   );
 
   const isFreeTierLimitReached = hostTier === 'free' && userCampsites.length >= 1;
@@ -24,11 +36,11 @@ export const AddListingWizard: React.FC = () => {
   const [step, setStep] = useState(1);
 
   // Host User Registration Inputs
-  const [hostName, setHostName] = useState(currentUser.isAdmin ? '' : currentUser.name);
-  const [hostEmail, setHostEmail] = useState(currentUser.isAdmin ? '' : currentUser.email);
-  const [hostPhone, setHostPhone] = useState(currentUser.phone || '');
-  const [hostBio, setHostBio] = useState(currentUser.bio || '');
-  const [hostAvatar, setHostAvatar] = useState(currentUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80');
+  const [hostName, setHostName] = useState(effectiveUser.isAdmin ? '' : effectiveUser.name);
+  const [hostEmail, setHostEmail] = useState(effectiveUser.isAdmin ? '' : effectiveUser.email);
+  const [hostPhone, setHostPhone] = useState(effectiveUser.phone || '');
+  const [hostBio, setHostBio] = useState(effectiveUser.bio || '');
+  const [hostAvatar, setHostAvatar] = useState(effectiveUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80');
 
   // Form State
   const [title, setTitle] = useState('');

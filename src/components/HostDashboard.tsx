@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   DollarSign, Calendar, Star, Users, CheckCircle, XCircle, Sparkles, 
-  PlusCircle, ShieldCheck, TrendingUp, CreditCard, Tent, MapPin, AlertCircle, Clock, Edit, Camera, Eye, ShieldAlert, AlertTriangle, MessageSquare, Send, Crown, Zap, Check, BarChart3, Heart, MousePointer, X
+  PlusCircle, ShieldCheck, TrendingUp, CreditCard, Tent, MapPin, AlertCircle, Clock, Edit, Camera, Eye, ShieldAlert, AlertTriangle, MessageSquare, Send, Crown, Zap, Check, BarChart3, Heart, MousePointer, X, LogOut
 } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
 import { Campsite, Review } from '../types';
@@ -18,6 +18,8 @@ export const HostDashboard: React.FC = () => {
     bookings, 
     campsites, 
     currentUser,
+    logoutUser,
+    openAuthModal,
     chatThreads,
     replyToThread,
     updateBookingStatus, 
@@ -37,7 +39,27 @@ export const HostDashboard: React.FC = () => {
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const [hostReplyText, setHostReplyText] = useState('');
   const [showAvatarModal, setShowAvatarModal] = useState(false);
-  const [tempAvatar, setTempAvatar] = useState(currentUser.avatar || '');
+  const [tempAvatar, setTempAvatar] = useState(currentUser?.avatar || '');
+
+  if (!currentUser) {
+    return (
+      <div className="max-w-md mx-auto my-16 bg-white p-8 rounded-3xl border border-stone-200 shadow-xl text-center space-y-5 font-sans">
+        <div className="w-16 h-16 bg-amber-50 text-amber-700 rounded-full flex items-center justify-center mx-auto text-2xl font-black">
+          🏡
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900">Šeimininko paskyra atsijungusi</h2>
+        <p className="text-gray-600 text-xs leading-relaxed">
+          Esate atsijungę iš paskyros. Norėdami valdyti savo skelbimus, stebėti užsakymus bei priimti svečių užklausas, prisijunkite prie šeimininko paskyros.
+        </p>
+        <button
+          onClick={() => openAuthModal('login')}
+          className="w-full py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-2xl font-bold text-xs shadow-md transition cursor-pointer"
+        >
+          🔑 Prisijungti kaip Šeimininkas
+        </button>
+      </div>
+    );
+  }
 
   // Filter campsites and bookings for current logged-in host if not admin
   const userCampsites = currentUser.isAdmin
@@ -120,13 +142,24 @@ export const HostDashboard: React.FC = () => {
           </div>
         </div>
 
-        <button
-          onClick={() => setView('add-listing')}
-          className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-2 shrink-0 cursor-pointer transition-all self-start md:self-center"
-        >
-          <PlusCircle className="w-4 h-4 text-white" />
-          <span>Pridėti naują sklypą</span>
-        </button>
+        <div className="flex items-center gap-2 shrink-0 self-start md:self-center">
+          <button
+            onClick={() => setView('add-listing')}
+            className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-2 cursor-pointer transition-all"
+          >
+            <PlusCircle className="w-4 h-4 text-white" />
+            <span>Pridėti naują sklypą</span>
+          </button>
+
+          <button
+            onClick={() => logoutUser()}
+            className="px-4 py-3 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 font-bold text-xs rounded-xl shadow-sm flex items-center gap-2 cursor-pointer transition-all"
+            title="Atsijungti iš Šeimininko paskyros"
+          >
+            <LogOut className="w-4 h-4 text-rose-700" />
+            <span className="hidden sm:inline">Atsijungti</span>
+          </button>
+        </div>
       </div>
 
       {/* 1. HIGHLY VISIBLE 0% COMMISSION PROMOTION ALERT BANNER */}

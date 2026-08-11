@@ -4,7 +4,7 @@ import {
   Trash2, Eye, Plus, Sparkles, AlertCircle, Building2, User, 
   Check, X, RefreshCw, ChevronRight, ExternalLink, ShieldAlert, AlertTriangle, Star, MessageSquare,
   CreditCard, DollarSign, Zap, Download, FileText, Lock, ChevronDown, ChevronUp, UserCheck, Shield,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon, LogOut
 } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
 import { Campsite, PropertyType, Review, Booking } from '../types';
@@ -21,6 +21,9 @@ export const AdminPanel: React.FC = () => {
     replyToThread,
     currentUser,
     usersList,
+    setCurrentUser,
+    logoutUser,
+    openAuthModal,
     switchUserRole,
     approveCampsite, 
     rejectCampsite, 
@@ -271,6 +274,38 @@ export const AdminPanel: React.FC = () => {
     return true;
   });
 
+  if (!currentUser || !currentUser.isAdmin) {
+    return (
+      <div className="max-w-md mx-auto my-16 bg-white p-8 rounded-3xl border border-rose-200 shadow-xl text-center space-y-5 font-sans">
+        <div className="w-16 h-16 bg-rose-50 text-rose-700 rounded-full flex items-center justify-center mx-auto text-2xl font-black">
+          🛡️
+        </div>
+        <h2 className="text-2xl font-black text-gray-900">Atsijungta iš Admin paskyros</h2>
+        <p className="text-gray-600 text-xs leading-relaxed">
+          Prieiga prie platformos backend valdymo pulto galima tik prisijungus su administratoriaus teisėmis.
+        </p>
+        <div className="space-y-2 pt-2">
+          <button
+            onClick={() => {
+              const adminUser = usersList.find(u => u.isAdmin);
+              if (adminUser) setCurrentUser(adminUser);
+              else openAuthModal('login');
+            }}
+            className="w-full py-3 bg-emerald-800 hover:bg-emerald-900 text-white rounded-2xl font-bold text-xs shadow-md transition cursor-pointer"
+          >
+            👑 Prisijungti kaip Administratorius
+          </button>
+          <button
+            onClick={() => openAuthModal('login')}
+            className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-2xl font-bold text-xs transition cursor-pointer"
+          >
+            🔑 Prisijungti su kitu el. paštu
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div id="admin-panel-container" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 font-sans bg-gray-50 min-h-screen">
       
@@ -289,6 +324,9 @@ export const AdminPanel: React.FC = () => {
               <ShieldCheck className="w-3.5 h-3.5" />
               Sistemos Backend Valdymas
             </span>
+            <span className="text-xs font-semibold text-emerald-300">
+              Prisijungęs: <b>{currentUser.name}</b>
+            </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
             Administratoriaus Panelė
@@ -298,8 +336,8 @@ export const AdminPanel: React.FC = () => {
           </p>
         </div>
 
-        {/* Quick Pending Alert Pill */}
-        <div className="z-10 flex items-center gap-3">
+        {/* Quick Pending Alert Pill & Unlogin Button */}
+        <div className="z-10 flex items-center gap-2.5 flex-wrap">
           <button
             onClick={() => setActiveTab('pending')}
             className={`px-5 py-3 rounded-2xl font-bold text-xs flex items-center gap-2.5 transition cursor-pointer shadow-md ${
@@ -310,6 +348,15 @@ export const AdminPanel: React.FC = () => {
           >
             <Clock className="w-4 h-4" />
             <span>Laukia Peržiūros ({pendingCampsites.length})</span>
+          </button>
+
+          <button
+            onClick={() => logoutUser()}
+            className="px-4 py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs flex items-center gap-2 transition cursor-pointer shadow-md"
+            title="Atsijungti iš Admin paskyros (Unlogin)"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Atsijungti iš Admin</span>
           </button>
         </div>
 

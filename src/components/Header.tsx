@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tent, MapPin, Search, Calendar, Compass, PlusCircle, ShieldCheck, User, Sparkles, Briefcase, Clock, ChevronDown, Check } from 'lucide-react';
+import { Tent, MapPin, Search, Calendar, Compass, PlusCircle, ShieldCheck, User, Sparkles, Briefcase, Clock, ChevronDown, Check, LogOut } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
 
 export const Header: React.FC = () => {
@@ -16,6 +16,7 @@ export const Header: React.FC = () => {
     usersList, 
     setCurrentUser, 
     openAuthModal,
+    logoutUser,
     t 
   } = useCampsites();
 
@@ -202,15 +203,38 @@ export const Header: React.FC = () => {
               </button>
             )}
 
-            {/* Quick Login / Sign Up Button */}
-            <button
-              onClick={() => openAuthModal('login')}
-              className="px-3 py-2 rounded-full bg-emerald-50 text-emerald-900 border border-emerald-200 hover:bg-emerald-100 font-extrabold text-xs transition cursor-pointer flex items-center gap-1.5 shrink-0"
-            >
-              <User className="w-3.5 h-3.5 text-emerald-700" />
-              <span className="hidden xl:inline">Prisijungti / Registruotis</span>
-              <span className="xl:hidden">Prisijungti</span>
-            </button>
+            {/* Add Listing Button for Hosts & Admins */}
+            {(currentUser?.userType === 'host' || currentUser?.isAdmin) && (
+              <button
+                id="cta-add-listing"
+                onClick={() => setView('add-listing')}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-700/20 transition-all cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span className="hidden sm:inline">Pridėti Skelbimą</span>
+                <span className="sm:hidden">+ Skelbimas</span>
+              </button>
+            )}
+
+            {/* Quick Login / Sign Up Button or Direct Unlogin Button */}
+            {!currentUser ? (
+              <button
+                onClick={() => openAuthModal('login')}
+                className="px-3.5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs transition cursor-pointer flex items-center gap-1.5 shrink-0 shadow-sm"
+              >
+                <User className="w-3.5 h-3.5" />
+                <span>Prisijungti</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => logoutUser()}
+                className="px-3 py-2 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 font-extrabold text-xs transition cursor-pointer flex items-center gap-1 shrink-0"
+                title="Atsijungti iš esamos paskyros"
+              >
+                <LogOut className="w-3.5 h-3.5 text-rose-700" />
+                <span className="hidden xl:inline">Atsijungti</span>
+              </button>
+            )}
 
             {/* User Profile Selector Dropdown */}
             <div className="relative">
@@ -222,14 +246,14 @@ export const Header: React.FC = () => {
                 <img
                   src={currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'}
                   alt={currentUser?.name || 'User'}
-                  className="w-7 h-7 rounded-full object-cover border border-emerald-500"
+                  className={`w-7 h-7 rounded-full object-cover border ${currentUser ? 'border-emerald-500' : 'border-gray-300 opacity-60'}`}
                 />
                 <div className="text-left hidden lg:block leading-tight">
                   <span className="text-xs font-bold text-gray-900 block truncate max-w-[110px]">
-                    {currentUser?.name || 'Vartotojas'}
+                    {currentUser?.name || 'Atsijungęs (Svečias)'}
                   </span>
                   <span className="text-[9px] font-semibold text-emerald-700 block">
-                    {currentUser?.isAdmin ? '👑 Platform Admin' : currentUser?.userType === 'host' ? '🏡 Šeimininkas' : '⛺ Keliautojas'}
+                    {currentUser ? (currentUser.isAdmin ? '👑 Platform Admin' : currentUser.userType === 'host' ? '🏡 Šeimininkas' : '⛺ Keliautojas') : 'Svečio režimas'}
                   </span>
                 </div>
                 <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
@@ -238,45 +262,85 @@ export const Header: React.FC = () => {
               {/* Profile Dropdown Menu */}
               {showUserDropdown && (
                 <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-gray-150 p-2 z-50 space-y-1 font-sans animate-in fade-in duration-150">
-                  {/* Action to Become a Host or Switch Roles */}
-                  <div className="p-2.5 bg-gradient-to-r from-amber-50 to-emerald-50 border border-amber-200/80 rounded-xl space-y-2">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900">
-                      Paskyros Valdymas & Rolė
-                    </p>
-                    <div className="grid grid-cols-2 gap-1.5">
+                  {/* Current Active User Banner & Unlogin */}
+                  {currentUser ? (
+                    <div className="p-3 bg-stone-900 text-white rounded-xl space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 truncate">
+                          <img src={currentUser.avatar} alt={currentUser.name} className="w-8 h-8 rounded-full object-cover shrink-0 border border-emerald-400" />
+                          <div className="truncate">
+                            <p className="text-xs font-bold truncate">{currentUser.name}</p>
+                            <p className="text-[10px] text-stone-300 truncate">{currentUser.email}</p>
+                          </div>
+                        </div>
+                      </div>
                       <button
                         onClick={() => {
-                          switchUserRole('host');
-                          setView('host-dashboard');
+                          logoutUser();
                           setShowUserDropdown(false);
                         }}
-                        className={`p-2 rounded-lg text-[11px] font-bold text-left transition flex items-center gap-1.5 cursor-pointer ${
-                          currentUser?.userType === 'host' 
-                            ? 'bg-amber-500 text-gray-950 font-black shadow-xs' 
-                            : 'bg-white hover:bg-amber-100 text-gray-800 border border-amber-200'
-                        }`}
+                        className="w-full mt-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
                       >
-                        <span className="text-sm">🏡</span>
-                        <span>Tapti Šeimininku</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          switchUserRole('client');
-                          setView('client-dashboard');
-                          setShowUserDropdown(false);
-                        }}
-                        className={`p-2 rounded-lg text-[11px] font-bold text-left transition flex items-center gap-1.5 cursor-pointer ${
-                          currentUser?.userType === 'client' 
-                            ? 'bg-emerald-600 text-white font-black shadow-xs' 
-                            : 'bg-white hover:bg-emerald-100 text-gray-800 border border-emerald-200'
-                        }`}
-                      >
-                        <span className="text-sm">⛺</span>
-                        <span>Keliautojas</span>
+                        <LogOut className="w-3.5 h-3.5" />
+                        <span>Atsijungti iš Paskyros (Unlogin)</span>
                       </button>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-950 rounded-xl space-y-2 text-center">
+                      <p className="text-xs font-bold">Esate atsijungę (Svečio režimas)</p>
+                      <button
+                        onClick={() => {
+                          openAuthModal('login');
+                          setShowUserDropdown(false);
+                        }}
+                        className="w-full py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition cursor-pointer"
+                      >
+                        🔑 Prisijungti prie paskyros
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Action to Become a Host or Switch Roles */}
+                  {currentUser && (
+                    <div className="p-2.5 bg-gradient-to-r from-amber-50 to-emerald-50 border border-amber-200/80 rounded-xl space-y-2">
+                      <p className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900">
+                        Paskyros Valdymas & Rolė
+                      </p>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <button
+                          onClick={() => {
+                            switchUserRole('host');
+                            setView('host-dashboard');
+                            setShowUserDropdown(false);
+                          }}
+                          className={`p-2 rounded-lg text-[11px] font-bold text-left transition flex items-center gap-1.5 cursor-pointer ${
+                            currentUser?.userType === 'host' 
+                              ? 'bg-amber-500 text-gray-950 font-black shadow-xs' 
+                              : 'bg-white hover:bg-amber-100 text-gray-800 border border-amber-200'
+                          }`}
+                        >
+                          <span className="text-sm">🏡</span>
+                          <span>Tapti Šeimininku</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            switchUserRole('client');
+                            setView('client-dashboard');
+                            setShowUserDropdown(false);
+                          }}
+                          className={`p-2 rounded-lg text-[11px] font-bold text-left transition flex items-center gap-1.5 cursor-pointer ${
+                            currentUser?.userType === 'client' 
+                              ? 'bg-emerald-600 text-white font-black shadow-xs' 
+                              : 'bg-white hover:bg-emerald-100 text-gray-800 border border-emerald-200'
+                          }`}
+                        >
+                          <span className="text-sm">⛺</span>
+                          <span>Keliautojas</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="px-3 py-1.5 border-b border-gray-100">
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Perjungti Vartotoją (Testavimas)</p>
