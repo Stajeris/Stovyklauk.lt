@@ -102,30 +102,46 @@ export async function sendGenericEmail(params: GenericEmailParams) {
         success: true,
         method: 'resend',
         data,
-        message: `El. laiškas sėkmingai išsiųstas per Resend API`
+        message: `El. laiškas sėkmingai išsiųstas per Resend API (${fromEmail})`
       };
     } catch (resendErr: any) {
-      console.error('❌ Resend API siuntimo klaida:', resendErr.message);
-      return {
-        success: false,
-        method: 'resend',
-        error: resendErr.message || 'Nepavyko išsiųsti laiško per Resend API'
-      };
+      console.warn('⚠️ Resend siuntimo klaida su skaitomu domenu, bandoma iš onboarding@resend.dev:', resendErr.message);
+      
+      // If domain is not verified on Resend, retry using onboarding@resend.dev
+      try {
+        const fallbackAddress = `"${fromName}" <onboarding@resend.dev>`;
+        const data = await resend.emails.send({
+          from: fallbackAddress,
+          to: [to],
+          subject,
+          html: htmlBody,
+        });
+
+        return {
+          success: true,
+          method: 'resend_fallback',
+          data,
+          message: `El. laiškas išsiųstas per Resend API (su bandomuoju adresu onboarding@resend.dev)`
+        };
+      } catch (fallbackErr: any) {
+        console.error('❌ Resend API siuntimo klaida:', fallbackErr.message);
+        return {
+          success: false,
+          method: 'resend',
+          error: fallbackErr.message || 'Nepavyko išsiųsti laiško per Resend API'
+        };
+      }
     }
   }
 
-  // 3. Fallback: Simulated Mode
-  console.log(`[Email Simulated Mode]
-  To: ${to}
-  Subject: ${subject}
-  Sender: ${senderAddress}`);
+  // 3. No provider configured or both failed
+  console.warn(`❌ El. pašto tiekėjas nekonfigūruotas arba siuntimas nepavyko (${to})`);
 
   return {
-    success: true,
-    mock: true,
-    method: 'simulated',
-    message: `El. laiškas simuliuotas (${to}). Nustatykite RESEND_API_KEY arba SMTP_HOST / SMTP_USER / SMTP_PASS aplinkos kintamuosius.`,
-    id: `sim_mail_${Date.now()}`
+    success: false,
+    method: 'none',
+    error: `El. pašto siuntimo sistema nekonfigūruota: trūksta RESEND_API_KEY arba SMTP_HOST / SMTP_USER / SMTP_PASS aplinkos kintamųjų. Prašome nustatyti šiuos kintamuosius projekto aplinkoje.`,
+    id: `failed_mail_${Date.now()}`
   };
 }
 
