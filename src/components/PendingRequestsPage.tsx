@@ -14,12 +14,14 @@ export const PendingRequestsPage: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [selectedContactBooking, setSelectedContactBooking] = useState<Booking | null>(null);
 
-  const pendingBookings = bookings.filter(b => b.status === 'pending');
-  const approvedBookings = bookings.filter(b => b.status === 'approved');
+  const pendingBookings = bookings.filter(b => b.status === 'pending' || b.status === 'free_inquiry');
+  const approvedBookings = bookings.filter(b => b.status === 'approved' || b.status === 'confirmed');
   const rejectedBookings = bookings.filter(b => b.status === 'rejected');
 
   const filteredBookings = bookings.filter(b => {
     if (filterStatus === 'all') return true;
+    if (filterStatus === 'pending') return b.status === 'pending' || b.status === 'free_inquiry';
+    if (filterStatus === 'approved') return b.status === 'approved' || b.status === 'confirmed';
     return b.status === filterStatus;
   });
 
@@ -199,24 +201,28 @@ export const PendingRequestsPage: React.FC = () => {
             <div 
               key={bk.id}
               className={`bg-white rounded-3xl border transition-all shadow-xs overflow-hidden ${
-                bk.status === 'pending' 
-                  ? 'border-amber-300 ring-2 ring-amber-100' 
-                  : bk.status === 'approved' 
-                    ? 'border-emerald-200' 
-                    : 'border-gray-200 opacity-80'
+                bk.status === 'free_inquiry'
+                  ? 'border-blue-300 ring-2 ring-blue-100'
+                  : bk.status === 'pending' 
+                    ? 'border-amber-300 ring-2 ring-amber-100' 
+                    : (bk.status === 'approved' || bk.status === 'confirmed')
+                      ? 'border-emerald-200' 
+                      : 'border-gray-200 opacity-80'
               }`}
             >
               {/* Card Top Status Bar */}
               <div className={`px-6 py-2.5 flex items-center justify-between text-xs font-bold ${
+                bk.status === 'free_inquiry' ? 'bg-blue-50 text-blue-900 border-b border-blue-100' :
                 bk.status === 'pending' ? 'bg-amber-50 text-amber-900 border-b border-amber-100' :
-                bk.status === 'approved' ? 'bg-emerald-50 text-emerald-900 border-b border-emerald-100' :
+                (bk.status === 'approved' || bk.status === 'confirmed') ? 'bg-emerald-50 text-emerald-900 border-b border-emerald-100' :
                 'bg-gray-100 text-gray-700 border-b border-gray-200'
               }`}>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-current animate-ping"></span>
                   <span className="uppercase text-[10px] tracking-wider font-extrabold">
-                    {bk.status === 'pending' ? 'Laukia jūsų patvirtinimo' :
-                     bk.status === 'approved' ? 'Užsakymas patvirtintas' : 'Užklausa atmesta'}
+                    {bk.status === 'free_inquiry' ? '✉️ Tiesioginė Free Užklausa (Tiesioginiai kontaktai)' :
+                     bk.status === 'pending' ? '⚡ PRO Rezervacijos Užklausa (Datos Laikinai Užrakintos)' :
+                     (bk.status === 'approved' || bk.status === 'confirmed') ? '✓ Užsakymas patvirtintas' : '✕ Užklausa atmesta'}
                   </span>
                 </div>
                 <span className="text-[11px] font-normal text-gray-500">
@@ -355,7 +361,7 @@ export const PendingRequestsPage: React.FC = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    {bk.status === 'pending' && (
+                    {(bk.status === 'pending' || bk.status === 'free_inquiry') && (
                       <div className="space-y-2">
                         <div className="grid grid-cols-2 gap-3">
                           <button
@@ -382,7 +388,7 @@ export const PendingRequestsPage: React.FC = () => {
                           className="w-full py-2 px-3 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                         >
                           <Mail className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Susisiekti / Rašyti laišką</span>
+                          <span>Rodyti Svečio Kontaktai ({bk.guestPhone || bk.guestEmail})</span>
                         </button>
                       </div>
                     )}

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { 
   Star, MapPin, Heart, Share2, ShieldCheck, CheckCircle2, AlertCircle, 
   User, Calendar, Users, Flame, Waves, Zap, Wifi, ShowerHead, Sparkles, 
-  Tent, ShieldAlert, DollarSign, Info, ArrowLeft, MessageSquare, ChevronRight, X, Trees, AlertTriangle, MessageSquarePlus, Crown
+  Tent, ShieldAlert, DollarSign, Info, ArrowLeft, MessageSquare, ChevronRight, X, Trees, AlertTriangle, MessageSquarePlus, Crown,
+  Mail, Phone, Send, CheckCircle
 } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
 import { Campsite, Booking, Review } from '../types';
@@ -16,7 +17,7 @@ import { DisputeReviewModal } from './DisputeReviewModal';
 import { calculateFullPricing, getCampsiteCleaningFee } from '../utils/pricing';
 
 export const CampsiteDetailPage: React.FC = () => {
-  const { selectedCampsite, setView, isDateBlocked, favorites, toggleFavorite, bookings, userMode } = useCampsites();
+  const { selectedCampsite, setView, isDateBlocked, favorites, toggleFavorite, bookings, userMode, addBooking } = useCampsites();
 
   if (!selectedCampsite) {
     return (
@@ -32,14 +33,64 @@ export const CampsiteDetailPage: React.FC = () => {
   const camp = selectedCampsite;
   const isFav = favorites.includes(camp.id);
 
-  // Booking Form State
+  // Booking & Traveler Inquiry Form State (No registration required)
   const [checkIn, setCheckIn] = useState('2026-08-15');
   const [checkOut, setCheckOut] = useState('2026-08-17');
   const [guests, setGuests] = useState(2);
+  const [travelerName, setTravelerName] = useState('');
+  const [travelerEmail, setTravelerEmail] = useState('');
+  const [travelerPhone, setTravelerPhone] = useState('');
+  const [travelerMessage, setTravelerMessage] = useState('');
+  const [inquirySubmittedBooking, setInquirySubmittedBooking] = useState<Booking | null>(null);
+  const [inquiryFormError, setInquiryFormError] = useState<string | null>(null);
+
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [showWidgetCalendar, setShowWidgetCalendar] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  const handleSendInquiry = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!travelerName.trim()) {
+      setInquiryFormError('Prašome įvesti savo vardą ir pavardę.');
+      return;
+    }
+    if (!travelerEmail.trim() || !travelerEmail.includes('@')) {
+      setInquiryFormError('Prašome įvesti galiojantį el. pašto adresą.');
+      return;
+    }
+    if (datesAreBlocked) {
+      setInquiryFormError('Pasirinktos datos užimtos. Pasirinkite kitas kalendoriuje.');
+      return;
+    }
+
+    setInquiryFormError(null);
+
+    const isHostPro = camp.isPro || camp.host?.tier === 'pro' || camp.host?.tier === 'premium';
+    
+    const created = addBooking({
+      campsiteId: camp.id,
+      campsiteTitle: camp.title,
+      campsiteImage: camp.images[0],
+      location: camp.location,
+      guestName: travelerName,
+      guestEmail: travelerEmail,
+      guestPhone: travelerPhone,
+      guestNote: travelerMessage,
+      checkIn,
+      checkOut,
+      guestsCount: guests,
+      totalNights: nights,
+      nightlyRate: camp.pricePerNight,
+      cleaningFee,
+      serviceFee: pricing.platformFeeEur,
+      totalPrice: pricing.totalGuestPrice,
+      propertyType: camp.propertyType,
+      status: isHostPro ? 'pending' : 'free_inquiry'
+    });
+
+    setInquirySubmittedBooking(created);
+  };
 
   // Review & Dispute Modals State
   const [reviewBookingTarget, setReviewBookingTarget] = useState<Booking | null>(null);
@@ -466,143 +517,302 @@ export const CampsiteDetailPage: React.FC = () => {
 
         </div>
 
-        {/* RIGHT COLUMN: STICKY BOOKING WIDGET (4 cols) */}
+        {/* RIGHT COLUMN: STICKY BOOKING / INQUIRY WIDGET (4 cols) */}
         <div className="lg:col-span-4 sticky top-24">
-          <div className="bg-white rounded-2xl border border-gray-150 p-6 shadow-md space-y-5">
+          <div className="bg-white rounded-2xl border border-gray-150 p-6 shadow-md space-y-5 font-sans">
             
-            {/* Price Header */}
-            <div className="flex items-baseline justify-between pb-4 border-b border-gray-100">
+            {/* Price Header & Plan Badge */}
+            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
               <div>
                 <span className="text-3xl font-black text-emerald-800">€{camp.pricePerNight}</span>
                 <span className="text-xs text-gray-500 font-semibold"> / parai</span>
               </div>
-              <div className="flex items-center gap-1 text-xs font-bold text-gray-800">
-                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                <span>{camp.rating}</span>
-                <span className="text-gray-400">({camp.reviewCount})</span>
+              <div className="flex flex-col items-end gap-1">
+                <div className="flex items-center gap-1 text-xs font-bold text-gray-800">
+                  <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                  <span>{camp.rating}</span>
+                  <span className="text-gray-400">({camp.reviewCount})</span>
+                </div>
+                <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider ${
+                  camp.isPro || camp.host?.tier === 'pro' || camp.host?.tier === 'premium'
+                    ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                    : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                }`}>
+                  {camp.isPro || camp.host?.tier === 'pro' || camp.host?.tier === 'premium' ? '⚡ PRO Rezervacija' : '✉️ FREE Užklausa'}
+                </span>
               </div>
             </div>
 
-            {/* Interactive Date Range Picker */}
-            <div className="space-y-3 font-sans">
-              <div 
-                onClick={() => setShowWidgetCalendar(prev => !prev)}
-                className="p-3 rounded-2xl border border-emerald-200/90 bg-emerald-50/40 hover:bg-emerald-50/80 transition-all cursor-pointer space-y-1.5 shadow-2xs"
-              >
-                <div className="flex items-center justify-between text-xs font-bold text-emerald-950">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-emerald-700" />
-                    <span>Rezervacijos datos</span>
+            {!inquirySubmittedBooking ? (
+              <form onSubmit={handleSendInquiry} className="space-y-4">
+                
+                {/* Interactive Date Range Picker */}
+                <div className="space-y-3 font-sans">
+                  <div 
+                    onClick={() => setShowWidgetCalendar(prev => !prev)}
+                    className="p-3 rounded-2xl border border-emerald-200/90 bg-emerald-50/40 hover:bg-emerald-50/80 transition-all cursor-pointer space-y-1.5 shadow-2xs"
+                  >
+                    <div className="flex items-center justify-between text-xs font-bold text-emerald-950">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-emerald-700" />
+                        <span>Pasirinkite datas</span>
+                      </div>
+                      <span className="text-[11px] font-extrabold text-emerald-800 underline">
+                        {showWidgetCalendar ? 'Sutraukti' : 'Rodyti kalendorių'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-gray-800 pt-1.5 border-t border-emerald-200/70">
+                      <div>
+                        <span className="block text-[9px] font-bold text-gray-400 uppercase">Atvykimas</span>
+                        <span className="text-emerald-950 font-extrabold">{checkIn || 'Nepasirinkta'}</span>
+                      </div>
+                      <div className="border-l border-emerald-200 pl-2">
+                        <span className="block text-[9px] font-bold text-gray-400 uppercase">Išvykimas</span>
+                        <span className="text-emerald-950 font-extrabold">{checkOut || 'Nepasirinkta'}</span>
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-[11px] font-extrabold text-emerald-800 underline">
-                    {showWidgetCalendar ? 'Sutraukti' : 'Rodyti kalendorių'}
+
+                  {/* Expandable Interactive Month Calendar with Disabled Reserved Dates */}
+                  {showWidgetCalendar && (
+                    <div className="animate-in fade-in duration-200">
+                      <DateRangePicker
+                        campsiteId={camp.id}
+                        checkIn={checkIn}
+                        checkOut={checkOut}
+                        onSelectDates={(inIso, outIso) => {
+                          setCheckIn(inIso);
+                          setCheckOut(outIso);
+                        }}
+                        isDateBlocked={isDateBlocked}
+                      />
+                    </div>
+                  )}
+
+                  {/* Blocked Date Warning */}
+                  {datesAreBlocked && (
+                    <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-medium flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                      <span>Pasirinktomis dienomis vieta užimta! Pasirinkite kitas datas kalendoriuje.</span>
+                    </div>
+                  )}
+
+                  {/* Guests Selector */}
+                  <div className="p-3 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-between">
+                    <div>
+                      <span className="block text-[9px] font-bold uppercase text-gray-400">Svečiai</span>
+                      <span className="text-xs font-bold text-gray-800">{guests} asm.</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setGuests(Math.max(1, guests - 1))}
+                        className="w-7 h-7 rounded-lg bg-gray-200 text-gray-800 font-bold flex items-center justify-center hover:bg-gray-300 transition"
+                      >
+                        -
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setGuests(Math.min(camp.maxGuests, guests + 1))}
+                        className="w-7 h-7 rounded-lg bg-gray-200 text-gray-800 font-bold flex items-center justify-center hover:bg-gray-300 transition"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Traveler Form Fields (No Registration Required) */}
+                <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
+                  <span className="block text-[10px] font-black uppercase text-stone-600 tracking-wider">
+                    Poilsiautojo Kontaktai (Registracija nebūtina)
                   </span>
-                </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-gray-800 pt-1.5 border-t border-emerald-200/70">
                   <div>
-                    <span className="block text-[9px] font-bold text-gray-400 uppercase">Atvykimas</span>
-                    <span className="text-emerald-950 font-extrabold">{checkIn || 'Nepasirinkta'}</span>
+                    <label className="block text-[10px] font-bold text-gray-700 uppercase mb-0.5">
+                      Vardas ir Pavardė *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Pvt. Jonas Jonaitis"
+                      value={travelerName}
+                      onChange={(e) => setTravelerName(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-900 focus:ring-2 focus:ring-emerald-600 focus:outline-hidden"
+                    />
                   </div>
-                  <div className="border-l border-emerald-200 pl-2">
-                    <span className="block text-[9px] font-bold text-gray-400 uppercase">Išvykimas</span>
-                    <span className="text-emerald-950 font-extrabold">{checkOut || 'Nepasirinkta'}</span>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-700 uppercase mb-0.5">
+                      El. pašto adresas *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="jonas@pavyzdys.lt"
+                      value={travelerEmail}
+                      onChange={(e) => setTravelerEmail(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-900 focus:ring-2 focus:ring-emerald-600 focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-700 uppercase mb-0.5">
+                      Telefono numeris
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="+370 600 00000"
+                      value={travelerPhone}
+                      onChange={(e) => setTravelerPhone(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-900 focus:ring-2 focus:ring-emerald-600 focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-700 uppercase mb-0.5">
+                      Žinutė šeimininkui (nebūtina)
+                    </label>
+                    <textarea
+                      rows={2}
+                      placeholder="Pvt. Atvykstame apie 16 val., keliaujame su šunimi..."
+                      value={travelerMessage}
+                      onChange={(e) => setTravelerMessage(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs text-gray-900 focus:ring-2 focus:ring-emerald-600 focus:outline-hidden"
+                    />
                   </div>
                 </div>
-              </div>
 
-              {/* Expandable Interactive Month Calendar with Disabled Reserved Dates */}
-              {showWidgetCalendar && (
-                <div className="animate-in fade-in duration-200">
-                  <DateRangePicker
-                    campsiteId={camp.id}
-                    checkIn={checkIn}
-                    checkOut={checkOut}
-                    onSelectDates={(inIso, outIso) => {
-                      setCheckIn(inIso);
-                      setCheckOut(outIso);
-                    }}
-                    isDateBlocked={isDateBlocked}
-                  />
-                </div>
-              )}
+                {/* Price Breakdown Calculation */}
+                <div className="space-y-1.5 text-xs border-t border-gray-100 pt-3">
+                  <div className="flex justify-between text-gray-600">
+                    <span>€{camp.pricePerNight} × {nights} nakt.</span>
+                    <span className="font-semibold text-gray-900">€{pricing.nightsSubtotal}</span>
+                  </div>
+                  {cleaningFee > 0 && (
+                    <div className="flex justify-between text-gray-600">
+                      <span>Valymo mokestis</span>
+                      <span className="font-semibold text-gray-900">€{cleaningFee}</span>
+                    </div>
+                  )}
 
-              {/* Blocked Date Warning */}
-              {datesAreBlocked && (
-                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-medium flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-                  <span>Pasirinktomis dienomis vieta užimta! Pasirinkite kitas datas kalendoriuje.</span>
+                  <div className="flex justify-between pt-2 border-t border-gray-100 text-base font-bold text-gray-900">
+                    <span>Numatoma suma:</span>
+                    <span className="font-black text-xl text-emerald-800">€{pricing.totalGuestPrice}</span>
+                  </div>
                 </div>
-              )}
 
-              {/* Guests Selector */}
-              <div className="p-3 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-between">
-                <div>
-                  <span className="block text-[9px] font-bold uppercase text-gray-400">Svečiai</span>
-                  <span className="text-xs font-bold text-gray-800">{guests} asm.</span>
-                </div>
-                <div className="flex items-center gap-2">
+                {inquiryFormError && (
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-medium">
+                    {inquiryFormError}
+                  </div>
+                )}
+
+                {/* Primary CTA Button */}
+                <button
+                  type="submit"
+                  id="send-inquiry-button"
+                  disabled={datesAreBlocked}
+                  className={`w-full py-3.5 rounded-xl font-extrabold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    datesAreBlocked
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-emerald-800/20'
+                  }`}
+                >
+                  <Send className="w-4 h-4 text-emerald-200" />
+                  <span>Siųsti užklausą šeimininkui</span>
+                </button>
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
                   <button
-                    onClick={() => setGuests(Math.max(1, guests - 1))}
-                    className="w-7 h-7 rounded-lg bg-gray-200 text-gray-800 font-bold flex items-center justify-center hover:bg-gray-300 transition"
+                    type="button"
+                    onClick={() => setIsBookingModalOpen(true)}
+                    className="w-full py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-bold text-[11px] border border-emerald-200 transition cursor-pointer"
                   >
-                    -
+                    ⚡ Stripe Greitas Užsakymas
                   </button>
+
                   <button
-                    onClick={() => setGuests(Math.min(camp.maxGuests, guests + 1))}
-                    className="w-7 h-7 rounded-lg bg-gray-200 text-gray-800 font-bold flex items-center justify-center hover:bg-gray-300 transition"
+                    type="button"
+                    onClick={() => setIsChatOpen(true)}
+                    className="w-full py-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-800 font-bold text-[11px] border border-gray-200 transition cursor-pointer"
                   >
-                    +
+                    💬 Rašyti žinutę
                   </button>
                 </div>
-              </div>
-            </div>
 
-            {/* Price Breakdown Calculation */}
-            <div className="space-y-2 text-xs border-t border-gray-100 pt-4 font-sans">
-              <div className="flex justify-between text-gray-600">
-                <span>€{camp.pricePerNight} × {nights} nakt.</span>
-                <span className="font-semibold text-gray-900">€{pricing.nightsSubtotal}</span>
-              </div>
-              {cleaningFee > 0 && (
-                <div className="flex justify-between text-gray-600">
-                  <span>Valymo ir paruošimo mokestis</span>
-                  <span className="font-semibold text-gray-900">€{cleaningFee}</span>
+              </form>
+            ) : (
+              /* Success / Inquiry Confirmation Response Card */
+              <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
+                
+                <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto shadow-xs">
+                  <CheckCircle className="w-7 h-7 text-emerald-700" />
                 </div>
-              )}
 
-              <div className="flex justify-between pt-3 border-t border-gray-100 text-base font-bold text-gray-900">
-                <span>Viso mokėti</span>
-                <span className="font-black text-xl text-emerald-800">€{pricing.totalGuestPrice}</span>
+                <div className="text-center space-y-1">
+                  <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-[10px] font-black uppercase tracking-wider">
+                    ✓ Užklausa Sėkmingai Išsiųsta
+                  </span>
+                  <h3 className="text-lg font-black text-gray-900">Ačiū, {inquirySubmittedBooking.guestName}!</h3>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Jūsų užklausa stovyklavietei <strong>"{camp.title}"</strong> ({checkIn} — {checkOut}) išsiųsta šeimininkui <strong>{camp.host.name}</strong>.
+                  </p>
+                </div>
+
+                {/* FREE PLAN DIRECT CONTACT BRIDGE */}
+                {inquirySubmittedBooking.status === 'free_inquiry' ? (
+                  <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 space-y-2.5 text-xs">
+                    <div className="flex items-center gap-1.5 text-emerald-950 font-black text-xs">
+                      <Phone className="w-4 h-4 text-emerald-700" />
+                      <span>Tiesioginiai Šeimininko Kontaktai (Free Planas):</span>
+                    </div>
+                    <p className="text-emerald-900 text-[11px] leading-relaxed">
+                      Šeimininkas naudojasi nemokamu „Free“ planu. Galite susisiekti su juo tiesiogiai telefonu ar el. paštu dėl galutinio patvirtinimo ir atsiskaitymo offline:
+                    </p>
+
+                    <div className="p-3 bg-white rounded-xl border border-emerald-200 space-y-1.5 font-sans">
+                      <div className="flex items-center justify-between font-bold text-gray-900">
+                        <span>Telefonas:</span>
+                        <a href={`tel:${camp.host.phone || '+370 600 12345'}`} className="text-emerald-800 hover:underline">
+                          {camp.host.phone || '+370 600 12345'}
+                        </a>
+                      </div>
+                      <div className="flex items-center justify-between font-bold text-gray-900 border-t border-gray-100 pt-1.5">
+                        <span>El. paštas:</span>
+                        <a href={`mailto:${camp.host.email || 'seimininkas@campy.lt'}`} className="text-emerald-800 hover:underline truncate max-w-[180px]">
+                          {camp.host.email || 'seimininkas@campy.lt'}
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* PRO PLAN TEMPORARY DATE LOCK RESPONSE */
+                  <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 space-y-2 text-xs">
+                    <div className="flex items-center gap-1.5 text-amber-950 font-black text-xs">
+                      <ShieldCheck className="w-4 h-4 text-amber-700" />
+                      <span>Laikinai Užrakintos Datos (PRO Planas):</span>
+                    </div>
+                    <p className="text-amber-900 text-[11px] leading-relaxed">
+                      Jūsų pasirinktos datos ({checkIn} — {checkOut}) yra <strong>laikinai rezervuotos kalendoriuje</strong>, kad kiti poilsiautojai jų neužimtų. Šeimininkas peržiūrės užklausą savo valdymo skyde ir pateiks patvirtinimą arba atmetimą.
+                    </p>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setInquirySubmittedBooking(null)}
+                  className="w-full py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl text-xs transition cursor-pointer"
+                >
+                  Siųsti kitą užklausą / keisti datas
+                </button>
+
               </div>
-            </div>
-
-            {/* Booking CTA Button */}
-            <button
-              id="book-now-button"
-              disabled={datesAreBlocked}
-              onClick={() => setIsBookingModalOpen(true)}
-              className={`w-full py-4 rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                datesAreBlocked
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-700/20'
-              }`}
-            >
-              <span>{datesAreBlocked ? 'Nepatvirtinta data' : 'Užsakyti stovyklavietę'}</span>
-            </button>
-
-            {/* Direct Host Inquiry Button */}
-            <button
-              type="button"
-              onClick={() => setIsChatOpen(true)}
-              className="w-full py-2.5 rounded-xl bg-gray-50 hover:bg-emerald-50 text-gray-800 hover:text-emerald-950 font-bold text-xs border border-gray-200 hover:border-emerald-300 flex items-center justify-center gap-2 cursor-pointer transition-all"
-            >
-              <MessageSquare className="w-4 h-4 text-emerald-700" />
-              <span>Klausimai šeimininkui {camp.host.name}</span>
-            </button>
+            )}
 
             <p className="text-[10px] text-gray-400 text-center font-sans">
-              Prieš patvirtinimą nuskaitymai neatliekami.
+              Campy.lt užklausų sistema • Jokių paslėptų mokesčių
             </p>
 
           </div>

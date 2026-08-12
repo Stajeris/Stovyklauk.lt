@@ -194,19 +194,15 @@ export const LandingPage: React.FC = () => {
             >
               Registruoti sklypą nemokamai
             </button>
-            <button
-              id="banner-dashboard-btn"
-              onClick={() => {
-                if (!currentUser) {
-                  openAuthModal('login');
-                } else {
-                  setView('host-dashboard');
-                }
-              }}
-              className="w-full bg-emerald-900/80 hover:bg-emerald-900 text-white border border-emerald-600/40 px-6 py-3 rounded-xl font-bold transition text-xs cursor-pointer"
-            >
-              Šeimininko Valdymo Skydas
-            </button>
+            {currentUser?.userType === 'host' && (
+              <button
+                id="banner-dashboard-btn"
+                onClick={() => setView('host-dashboard')}
+                className="w-full bg-emerald-900/80 hover:bg-emerald-900 text-white border border-emerald-600/40 px-6 py-3 rounded-xl font-bold transition text-xs cursor-pointer"
+              >
+                Šeimininko Valdymo Skydas
+              </button>
+            )}
           </div>
 
           {/* Decorative glow */}

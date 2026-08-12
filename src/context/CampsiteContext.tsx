@@ -1159,8 +1159,13 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const addBooking = (bookingData: Omit<Booking, 'id' | 'createdAt' | 'status'>): Booking => {
+  const addBooking = (bookingData: Omit<Booking, 'id' | 'createdAt' | 'status'> & { status?: 'free_inquiry' | 'pending' | 'approved' | 'confirmed' | 'rejected' }): Booking => {
     const targetCampsite = campsites.find(c => c.id === bookingData.campsiteId);
+    
+    // Determine host plan: 'free' | 'pro' | 'premium'
+    const isPro = targetCampsite?.isPro || targetCampsite?.host?.tier === 'pro' || targetCampsite?.host?.tier === 'premium' || hostTier === 'pro' || hostTier === 'premium';
+    const plan: HostTier = isPro ? (targetCampsite?.host?.tier || 'pro') : 'free';
+
     const pricing = calculateFullPricing(
       bookingData.nightlyRate,
       bookingData.totalNights,
@@ -1170,8 +1175,13 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       targetCampsite?.customPrices
     );
 
+    // Initial status:
+    // If explicit status passed, use it; otherwise 'free_inquiry' for Free plan, 'pending' for Pro plan
+    const initialStatus = bookingData.status || (plan === 'free' ? 'free_inquiry' : 'pending');
+
     const newBooking: Booking = {
       ...bookingData,
+      hostPlan: plan,
       bookingSubtotal: bookingData.bookingSubtotal ?? pricing.bookingSubtotal,
       platformFeeCents: bookingData.platformFeeCents ?? pricing.platformFeeCents,
       platformFeeEur: bookingData.platformFeeEur ?? pricing.platformFeeEur,
@@ -1184,34 +1194,65 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       stripePaymentIntentId: bookingData.stripePaymentIntentId || `pi_stripe_escrow_${Date.now()}`,
       id: `bk-${Date.now().toString().slice(-4)}`,
       createdAt: new Date().toISOString().split('T')[0],
-      status: 'pending',
+      status: initialStatus,
     };
 
     setBookings(prev => [newBooking, ...prev]);
 
-    // Also block dates on campsite
-    const checkIn = new Date(bookingData.checkIn);
-    const checkOut = new Date(bookingData.checkOut);
-    const datesToBlock: string[] = [];
-    
-    for (let d = new Date(checkIn); d <= checkOut; d.setDate(d.getDate() + 1)) {
-      datesToBlock.push(d.toISOString().split('T')[0]);
+    // Calendar blocking logic:
+    // ONLY block dates automatically if status is 'pending' or 'approved'/'confirmed' (i.e. PRO plan or approved booking)
+    // Free plan inquiries do NOT block calendar dates on platform!
+    if (initialStatus === 'pending' || initialStatus === 'approved' || initialStatus === 'confirmed') {
+      const checkIn = new Date(bookingData.checkIn);
+      const checkOut = new Date(bookingData.checkOut);
+      const datesToBlock: string[] = [];
+      
+      for (let d = new Date(checkIn); d <= checkOut; d.setDate(d.getDate() + 1)) {
+        datesToBlock.push(d.toISOString().split('T')[0]);
+      }
+
+      setCampsites(prev => prev.map(c => {
+        if (c.id === bookingData.campsiteId) {
+          return {
+            ...c,
+            blockedDates: Array.from(new Set([...c.blockedDates, ...datesToBlock]))
+          };
+        }
+        return c;
+      }));
     }
 
-    setCampsites(prev => prev.map(c => {
-      if (c.id === bookingData.campsiteId) {
-        return {
-          ...c,
-          blockedDates: Array.from(new Set([...c.blockedDates, ...datesToBlock]))
-        };
-      }
-      return c;
-    }));
+    // Automatically send chat message to host notification
+    if (targetCampsite) {
+      const msgText = initialStatus === 'free_inquiry'
+        ? `[Tiesioginė Free Užklausa] Svečias ${bookingData.guestName} (${bookingData.guestEmail}, ${bookingData.guestPhone || 'tel. nenurodytas'}) atsiuntė užklausą datoms: ${bookingData.checkIn} — ${bookingData.checkOut}. Žinutė: "${bookingData.guestNote || 'Nėra papildomos žinutės'}"`
+        : `[Pro Rezervacijos Užklausa] Svečias ${bookingData.guestName} (${bookingData.guestEmail}, ${bookingData.guestPhone || 'tel. nenurodytas'}) laukia jūsų patvirtinimo datoms: ${bookingData.checkIn} — ${bookingData.checkOut}. Datos laikinai užrakintos. Žinutė: "${bookingData.guestNote || 'Nėra papildomos žinutės'}"`;
+
+      sendMessageInThread(
+        bookingData.campsiteId,
+        {
+          id: `guest-${Date.now()}`,
+          name: bookingData.guestName,
+          email: bookingData.guestEmail,
+          role: 'client'
+        },
+        msgText,
+        targetCampsite.title,
+        {
+          id: targetCampsite.host.id,
+          name: targetCampsite.host.name,
+          avatar: targetCampsite.host.avatar
+        },
+        targetCampsite.images[0]
+      );
+    }
 
     return newBooking;
   };
 
-  const updateBookingStatus = (bookingId: string, newStatus: 'approved' | 'rejected' | 'completed') => {
+  const updateBookingStatus = (bookingId: string, newStatus: 'approved' | 'confirmed' | 'rejected' | 'completed') => {
+    const targetBooking = bookings.find(b => b.id === bookingId);
+
     setBookings(prev => prev.map(b => {
       if (b.id === bookingId) {
         let updatedEscrow = b.escrowStatus;
@@ -1225,13 +1266,36 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
         return {
           ...b,
-          status: newStatus,
+          status: newStatus === 'confirmed' ? 'approved' : newStatus,
           escrowStatus: updatedEscrow,
-          stripePaymentStatus: updatedStripe
+          stripePaymentStatus: updatedStripe,
+          paymentInstructions: (newStatus === 'approved' || newStatus === 'confirmed')
+            ? 'Apmokėjimo rekvizitai: Banko sąskaita LT79 7044 0600 0123 4567, Gavėjas: Šeimininkas / Campy.lt. Pervedime nurodykite užsakymo ID.'
+            : b.paymentInstructions
         };
       }
       return b;
     }));
+
+    // If rejected, release the temporarily blocked dates from campsite.blockedDates!
+    if (newStatus === 'rejected' && targetBooking) {
+      const checkIn = new Date(targetBooking.checkIn);
+      const checkOut = new Date(targetBooking.checkOut);
+      const datesToRemove: string[] = [];
+      for (let d = new Date(checkIn); d <= checkOut; d.setDate(d.getDate() + 1)) {
+        datesToRemove.push(d.toISOString().split('T')[0]);
+      }
+
+      setCampsites(prev => prev.map(c => {
+        if (c.id === targetBooking.campsiteId) {
+          return {
+            ...c,
+            blockedDates: c.blockedDates.filter(date => !datesToRemove.includes(date))
+          };
+        }
+        return c;
+      }));
+    }
   };
 
   const releaseEscrowPayout = (bookingId: string) => {

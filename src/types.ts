@@ -152,7 +152,9 @@ export interface Booking {
   escrowStatus?: 'held_in_escrow' | 'payout_released_to_host' | 'refunded_to_guest';
   paymentMethodType?: 'card' | 'apple_pay' | 'google_pay';
   stripePaymentIntentId?: string;
-  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  status: 'free_inquiry' | 'pending' | 'approved' | 'confirmed' | 'rejected' | 'completed';
+  hostPlan?: HostTier;
+  paymentInstructions?: string;
   createdAt: string;
   propertyType: PropertyType;
   visitConfirmedByGuest?: boolean;
@@ -160,6 +162,23 @@ export interface Booking {
   escrowPayoutReleaseAt?: string;
   arrivalNotificationSent?: boolean;
   arrivalNotificationSentAt?: string;
+}
+
+export interface Inquiry {
+  id: string;
+  listingId: string;
+  campsiteTitle: string;
+  travelerName: string;
+  travelerEmail: string;
+  travelerPhone?: string;
+  message?: string;
+  startDate: string;
+  endDate: string;
+  guestsCount: number;
+  status: 'free_inquiry' | 'pending' | 'confirmed' | 'rejected';
+  hostPlan: 'free' | 'pro' | 'premium';
+  createdAt: string;
+  paymentInstructions?: string;
 }
 
 export interface SearchFilters {
