@@ -75,7 +75,7 @@ export const LandingPage: React.FC = () => {
             backgroundImage: `url('https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1600&q=80')` 
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/70 via-emerald-950/30 to-transparent opacity-60" />
+        <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/70 via-emerald-950/30 to-transparent opacity-20" />
 
         {/* Hero Content */}
         <div className="relative z-10 max-w-5xl mx-auto px-4 text-center">
