@@ -156,6 +156,9 @@ export const HostCalendarManager: React.FC<HostCalendarManagerProps> = ({
     );
   }
 
+  // Status filter state for Pro calendar view
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'completed' | 'rejected' | 'blocked' | 'ical'>('all');
+
   // Active bookings list
   const activeBookings = useMemo(() => {
     if (activeCampsiteId === 'all') {
@@ -165,21 +168,78 @@ export const HostCalendarManager: React.FC<HostCalendarManagerProps> = ({
     return bookings.filter(b => b.campsiteId === activeCampsiteId);
   }, [bookings, activeCampsiteId, campsites]);
 
+  // Current Month Bookings and Analytics for Pro users
+  const currentMonthBookings = useMemo(() => {
+    const monthStartStr = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+    const lastDayNum = new Date(year, month + 1, 0).getDate();
+    const monthEndStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDayNum).padStart(2, '0')}`;
+
+    return activeBookings.filter(b => b.checkIn <= monthEndStr && b.checkOut >= monthStartStr);
+  }, [activeBookings, year, month]);
+
+  const monthStats = useMemo(() => {
+    const total = currentMonthBookings.length;
+    const pending = currentMonthBookings.filter(b => b.status === 'pending').length;
+    const approved = currentMonthBookings.filter(b => b.status === 'approved').length;
+    const completed = currentMonthBookings.filter(b => b.status === 'completed').length;
+    const rejected = currentMonthBookings.filter(b => b.status === 'rejected').length;
+
+    const totalRevenue = currentMonthBookings
+      .filter(b => b.status === 'approved' || b.status === 'completed')
+      .reduce((sum, b) => sum + (b.hostPayoutAmount || b.totalPrice), 0);
+
+    const occupiedDaysSet = new Set<string>();
+    currentMonthBookings.forEach(b => {
+      if (b.status === 'approved' || b.status === 'completed') {
+        let curr = new Date(b.checkIn);
+        const endD = new Date(b.checkOut);
+        while (curr <= endD) {
+          if (curr.getFullYear() === year && curr.getMonth() === month) {
+            occupiedDaysSet.add(curr.toISOString().split('T')[0]);
+          }
+          curr.setDate(curr.getDate() + 1);
+        }
+      }
+    });
+
+    const daysInM = new Date(year, month + 1, 0).getDate();
+    const occupancyRate = Math.round((occupiedDaysSet.size / daysInM) * 100);
+
+    return { 
+      total, 
+      pending, 
+      approved, 
+      completed, 
+      rejected, 
+      totalRevenue, 
+      occupancyRate, 
+      occupiedDaysCount: occupiedDaysSet.size,
+      daysInM 
+    };
+  }, [currentMonthBookings, year, month]);
+
   // Helper to get all events & bookings for a specific date
   const getDateDetails = (dateStr: string) => {
     // 1. Guest bookings matching date
-    const dateBookings = activeBookings.filter(b => dateStr >= b.checkIn && dateStr <= b.checkOut);
+    const allDateBookings = activeBookings.filter(b => dateStr >= b.checkIn && dateStr <= b.checkOut);
+    const dateBookings = (statusFilter === 'all' || statusFilter === 'blocked' || statusFilter === 'ical')
+      ? allDateBookings
+      : allDateBookings.filter(b => b.status === statusFilter);
 
     // 2. Imported iCal events
     const importedEventsList = activeCampsiteId === 'all'
       ? campsites.flatMap(c => c.importedEvents || [])
       : (activeCampsite?.importedEvents || []);
-    const dateImported = importedEventsList.filter(e => dateStr >= e.startDate && dateStr <= e.endDate);
+    const dateImported = (statusFilter === 'all' || statusFilter === 'ical')
+      ? importedEventsList.filter(e => dateStr >= e.startDate && dateStr <= e.endDate)
+      : [];
 
     // 3. Blocked status
-    const isBlocked = activeCampsiteId === 'all'
-      ? campsites.some(c => c.blockedDates?.includes(dateStr))
-      : (activeCampsite?.blockedDates?.includes(dateStr) || false);
+    const isBlocked = (statusFilter === 'all' || statusFilter === 'blocked')
+      ? (activeCampsiteId === 'all'
+          ? campsites.some(c => c.blockedDates?.includes(dateStr))
+          : (activeCampsite?.blockedDates?.includes(dateStr) || false))
+      : false;
 
     // 4. Custom price
     const customPrice = activeCampsite ? activeCampsite.customPrices?.[dateStr] : null;
@@ -187,6 +247,7 @@ export const HostCalendarManager: React.FC<HostCalendarManagerProps> = ({
 
     return {
       dateBookings,
+      rawAllBookingsCount: allDateBookings.length,
       dateImported,
       isBlocked,
       price: customPrice ?? defaultPrice,
@@ -529,7 +590,112 @@ export const HostCalendarManager: React.FC<HostCalendarManagerProps> = ({
       {activeSubTab === 'calendar' && (
         <div className="space-y-5">
           
-          {/* Month Navigation & Legend Header */}
+          {/* PRO PLAN MONTHLY RESERVATION STATUS ANALYTICS DASHBOARD CARD */}
+          <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-stone-900 text-white rounded-3xl p-5 border border-emerald-800 shadow-md space-y-4 font-sans">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-800/80 pb-3">
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="w-5 h-5 text-amber-400" />
+                <h3 className="font-black text-lg text-white capitalize">
+                  Mėnesio Užsakymų Būsenos ir Analitika ({monthName})
+                </h3>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 bg-amber-400/20 text-amber-300 border border-amber-400/40 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs">
+                  <Crown className="w-3.5 h-3.5 text-amber-400" />
+                  <span>PRO Planas: Visos Būsenos Aktyvios</span>
+                </span>
+                {hostTier !== 'pro' && (
+                  <button
+                    onClick={() => {
+                      setHostTier('pro');
+                      showToast('⚡ Įjungtas PRO narystės paketas!');
+                    }}
+                    className="px-3 py-1 bg-amber-400 hover:bg-amber-300 text-emerald-950 font-black text-[10px] uppercase rounded-full transition cursor-pointer"
+                  >
+                    Aktyvuoti PRO
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Status KPI Summary Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-1">
+              {/* Total Bookings */}
+              <div className="p-3 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-xs">
+                <span className="text-[10px] font-bold text-stone-300 uppercase block tracking-wider">Viso Užsakymų</span>
+                <span className="text-xl font-black text-white block mt-0.5">{monthStats.total}</span>
+                <span className="text-[10px] text-emerald-300 font-bold block">{monthName}</span>
+              </div>
+
+              {/* Pending */}
+              <div 
+                onClick={() => setStatusFilter(statusFilter === 'pending' ? 'all' : 'pending')}
+                className={`p-3 rounded-2xl border transition cursor-pointer ${
+                  statusFilter === 'pending'
+                    ? 'bg-amber-400 text-amber-950 border-amber-300 ring-2 ring-amber-300'
+                    : 'bg-amber-500/15 border-amber-400/30 text-amber-200 hover:bg-amber-500/25'
+                }`}
+              >
+                <span className="text-[10px] font-bold uppercase block tracking-wider opacity-80">🟡 Laukiantys</span>
+                <span className="text-xl font-black block mt-0.5">{monthStats.pending}</span>
+                <span className="text-[10px] font-bold block opacity-90">Laukia patvirtinimo</span>
+              </div>
+
+              {/* Approved */}
+              <div 
+                onClick={() => setStatusFilter(statusFilter === 'approved' ? 'all' : 'approved')}
+                className={`p-3 rounded-2xl border transition cursor-pointer ${
+                  statusFilter === 'approved'
+                    ? 'bg-emerald-500 text-white border-emerald-300 ring-2 ring-emerald-300'
+                    : 'bg-emerald-500/15 border-emerald-400/30 text-emerald-200 hover:bg-emerald-500/25'
+                }`}
+              >
+                <span className="text-[10px] font-bold uppercase block tracking-wider opacity-80">🟢 Patvirtinti</span>
+                <span className="text-xl font-black block mt-0.5">{monthStats.approved}</span>
+                <span className="text-[10px] font-bold block opacity-90">Apmokėti užsakymai</span>
+              </div>
+
+              {/* Completed */}
+              <div 
+                onClick={() => setStatusFilter(statusFilter === 'completed' ? 'all' : 'completed')}
+                className={`p-3 rounded-2xl border transition cursor-pointer ${
+                  statusFilter === 'completed'
+                    ? 'bg-blue-500 text-white border-blue-300 ring-2 ring-blue-300'
+                    : 'bg-blue-500/15 border-blue-400/30 text-blue-200 hover:bg-blue-500/25'
+                }`}
+              >
+                <span className="text-[10px] font-bold uppercase block tracking-wider opacity-80">🔵 Įvykdyti</span>
+                <span className="text-xl font-black block mt-0.5">{monthStats.completed}</span>
+                <span className="text-[10px] font-bold block opacity-90">Svečiai išvyko</span>
+              </div>
+
+              {/* Rejected */}
+              <div 
+                onClick={() => setStatusFilter(statusFilter === 'rejected' ? 'all' : 'rejected')}
+                className={`p-3 rounded-2xl border transition cursor-pointer ${
+                  statusFilter === 'rejected'
+                    ? 'bg-rose-500 text-white border-rose-300 ring-2 ring-rose-300'
+                    : 'bg-rose-500/15 border-rose-400/30 text-rose-200 hover:bg-rose-500/25'
+                }`}
+              >
+                <span className="text-[10px] font-bold uppercase block tracking-wider opacity-80">🔴 Atmesti / Atšaukti</span>
+                <span className="text-xl font-black block mt-0.5">{monthStats.rejected}</span>
+                <span className="text-[10px] font-bold block opacity-90">Atšaukti užsakymai</span>
+              </div>
+
+              {/* Monthly Revenue & Occupancy */}
+              <div className="p-3 rounded-2xl bg-amber-400/15 border border-amber-400/30 text-amber-200">
+                <span className="text-[10px] font-bold uppercase block tracking-wider opacity-80">💶 Mėnesio Pajamos</span>
+                <span className="text-xl font-black text-amber-300 block mt-0.5">€{monthStats.totalRevenue}</span>
+                <span className="text-[10px] font-bold block text-emerald-300">
+                  Užimtumas: {monthStats.occupancyRate}% ({monthStats.occupiedDaysCount}/{monthStats.daysInM} d.)
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Month Navigation & Status Filter Bar */}
           <div className="flex flex-col lg:flex-row items-center justify-between gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-150">
             <div className="flex items-center gap-2">
               <button
@@ -557,24 +723,85 @@ export const HostCalendarManager: React.FC<HostCalendarManagerProps> = ({
               </button>
             </div>
 
-            {/* Status Legend */}
-            <div className="flex flex-wrap items-center gap-3 text-[11px] font-bold text-gray-700">
-              <span className="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 text-amber-900">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
-                <span>Laukiama Patvirtinimo</span>
-              </span>
-              <span className="flex items-center gap-1.5 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 text-emerald-900">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                <span>Patvirtintas Užsakymas</span>
-              </span>
-              <span className="flex items-center gap-1.5 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 text-blue-900">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-                <span>Atvykęs / Įvykdyta</span>
-              </span>
-              <span className="flex items-center gap-1.5 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200 text-purple-900">
-                <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
-                <span>iCal / Išorinis Sync</span>
-              </span>
+            {/* Interactive Status Filter Pills */}
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-bold text-gray-700">
+              <span className="text-stone-400 font-extrabold uppercase text-[10px] mr-1">Rodyti:</span>
+              <button
+                onClick={() => setStatusFilter('all')}
+                className={`px-3 py-1 rounded-xl transition cursor-pointer ${
+                  statusFilter === 'all'
+                    ? 'bg-stone-900 text-white font-extrabold shadow-xs'
+                    : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100'
+                }`}
+              >
+                Visi ({monthStats.total})
+              </button>
+              <button
+                onClick={() => setStatusFilter('pending')}
+                className={`px-2.5 py-1 rounded-xl transition cursor-pointer flex items-center gap-1 ${
+                  statusFilter === 'pending'
+                    ? 'bg-amber-500 text-amber-950 font-black shadow-xs'
+                    : 'bg-amber-50 border border-amber-200 text-amber-900 hover:bg-amber-100'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                <span>Laukiantys ({monthStats.pending})</span>
+              </button>
+              <button
+                onClick={() => setStatusFilter('approved')}
+                className={`px-2.5 py-1 rounded-xl transition cursor-pointer flex items-center gap-1 ${
+                  statusFilter === 'approved'
+                    ? 'bg-emerald-700 text-white font-black shadow-xs'
+                    : 'bg-emerald-50 border border-emerald-200 text-emerald-900 hover:bg-emerald-100'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span>Patvirtinti ({monthStats.approved})</span>
+              </button>
+              <button
+                onClick={() => setStatusFilter('completed')}
+                className={`px-2.5 py-1 rounded-xl transition cursor-pointer flex items-center gap-1 ${
+                  statusFilter === 'completed'
+                    ? 'bg-blue-700 text-white font-black shadow-xs'
+                    : 'bg-blue-50 border border-blue-200 text-blue-900 hover:bg-blue-100'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                <span>Įvykdyti ({monthStats.completed})</span>
+              </button>
+              <button
+                onClick={() => setStatusFilter('rejected')}
+                className={`px-2.5 py-1 rounded-xl transition cursor-pointer flex items-center gap-1 ${
+                  statusFilter === 'rejected'
+                    ? 'bg-rose-700 text-white font-black shadow-xs'
+                    : 'bg-rose-50 border border-rose-200 text-rose-900 hover:bg-rose-100'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                <span>Atmesti ({monthStats.rejected})</span>
+              </button>
+              <button
+                onClick={() => setStatusFilter('ical')}
+                className={`px-2.5 py-1 rounded-xl transition cursor-pointer flex items-center gap-1 ${
+                  statusFilter === 'ical'
+                    ? 'bg-purple-700 text-white font-black shadow-xs'
+                    : 'bg-purple-50 border border-purple-200 text-purple-900 hover:bg-purple-100'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                <span>iCal Sync</span>
+              </button>
+              <button
+                onClick={() => setStatusFilter('blocked')}
+                className={`px-2.5 py-1 rounded-xl transition cursor-pointer flex items-center gap-1 ${
+                  statusFilter === 'blocked'
+                    ? 'bg-stone-700 text-white font-black shadow-xs'
+                    : 'bg-stone-100 border border-stone-200 text-stone-800 hover:bg-stone-200'
+                }`}
+              >
+                <Lock className="w-3 h-3 text-stone-600" />
+                <span>Užblokuoti</span>
+              </button>
             </div>
           </div>
 
