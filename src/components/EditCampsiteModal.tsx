@@ -44,11 +44,11 @@ export const EditCampsiteModal: React.FC<EditCampsiteModalProps> = ({ campsite, 
   const [latitude, setLatitude] = useState<number>(campsite.latitude || 55.1694);
   const [longitude, setLongitude] = useState<number>(campsite.longitude || 25.4520);
   const [terrainType, setTerrainType] = useState(campsite.terrainType);
-  const [propertyType, setPropertyType] = useState<PropertyType>(campsite.propertyType);
-  const [hasCleaningFee, setHasCleaningFee] = useState<boolean>(
-    campsite.hasCleaningFee === true
+  const [selectedCategories, setSelectedCategories] = useState<PropertyType[]>(
+    campsite.categories && campsite.categories.length > 0 
+      ? campsite.categories 
+      : [campsite.propertyType]
   );
-  const [cleaningFee, setCleaningFee] = useState<number>(campsite.cleaningFee ?? 15);
   const [pricePerNight, setPricePerNight] = useState(campsite.pricePerNight);
   const [maxGuests, setMaxGuests] = useState(campsite.maxGuests);
   const [rvMaxLengthFt, setRvMaxLengthFt] = useState(campsite.rvMaxLengthFt || 30);
@@ -119,6 +119,18 @@ export const EditCampsiteModal: React.FC<EditCampsiteModalProps> = ({ campsite, 
     showToast('Nuotrauka nustatyta kaip pagrindinė!');
   };
 
+  const toggleCategory = (catId: PropertyType) => {
+    if (selectedCategories.includes(catId)) {
+      if (selectedCategories.length === 1) {
+        showToast('Privaloma pasirinkti bent vieną kategoriją');
+        return;
+      }
+      setSelectedCategories(prev => prev.filter(c => c !== catId));
+    } else {
+      setSelectedCategories(prev => [...prev, catId]);
+    }
+  };
+
   const toggleAmenity = (amenity: string) => {
     setSelectedAmenities(prev =>
       prev.includes(amenity) ? prev.filter(a => a !== amenity) : [...prev, amenity]
@@ -165,12 +177,13 @@ export const EditCampsiteModal: React.FC<EditCampsiteModalProps> = ({ campsite, 
       latitude,
       longitude,
       terrainType,
-      propertyType,
-      hasCleaningFee,
-      cleaningFee: hasCleaningFee ? cleaningFee : 0,
+      propertyType: selectedCategories[0] || 'tent',
+      categories: selectedCategories,
+      hasCleaningFee: false,
+      cleaningFee: 0,
       pricePerNight,
       maxGuests,
-      rvMaxLengthFt: propertyType === 'rv' ? rvMaxLengthFt : undefined,
+      rvMaxLengthFt: selectedCategories.includes('rv') ? rvMaxLengthFt : undefined,
       cancellationPolicy,
       images,
       amenities: selectedAmenities,
@@ -554,7 +567,7 @@ export const EditCampsiteModal: React.FC<EditCampsiteModalProps> = ({ campsite, 
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
                     Kaina už parą (€) *
@@ -590,64 +603,57 @@ export const EditCampsiteModal: React.FC<EditCampsiteModalProps> = ({ campsite, 
                     <Users className="w-4 h-4 text-gray-400 absolute left-2.5 top-3" />
                   </div>
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
-                    Kategorija / Tipas *
-                  </label>
-                  <select
-                    value={propertyType}
-                    onChange={(e) => {
-                      setPropertyType(e.target.value as PropertyType);
-                    }}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-xs font-bold text-gray-900 focus:ring-2 focus:ring-emerald-600 focus:outline-hidden"
-                  >
-                    <option value="tent">⛺ Palapinėms</option>
-                    <option value="glamping">✨ Glamping</option>
-                    <option value="rv">🚐 Kemperiams</option>
-                    <option value="cabin">🏡 Atostogų nameliai</option>
-                    <option value="other">🌲 Kita</option>
-                  </select>
+              {/* Multi-Selection Category Selector */}
+              <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-3 font-sans mt-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="block text-xs font-extrabold text-gray-900">
+                      Kategorijos / Tipai * (Galima pasirinkti kelis)
+                    </label>
+                    <p className="text-[10px] text-gray-500 font-medium leading-relaxed mt-0.5">
+                      Pažymėkite visas kategorijas, kurias atitinka jūsų objektas (pvz., siūlote ir vietas palapinėms, ir kemperiams).
+                    </p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-900 text-[10px] font-black uppercase shrink-0">
+                    Pasirinkta: {selectedCategories.length}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pt-1">
+                  {[
+                    { id: 'tent' as PropertyType, label: '⛺ Palapinėms' },
+                    { id: 'glamping' as PropertyType, label: '✨ Glamping' },
+                    { id: 'rv' as PropertyType, label: '🚐 Kemperiams' },
+                    { id: 'cabin' as PropertyType, label: '🏡 Nameliai' },
+                    { id: 'other' as PropertyType, label: '🌲 Kita' },
+                  ].map((cat) => {
+                    const isSelected = selectedCategories.includes(cat.id);
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => toggleCategory(cat.id)}
+                        className={`p-2.5 rounded-xl border text-xs font-bold text-center flex items-center justify-between transition-all cursor-pointer ${
+                          isSelected
+                            ? 'border-emerald-600 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-500/20 shadow-xs'
+                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                        }`}
+                      >
+                        <span className="truncate">{cat.label}</span>
+                        <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ml-1 ${
+                          isSelected ? 'bg-emerald-600 text-white' : 'border border-gray-300'
+                        }`}>
+                          {isSelected && <Check className="w-2.5 h-2.5" />}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Valymo ir Paruošimo Mokestis (Cleaning Fee Toggle) */}
-              <div className="p-4 rounded-2xl bg-white border border-gray-200 space-y-3 font-sans mt-2">
-                <label className="flex items-start gap-3 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={hasCleaningFee}
-                    onChange={(e) => setHasCleaningFee(e.target.checked)}
-                    className="w-4 h-4 mt-0.5 rounded text-emerald-600 focus:ring-emerald-500 border-gray-300 cursor-pointer"
-                  />
-                  <div>
-                    <span className="text-xs font-extrabold text-gray-900 block">
-                      Taikyti valymo ir paruošimo mokestį
-                    </span>
-                    <span className="text-[10px] text-gray-500 font-medium leading-relaxed block mt-0.5">
-                      Pagal nutylėjimą taikoma tik Kemperių nuomai, bet galite pasirinkti ir nustatyti ši mokestį bet kuriam objektui.
-                    </span>
-                  </div>
-                </label>
-
-                {hasCleaningFee && (
-                  <div className="pt-2 border-t border-gray-150 flex items-center justify-between gap-4">
-                    <label className="text-xs font-bold text-gray-700">Valymo / paruošimo mokesčio suma (€):</label>
-                    <div className="relative w-32">
-                      <input
-                        type="number"
-                        min={0}
-                        max={300}
-                        value={cleaningFee}
-                        onChange={(e) => setCleaningFee(Math.max(0, parseInt(e.target.value) || 0))}
-                        className="w-full px-3 py-1.5 rounded-xl border border-gray-300 bg-white text-xs font-extrabold text-gray-900 focus:ring-2 focus:ring-emerald-600"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {propertyType === 'rv' && (
+              {selectedCategories.includes('rv') && (
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
                     Maksimalus Kemperio Ilgis (pėdos/metrai)

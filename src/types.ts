@@ -152,6 +152,7 @@ export interface Campsite {
   rating: number;
   reviewCount: number;
   propertyType: PropertyType;
+  categories?: PropertyType[];
   maxGuests: number;
   rvMaxLengthFt?: number;
   images: string[];

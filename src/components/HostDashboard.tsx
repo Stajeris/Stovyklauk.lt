@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   DollarSign, Calendar, Star, Users, CheckCircle, XCircle, Sparkles, 
-  PlusCircle, ShieldCheck, TrendingUp, CreditCard, Tent, MapPin, AlertCircle, Clock, Edit, Camera, Eye, ShieldAlert, AlertTriangle, MessageSquare, Send, Crown, Zap, Check, BarChart3, Heart, MousePointer, X, LogOut
+  PlusCircle, ShieldCheck, TrendingUp, CreditCard, Tent, MapPin, AlertCircle, Clock, Edit, Camera, Eye, ShieldAlert, AlertTriangle, MessageSquare, Send, Crown, Zap, Check, BarChart3, Heart, MousePointer, X, LogOut, Mail
 } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
 import { Campsite, Review } from '../types';
@@ -35,7 +35,7 @@ export const HostDashboard: React.FC = () => {
     updateUserProfile
   } = useCampsites();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'calendar' | 'payouts' | 'reviews' | 'chats' | 'membership' | 'pro_tools'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'calendar' | 'reviews' | 'chats' | 'membership' | 'pro_tools'>('overview');
   const [proSubTab, setProSubTab] = useState<'pitches' | 'seasonal' | 'emails'>('pitches');
   const [proCampsiteId, setProCampsiteId] = useState<string>('');
   const [selectedCalendarCampsiteId, setSelectedCalendarCampsiteId] = useState<string | undefined>(undefined);
@@ -276,14 +276,6 @@ export const HostDashboard: React.FC = () => {
           <span>Kalendorius ir iCal Sync</span>
         </button>
         <button
-          onClick={() => setActiveTab('payouts')}
-          className={`pb-3 border-b-2 transition-colors cursor-pointer ${
-            activeTab === 'payouts' ? 'border-emerald-600 text-emerald-800' : 'border-transparent hover:text-gray-800'
-          }`}
-        >
-          Išmokėjimų Nustatymai
-        </button>
-        <button
           onClick={() => setActiveTab('reviews')}
           className={`pb-3 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
             activeTab === 'reviews' ? 'border-amber-600 text-amber-900 font-extrabold' : 'border-transparent hover:text-gray-800'
@@ -502,10 +494,14 @@ export const HostDashboard: React.FC = () => {
                       <span>{site.images.length} nuotraukos</span>
                     </div>
 
-                    <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 items-start">
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-800 text-white text-[10px] font-bold uppercase tracking-wider">
-                        {site.propertyType === 'tent' ? '⛺ Palapinėms' : site.propertyType === 'glamping' ? '✨ Glamping' : site.propertyType === 'rv' ? '🚐 Kemperiams' : site.propertyType === 'cabin' ? '🏡 Atostogų namelis' : '🌲 Kita'}
-                      </span>
+                    <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 items-start max-w-[70%]">
+                      <div className="flex flex-wrap gap-1">
+                        {(site.categories && site.categories.length > 0 ? site.categories : [site.propertyType]).map((cat) => (
+                          <span key={cat} className="px-2 py-0.5 rounded-full bg-emerald-900/90 backdrop-blur-xs text-white text-[9px] font-bold uppercase tracking-wider shadow-xs">
+                            {cat === 'tent' ? '⛺ Palapinėms' : cat === 'glamping' ? '✨ Glamping' : cat === 'rv' ? '🚐 Kemperiams' : cat === 'cabin' ? '🏡 Namelis' : '🌲 Kita'}
+                          </span>
+                        ))}
+                      </div>
                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border shadow-xs ${
                         (!site.status || site.status === 'approved')
                           ? 'bg-emerald-100 text-emerald-950 border-emerald-300'
@@ -590,141 +586,7 @@ export const HostDashboard: React.FC = () => {
         />
       )}
 
-      {/* STRIPE CONNECT PAYOUTS TAB */}
-      {activeTab === 'payouts' && (
-        <div className="space-y-6 font-sans">
-          
-          <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs space-y-6">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-2xl bg-emerald-100 text-emerald-800">
-                  <CreditCard className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="font-black text-xl text-gray-900">Stripe Escrow Išmokėjimo & Mokesčių Valdymas</h3>
-                  <p className="text-xs text-gray-500 font-medium">Svečių įmokos saugiai užlaikomos „Stripe Escrow“ depozite iki atvykimo dienos.</p>
-                </div>
-              </div>
 
-              <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                <span>Stripe Verified Connect</span>
-              </span>
-            </div>
-
-            {/* Escrow Financial Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-              <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 space-y-1">
-                <span className="font-extrabold text-amber-900 uppercase tracking-wider text-[10px] block">
-                  🔒 Laikoma Escrow (Laukia viešnagės)
-                </span>
-                <span className="text-2xl font-black text-amber-950">
-                  €{userBookings
-                    .filter(b => b.escrowStatus === 'held_in_escrow' || !b.escrowStatus)
-                    .reduce((sum, b) => sum + (b.hostPayoutAmount || b.bookingSubtotal || b.totalPrice), 0)
-                    .toFixed(2)}
-                </span>
-                <p className="text-amber-800 text-[11px]">Pinigai bus atiduoti svečiui atvykus</p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 space-y-1">
-                <span className="font-extrabold text-emerald-900 uppercase tracking-wider text-[10px] block">
-                  🏦 Išmokėta į Banko Sąskaitą
-                </span>
-                <span className="text-2xl font-black text-emerald-950">
-                  €{userBookings
-                    .filter(b => b.escrowStatus === 'payout_released_to_host')
-                    .reduce((sum, b) => sum + (b.hostPayoutAmount || b.bookingSubtotal || b.totalPrice), 0)
-                    .toFixed(2)}
-                </span>
-                <p className="text-emerald-800 text-[11px]">Sąskaita: IBAN LT79 **** **** 4821</p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-1">
-                <span className="font-extrabold text-gray-700 uppercase tracking-wider text-[10px] block">
-                  📊 Taikoma Platformos Mokesčių Pakopa
-                </span>
-                <span className="text-2xl font-black text-gray-900">5% – 10%</span>
-                <p className="text-gray-500 text-[11px]">Mokestis moka svečias (Min. 5.00 EUR Stripe apsauga)</p>
-              </div>
-            </div>
-
-            {/* Escrow Bookings Breakdown Table */}
-            <div className="space-y-3 pt-2">
-              <h4 className="font-extrabold text-base text-gray-900">Užsakymų Išmokėjimų ir Escrow Būsenos Suvestinė</h4>
-              
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-gray-200 text-gray-400 font-extrabold uppercase text-[10px] bg-gray-50">
-                      <th className="py-2.5 px-3">Užsakymas</th>
-                      <th className="py-2.5 px-3">Svečias & Datos</th>
-                      <th className="py-2.5 px-3">Suma (Subtotal)</th>
-                      <th className="py-2.5 px-3">Platformos Mokestis</th>
-                      <th className="py-2.5 px-3">Jūsų Išmoka</th>
-                      <th className="py-2.5 px-3">Escrow Būsena</th>
-                      <th className="py-2.5 px-3 text-right">Veiksmas</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 font-sans">
-                    {userBookings.map(b => (
-                      <tr key={b.id} className="hover:bg-gray-50/80 transition-colors">
-                        <td className="py-3 px-3">
-                          <span className="font-bold text-gray-900 block">{b.campsiteTitle}</span>
-                          <span className="text-[10px] text-gray-400 font-mono">ID: {b.id}</span>
-                        </td>
-                        <td className="py-3 px-3">
-                          <span className="font-semibold text-gray-800 block">{b.guestName}</span>
-                          <span className="text-[10px] text-gray-500">{b.checkIn} iki {b.checkOut}</span>
-                        </td>
-                        <td className="py-3 px-3 font-bold text-gray-900">
-                          €{(b.bookingSubtotal || b.totalPrice).toFixed(2)}
-                        </td>
-                        <td className="py-3 px-3 text-emerald-800 font-semibold">
-                          €{(b.platformFeeEur || b.serviceFee || 5).toFixed(2)} ({b.feePercentage || 10}%)
-                        </td>
-                        <td className="py-3 px-3 font-extrabold text-emerald-900 text-sm">
-                          €{(b.hostPayoutAmount || b.bookingSubtotal || b.totalPrice).toFixed(2)}
-                        </td>
-                        <td className="py-3 px-3">
-                          {b.escrowStatus === 'payout_released_to_host' ? (
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                              ✓ Išmokėta į banką
-                            </span>
-                          ) : b.escrowStatus === 'refunded_to_guest' ? (
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-200">
-                              ↩ Grąžinta svečiui
-                            </span>
-                          ) : (
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-200">
-                              🔒 Escrow Užlaikymas
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 px-3 text-right">
-                          {b.escrowStatus !== 'payout_released_to_host' && b.status === 'approved' && (
-                            <button
-                              onClick={() => {
-                                releaseEscrowPayout(b.id);
-                                alert(`Sėkmingai atšaldytos lėšos €${b.hostPayoutAmount || b.bookingSubtotal}! Pervedimas į jūsų banką inicijuotas.`);
-                              }}
-                              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[10px] shadow-xs cursor-pointer"
-                            >
-                              Atšaldyti & Pervesti Išmoką
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-      )}
 
       {/* HOST REVIEWS & DISPUTES TAB */}
       {activeTab === 'reviews' && (

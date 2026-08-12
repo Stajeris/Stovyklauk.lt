@@ -53,9 +53,7 @@ export const AddListingWizard: React.FC = () => {
   const [latitude, setLatitude] = useState<number>(55.1694);
   const [longitude, setLongitude] = useState<number>(25.4520);
   const [terrainType, setTerrainType] = useState<string>(TERRAIN_OPTIONS[0]);
-  const [propertyType, setPropertyType] = useState<PropertyType>('tent');
-  const [hasCleaningFee, setHasCleaningFee] = useState<boolean>(false);
-  const [cleaningFee, setCleaningFee] = useState<number>(15);
+  const [selectedCategories, setSelectedCategories] = useState<PropertyType[]>(['tent']);
   const [pricePerNight, setPricePerNight] = useState(25);
   const [maxGuests, setMaxGuests] = useState(4);
   const [rvMaxLengthFt, setRvMaxLengthFt] = useState(30);
@@ -142,11 +140,12 @@ export const AddListingWizard: React.FC = () => {
         latitude,
         longitude,
         pricePerNight,
-        hasCleaningFee,
-        cleaningFee: hasCleaningFee ? cleaningFee : 0,
-        propertyType,
+        hasCleaningFee: false,
+        cleaningFee: 0,
+        propertyType: selectedCategories[0] || 'tent',
+        categories: selectedCategories,
         maxGuests,
-        rvMaxLengthFt: propertyType === 'rv' ? rvMaxLengthFt : undefined,
+        rvMaxLengthFt: selectedCategories.includes('rv') ? rvMaxLengthFt : undefined,
         images: imagesList.length > 0 ? imagesList : [
           'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80'
         ],
@@ -541,39 +540,53 @@ export const AddListingWizard: React.FC = () => {
         {step === 2 && (
           <div className="space-y-5 animate-in fade-in duration-200 font-sans">
             <div className="space-y-1">
-              <h2 className="text-2xl font-bold text-gray-900">2 Žingsnis: Tipas ir Kaina</h2>
-              <p className="text-xs text-gray-500">Pasirinkite apgyvendinimo tipą bei nakvynės kainą.</p>
+              <h2 className="text-2xl font-bold text-gray-900">2 Žingsnis: Tipai ir Kaina</h2>
+              <p className="text-xs text-gray-500">Pasirinkite vieną ar kelias kategorijas (pvz., ir palapinėms, ir kemperiams) bei nakvynės kainą.</p>
             </div>
 
-            {/* Property Type Radio Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-              {[
-                { id: 'tent', label: 'Palapinėms', icon: Tent },
-                { id: 'glamping', label: 'Glamping', icon: Sparkles },
-                { id: 'rv', label: 'Kemperiams', icon: Trees },
-                { id: 'cabin', label: 'Atostogų Namelis', icon: Home },
-                { id: 'other', label: 'Kita', icon: TreePine },
-              ].map(item => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      const newType = item.id as PropertyType;
-                      setPropertyType(newType);
-                    }}
-                    className={`p-4 rounded-2xl border text-center flex flex-col items-center gap-2 transition-all cursor-pointer ${
-                      propertyType === item.id
-                        ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-bold ring-2 ring-emerald-600'
-                        : 'border-gray-200 hover:bg-gray-50 text-gray-700'
-                    }`}
-                  >
-                    <Icon className="w-6 h-6 text-emerald-700" />
-                    <span className="text-xs font-bold uppercase tracking-wider">{item.label}</span>
-                  </button>
-                );
-              })}
+            {/* Property Type Multi-Select Cards */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-extrabold text-gray-900">Kategorijos (Galima pasirinkti kelias):</label>
+                <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  Pasirinkta: {selectedCategories.length}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                {[
+                  { id: 'tent' as PropertyType, label: 'Palapinėms', icon: Tent },
+                  { id: 'glamping' as PropertyType, label: 'Glamping', icon: Sparkles },
+                  { id: 'rv' as PropertyType, label: 'Kemperiams', icon: Trees },
+                  { id: 'cabin' as PropertyType, label: 'Atostogų Namelis', icon: Home },
+                  { id: 'other' as PropertyType, label: 'Kita', icon: TreePine },
+                ].map(item => {
+                  const Icon = item.icon;
+                  const isSelected = selectedCategories.includes(item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        if (isSelected) {
+                          if (selectedCategories.length > 1) {
+                            setSelectedCategories(prev => prev.filter(c => c !== item.id));
+                          }
+                        } else {
+                          setSelectedCategories(prev => [...prev, item.id]);
+                        }
+                      }}
+                      className={`p-4 rounded-2xl border text-center flex flex-col items-center gap-2 transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-bold ring-2 ring-emerald-600 shadow-xs'
+                          : 'border-gray-200 hover:bg-gray-50 text-gray-700'
+                      }`}
+                    >
+                      <Icon className="w-6 h-6 text-emerald-700" />
+                      <span className="text-xs font-bold uppercase tracking-wider">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Price per night */}
@@ -595,42 +608,6 @@ export const AddListingWizard: React.FC = () => {
               </p>
             </div>
 
-            {/* Valymo ir Paruošimo Mokestis (Cleaning Fee Toggle) */}
-            <div className="p-4 rounded-2xl bg-white border border-gray-200 space-y-3 font-sans shadow-2xs">
-              <label className="flex items-start gap-3 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={hasCleaningFee}
-                  onChange={(e) => setHasCleaningFee(e.target.checked)}
-                  className="w-4 h-4 mt-0.5 rounded text-emerald-600 focus:ring-emerald-500 border-gray-300 cursor-pointer"
-                />
-                <div>
-                  <span className="text-xs font-extrabold text-gray-900 block">
-                    Taikyti valymo ir paruošimo mokestį
-                  </span>
-                  <span className="text-[10px] text-gray-500 font-medium leading-relaxed block mt-0.5">
-                    Pagal nutylėjimą šis mokestis taikomas tik Kemperių nuomai, bet galite pažymėti ir įvesti kainą bet kuriam objektui.
-                  </span>
-                </div>
-              </label>
-
-              {hasCleaningFee && (
-                <div className="pt-2 border-t border-gray-150 flex items-center justify-between gap-4">
-                  <label className="text-xs font-bold text-gray-700">Valymo / paruošimo mokesčio suma (€):</label>
-                  <div className="relative w-32">
-                    <input
-                      type="number"
-                      min={0}
-                      max={300}
-                      value={cleaningFee}
-                      onChange={(e) => setCleaningFee(Math.max(0, parseInt(e.target.value) || 0))}
-                      className="w-full px-3 py-1.5 rounded-xl border border-gray-300 bg-white text-xs font-extrabold text-gray-900 focus:ring-2 focus:ring-emerald-600"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Capacity */}
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -645,7 +622,7 @@ export const AddListingWizard: React.FC = () => {
                 />
               </div>
 
-              {propertyType === 'rv' && (
+              {selectedCategories.includes('rv') && (
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Maks. kemperio ilgis (m)</label>
                   <input

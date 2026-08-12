@@ -35,9 +35,11 @@ export const SearchResultsPage: React.FC = () => {
       if (!matchLoc) return false;
     }
 
-    // Property Type
+    // Property Type / Categories
     if (searchFilters.propertyType !== 'all') {
-      if (site.propertyType !== searchFilters.propertyType) return false;
+      const matchType = site.propertyType === searchFilters.propertyType || 
+                        (site.categories && site.categories.includes(searchFilters.propertyType as PropertyType));
+      if (!matchType) return false;
     }
 
     // Price

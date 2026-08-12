@@ -34,6 +34,7 @@ export interface DetailedPricingBreakdown {
   totalGuestPrice: number;
   hostPayoutAmount: number;
   appliedRuleName?: string;
+  activeSeasonalRule?: SeasonalPriceRule;
 }
 
 export function calculateFullPricing(

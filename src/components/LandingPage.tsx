@@ -48,7 +48,7 @@ export const LandingPage: React.FC = () => {
   const filteredCampsites = publicCampsites
     .filter(c => {
       if (activeTab === 'all') return true;
-      return c.propertyType === activeTab;
+      return c.propertyType === activeTab || (c.categories && c.categories.includes(activeTab as PropertyType));
     })
     .sort((a, b) => {
       const getRank = (site: typeof a) => {
