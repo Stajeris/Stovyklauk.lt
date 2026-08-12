@@ -9,7 +9,6 @@ import { EditCampsiteModal } from './EditCampsiteModal';
 import { DisputeReviewModal } from './DisputeReviewModal';
 import { HostCalendarManager } from './HostCalendarManager';
 import { HostVerificationSection } from './HostVerificationSection';
-import { VisitArrivalConfirmationCard } from './VisitArrivalConfirmationCard';
 import { HostPhotoUploader } from './HostPhotoUploader';
 import { ProtectedChatMessage, maskContactInfoText } from '../utils/privacyFilter';
 import { HostPitchManager } from './HostPitchManager';
@@ -328,7 +327,7 @@ export const HostDashboard: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h3 className="font-bold text-2xl text-gray-900">Laukiančios Užsakymo Užklausos</h3>
-              <p className="text-xs font-sans text-gray-500 font-medium">Patvirtinkite arba atmeskite svečių užklausas bei tikrinkite apsilankymų patvirtinimus</p>
+              <p className="text-xs font-sans text-gray-500 font-medium">Patvirtinkite arba atmeskite svečių užklausas</p>
             </div>
             <button
               onClick={() => setView('pending-requests')}
@@ -410,13 +409,6 @@ export const HostDashboard: React.FC = () => {
                         </div>
                       )}
                     </div>
-
-                    {/* Visit Confirmation and 24h Escrow Countdown Card for Approved Bookings */}
-                    {bk.status === 'approved' && (
-                      <div className="w-full md:w-80">
-                        <VisitArrivalConfirmationCard booking={bk} role="host" />
-                      </div>
-                    )}
                   </div>
                 </div>
               ))}

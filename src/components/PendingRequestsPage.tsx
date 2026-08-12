@@ -6,7 +6,6 @@ import {
 import { useCampsites } from '../context/CampsiteContext';
 import { Booking } from '../types';
 import { OrderApproxMap } from './OrderApproxMap';
-import { VisitArrivalConfirmationCard } from './VisitArrivalConfirmationCard';
 
 export const PendingRequestsPage: React.FC = () => {
   const { campsites, bookings, updateBookingStatus, setView, t } = useCampsites();
@@ -407,7 +406,6 @@ export const PendingRequestsPage: React.FC = () => {
                             Rodyti kontaktus
                           </button>
                         </div>
-                        <VisitArrivalConfirmationCard booking={bk} role="host" />
                       </div>
                     )}
 
