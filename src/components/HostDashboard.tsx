@@ -14,6 +14,7 @@ import { ProtectedChatMessage, maskContactInfoText } from '../utils/privacyFilte
 import { HostPitchManager } from './HostPitchManager';
 import { HostSeasonalPricingManager } from './HostSeasonalPricingManager';
 import { HostAutomatedEmailManager } from './HostAutomatedEmailManager';
+import { MiniReservationCalendar } from './MiniReservationCalendar';
 
 export const HostDashboard: React.FC = () => {
   const { 
@@ -409,6 +410,18 @@ export const HostDashboard: React.FC = () => {
                         </div>
                       )}
                     </div>
+                  </div>
+
+                  {/* Mini Calendar showing reservations for requested campsite */}
+                  <div className="w-full border-t border-stone-100 pt-3">
+                    <MiniReservationCalendar
+                      campsiteId={bk.campsiteId}
+                      checkIn={bk.checkIn}
+                      checkOut={bk.checkOut}
+                      currentBookingId={bk.id}
+                      bookingStatus={bk.status}
+                      campsiteTitle={bk.campsiteTitle}
+                    />
                   </div>
                 </div>
               ))}

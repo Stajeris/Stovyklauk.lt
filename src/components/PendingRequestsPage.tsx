@@ -6,6 +6,7 @@ import {
 import { useCampsites } from '../context/CampsiteContext';
 import { Booking } from '../types';
 import { OrderApproxMap } from './OrderApproxMap';
+import { MiniReservationCalendar } from './MiniReservationCalendar';
 
 export const PendingRequestsPage: React.FC = () => {
   const { campsites, bookings, updateBookingStatus, setView, t } = useCampsites();
@@ -358,6 +359,16 @@ export const PendingRequestsPage: React.FC = () => {
                         </span>
                       </div>
                     </div>
+
+                    {/* Mini Calendar for requested place to book */}
+                    <MiniReservationCalendar
+                      campsiteId={bk.campsiteId}
+                      checkIn={bk.checkIn}
+                      checkOut={bk.checkOut}
+                      currentBookingId={bk.id}
+                      bookingStatus={bk.status}
+                      campsiteTitle={bk.campsiteTitle}
+                    />
 
                     {/* Action Buttons */}
                     {(bk.status === 'pending' || bk.status === 'free_inquiry') && (
