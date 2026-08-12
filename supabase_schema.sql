@@ -119,16 +119,20 @@ CREATE INDEX IF NOT EXISTS idx_bookings_listing ON public.bookings(listing_id, c
 -- 6. AUTOMATED EMAIL LOGS TABLE
 CREATE TABLE IF NOT EXISTS public.automated_email_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    listing_id UUID NOT NULL REFERENCES public.listings(id) ON DELETE CASCADE,
+    listing_id UUID REFERENCES public.listings(id) ON DELETE CASCADE,
     booking_id UUID REFERENCES public.bookings(id) ON DELETE CASCADE,
-    type VARCHAR(50) NOT NULL, -- confirmation_checkin, new_reservation_request
+    type VARCHAR(100) NOT NULL, -- welcome_user, welcome_host, reservation_confirmed, etc.
     recipient_email VARCHAR(255) NOT NULL,
     recipient_name VARCHAR(255) NOT NULL,
     subject VARCHAR(255) NOT NULL,
     content_preview TEXT,
+    html_body TEXT,
     sent_at TIMESTAMPTZ DEFAULT NOW(),
     status VARCHAR(50) DEFAULT 'sent'
 );
+
+CREATE INDEX IF NOT EXISTS idx_email_logs_recipient ON public.automated_email_logs(recipient_email);
+CREATE INDEX IF NOT EXISTS idx_email_logs_listing ON public.automated_email_logs(listing_id);
 
 -- 7. ROW LEVEL SECURITY (RLS) POLICIES
 ALTER TABLE public.listings ENABLE ROW LEVEL SECURITY;
@@ -138,6 +142,32 @@ ALTER TABLE public.ical_feeds ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.imported_calendar_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.automated_email_logs ENABLE ROW LEVEL SECURITY;
+
+-- Email Logs Policy: Users and Hosts can view their own sent email logs
+CREATE POLICY "Users and hosts view their email logs" ON public.automated_email_logs
+    FOR SELECT USING (
+        recipient_email = auth.jwt() ->> 'email' OR
+        EXISTS (SELECT 1 FROM public.listings WHERE id = automated_email_logs.listing_id AND host_id = auth.uid()) OR
+        auth.jwt() ->> 'role' = 'service_role'
+    );
+
+CREATE POLICY "Anyone or server can insert email logs" ON public.automated_email_logs
+    FOR INSERT WITH CHECK (true);
+
+-- ====================================================================
+-- SUPABASE AUTH & CUSTOM SMTP CONFIGURATION GUIDE
+-- ====================================================================
+-- To use Supabase SMTP for auth emails (Signup confirmation, Reset Password, Magic Links):
+-- 1. In Supabase Dashboard, go to Project Settings -> Authentication -> SMTP Settings.
+-- 2. Enable Custom SMTP.
+-- 3. Enter the following parameters:
+--    - Sender Name: Campy.lt Stovyklavietės
+--    - Sender Email: noreply@campy.lt
+--    - Host: smtp.resend.com (or your SMTP host, e.g., smtp.sendgrid.net, email-smtp.us-east-1.amazonaws.com)
+--    - Port: 587 (or 465 for SSL)
+--    - Username: resend (or your SMTP user)
+--    - Password: your_resend_api_key (e.g. re_123456789)
+-- ====================================================================
 
 -- Public Read Policy for Listings, Pitches & Seasonal Rules
 CREATE POLICY "Public listings are viewable by everyone" ON public.listings FOR SELECT USING (true);

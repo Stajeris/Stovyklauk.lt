@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Mail, CheckCircle2, Send, Crown, MapPin, Key, Wifi, FileText, Clock, Eye } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Mail, CheckCircle2, Send, Crown, MapPin, Key, Wifi, FileText, Clock, Eye, Server, ShieldCheck, AlertCircle, RefreshCw } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
 import { Campsite } from '../types';
 import { generateSystemEmail, SystemEmailType } from '../utils/emailSystem';
@@ -28,6 +28,54 @@ export const HostAutomatedEmailManager: React.FC<HostAutomatedEmailManagerProps>
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [activeTemplateTab, setActiveTemplateTab] = useState<SystemEmailType>('reservation_confirmed');
   const [testEmailSentToast, setTestEmailSentToast] = useState<string | null>(null);
+
+  // Live SMTP status & diagnostic state
+  const [smtpStatus, setSmtpStatus] = useState<any>(null);
+  const [isLoadingSmtpStatus, setIsLoadingSmtpStatus] = useState(false);
+  const [testRecipientInput, setTestRecipientInput] = useState('');
+  const [isTestingSmtp, setIsTestingSmtp] = useState(false);
+  const [testSmtpOutput, setTestSmtpOutput] = useState<any>(null);
+  const [showSmtpGuide, setShowSmtpGuide] = useState(false);
+
+  const fetchSmtpStatus = async () => {
+    setIsLoadingSmtpStatus(true);
+    try {
+      const res = await fetch('/api/smtp-status');
+      const data = await res.json();
+      if (data.success) {
+        setSmtpStatus(data.status);
+      }
+    } catch (e) {
+      console.warn('Could not fetch SMTP status:', e);
+    } finally {
+      setIsLoadingSmtpStatus(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSmtpStatus();
+  }, []);
+
+  const handleTestSmtpConnection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!testRecipientInput) return;
+    setIsTestingSmtp(true);
+    setTestSmtpOutput(null);
+
+    try {
+      const res = await fetch('/api/test-smtp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testEmail: testRecipientInput })
+      });
+      const data = await res.json();
+      setTestSmtpOutput(data);
+    } catch (err: any) {
+      setTestSmtpOutput({ success: false, error: err.message });
+    } finally {
+      setIsTestingSmtp(false);
+    }
+  };
 
   const handleSaveInstructions = (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,6 +189,158 @@ export const HostAutomatedEmailManager: React.FC<HostAutomatedEmailManagerProps>
           <span>{testEmailSentToast}</span>
         </div>
       )}
+
+      {/* Supabase SMTP & Resend Diagnostics Panel */}
+      <div className="p-5 rounded-2xl bg-stone-900 text-stone-100 border border-stone-800 space-y-4 shadow-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-800 pb-3">
+          <div className="flex items-center gap-2.5">
+            <span className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 font-bold">
+              <Server className="w-5 h-5" />
+            </span>
+            <div>
+              <h4 className="font-extrabold text-sm text-stone-100 flex items-center gap-2">
+                <span>Supabase SMTP & Resend Siuntimo Būsenos Skydelis</span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-wider">
+                  Live Engine
+                </span>
+              </h4>
+              <p className="text-[11px] text-stone-400">
+                Tikrasis el. pašto siuntimo serveris (Nodemailer SMTP / Resend API / Simuliacija)
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={fetchSmtpStatus}
+              disabled={isLoadingSmtpStatus}
+              className="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-bold rounded-xl flex items-center gap-1.5 transition cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoadingSmtpStatus ? 'animate-spin text-emerald-400' : ''}`} />
+              <span>Atnaujinti būseną</span>
+            </button>
+            <button
+              onClick={() => setShowSmtpGuide(!showSmtpGuide)}
+              className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl transition cursor-pointer"
+            >
+              <span>{showSmtpGuide ? 'Slėpti gidą' : 'Supabase SMTP Gidas'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Live Config Indicators */}
+        {smtpStatus && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div className="p-3 rounded-xl bg-stone-800/80 border border-stone-750">
+              <div className="text-[10px] uppercase tracking-wider font-extrabold text-stone-400 mb-1">
+                Supabase / Direct SMTP
+              </div>
+              <div className="flex items-center gap-2 font-bold text-stone-200">
+                {smtpStatus.smtpConfigured ? (
+                  <span className="text-emerald-400 flex items-center gap-1">
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Aktyvus ({smtpStatus.smtpHost})</span>
+                  </span>
+                ) : (
+                  <span className="text-amber-400 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>Neaktyvus (Simuliacija)</span>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-stone-800/80 border border-stone-750">
+              <div className="text-[10px] uppercase tracking-wider font-extrabold text-stone-400 mb-1">
+                Resend API
+              </div>
+              <div className="flex items-center gap-2 font-bold text-stone-200">
+                {smtpStatus.resendConfigured ? (
+                  <span className="text-emerald-400 flex items-center gap-1">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Prijungtas API Raktas</span>
+                  </span>
+                ) : (
+                  <span className="text-stone-400 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>Numatytasis Mode</span>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-stone-800/80 border border-stone-750">
+              <div className="text-[10px] uppercase tracking-wider font-extrabold text-stone-400 mb-1">
+                Siuntėjo Adresas
+              </div>
+              <div className="font-mono text-emerald-300 font-bold text-[11px] truncate">
+                "Campy.lt" &lt;noreply@campy.lt&gt;
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Test SMTP connection form */}
+        <form onSubmit={handleTestSmtpConnection} className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <input
+            type="email"
+            required
+            placeholder="Įveskite savo el. paštą bandomajam siuntimui..."
+            value={testRecipientInput}
+            onChange={(e) => setTestRecipientInput(e.target.value)}
+            className="flex-1 px-3.5 py-2.5 rounded-xl bg-stone-950 border border-stone-700 text-stone-100 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+          />
+          <button
+            type="submit"
+            disabled={isTestingSmtp}
+            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl transition cursor-pointer flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
+          >
+            <Send className="w-3.5 h-3.5" />
+            <span>{isTestingSmtp ? 'Siunčiama...' : 'Tikrinti SMTP Ryšį'}</span>
+          </button>
+        </form>
+
+        {/* Test Output Box */}
+        {testSmtpOutput && (
+          <div className={`p-4 rounded-xl border text-xs font-mono space-y-1 ${
+            testSmtpOutput.testResult?.success || testSmtpOutput.success
+              ? 'bg-emerald-950/80 border-emerald-800 text-emerald-200'
+              : 'bg-rose-950/80 border-rose-800 text-rose-200'
+          }`}>
+            <p className="font-extrabold flex items-center gap-2">
+              <span>{testSmtpOutput.testResult?.success ? '🟢 Testas Sėkmingas!' : '⚠️ Testo Rezultatas:'}</span>
+            </p>
+            <p className="text-[11px] text-stone-300">{testSmtpOutput.testResult?.message || JSON.stringify(testSmtpOutput)}</p>
+          </div>
+        )}
+
+        {/* Step-by-step Supabase SMTP configuration guide */}
+        {showSmtpGuide && (
+          <div className="p-4 rounded-xl bg-stone-950 border border-stone-800 text-xs space-y-2 text-stone-300 animate-in fade-in">
+            <h5 className="font-extrabold text-stone-100 text-sm flex items-center gap-1.5 text-emerald-400">
+              <ShieldCheck className="w-4 h-4" />
+              <span>Kaip Konfigūruoti Supabase Custom SMTP:</span>
+            </h5>
+            <ol className="list-decimal list-inside space-y-1.5 text-stone-300 text-[11px] leading-relaxed">
+              <li>Atsidarykite <strong>Supabase Dashboard</strong> ir pasirinkite savo projektą.</li>
+              <li>Eikite į <strong>Project Settings → Authentication → SMTP Settings</strong>.</li>
+              <li>Aktivuokite <strong>"Enable Custom SMTP"</strong> jungiklį.</li>
+              <li>
+                Įveskite SMTP nustatymus:
+                <ul className="list-disc list-inside ml-4 text-stone-400 mt-1 space-y-0.5 font-mono text-[10px]">
+                  <li>Host: <span className="text-emerald-300">smtp.resend.com</span></li>
+                  <li>Port: <span className="text-emerald-300">587</span></li>
+                  <li>User: <span className="text-emerald-300">resend</span></li>
+                  <li>Password: <span className="text-emerald-300">jūsų_resend_api_raktas</span></li>
+                  <li>Sender Name: <span className="text-emerald-300">Campy.lt Stovyklavietės</span></li>
+                  <li>Sender Email: <span className="text-emerald-300">noreply@campy.lt</span></li>
+                </ul>
+              </li>
+              <li>Aplikacijos backend `.env` faile taip pat galite nurodyti <code className="text-amber-300">SMTP_HOST</code>, <code className="text-amber-300">SMTP_USER</code>, <code className="text-amber-300">SMTP_PASS</code> kintamuosius tiesioginiam siuntimui per Express backend.</li>
+            </ol>
+          </div>
+        )}
+      </div>
 
       {/* Check-in Instructions Settings Form */}
       <form onSubmit={handleSaveInstructions} className="p-5 rounded-2xl bg-stone-50 border border-stone-200 space-y-4">

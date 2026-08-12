@@ -2,7 +2,7 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
-import { sendBookingConfirmationEmail } from "./src/lib/email";
+import { sendBookingConfirmationEmail, sendGenericEmail, testSmtpConnection } from "./src/lib/email";
 
 dotenv.config();
 
@@ -10,9 +10,39 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  app.use(express.json({ limit: '10mb' }));
 
-  // API Route: Send Booking Confirmation Email using Resend
+  // API Route: Send System Email (Unified endpoint for all 9 system templates)
+  app.post("/api/send-system-email", async (req, res) => {
+    try {
+      const { recipientEmail, subject, htmlBody, fromName, fromEmail } = req.body;
+
+      if (!recipientEmail || !subject || !htmlBody) {
+        return res.status(400).json({
+          success: false,
+          error: "Trūksta privalomų laukų: recipientEmail, subject, htmlBody"
+        });
+      }
+
+      const result = await sendGenericEmail({
+        to: recipientEmail,
+        subject,
+        htmlBody,
+        fromName: fromName || 'Campy.lt',
+        fromEmail: fromEmail || 'noreply@campy.lt'
+      });
+
+      return res.json(result);
+    } catch (error: any) {
+      console.error("API error sending system email:", error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || "Serverio klaida siunčiant el. laišką"
+      });
+    }
+  });
+
+  // API Route: Send Booking Confirmation Email using Resend / SMTP
   app.post("/api/send-confirmation-email", async (req, res) => {
     try {
       const { guestEmail, guestName, campsiteTitle, checkIn, checkOut, totalPrice, bookingId, hostName, hostPhone } = req.body;
@@ -46,9 +76,34 @@ async function startServer() {
     }
   });
 
+  // API Route: Get SMTP and Resend configuration status
+  app.get("/api/smtp-status", async (req, res) => {
+    try {
+      const diag = await testSmtpConnection();
+      return res.json({ success: true, ...diag });
+    } catch (error: any) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // API Route: Send test SMTP email
+  app.post("/api/test-smtp", async (req, res) => {
+    try {
+      const { testEmail } = req.body;
+      if (!testEmail) {
+        return res.status(400).json({ success: false, error: "Nurodykite testElPaštą" });
+      }
+
+      const result = await testSmtpConnection(testEmail);
+      return res.json({ success: true, ...result });
+    } catch (error: any) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   // Health check endpoint
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", service: "Resend Email Server" });
+    res.json({ status: "ok", service: "Campy.lt Email & Supabase SMTP Engine" });
   });
 
   // Vite middleware for development vs static build for production

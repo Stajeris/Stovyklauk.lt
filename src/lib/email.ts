@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
 export interface BookingConfirmationEmailParams {
   guestEmail: string;
@@ -12,20 +13,165 @@ export interface BookingConfirmationEmailParams {
   hostPhone?: string;
 }
 
+export interface GenericEmailParams {
+  to: string;
+  subject: string;
+  htmlBody: string;
+  fromName?: string;
+  fromEmail?: string;
+}
+
 let resendClient: Resend | null = null;
 
 export function getResendClient(): Resend | null {
   if (!resendClient) {
     const apiKey = process.env.RESEND_API_KEY;
-    if (apiKey && apiKey !== 're_123456789') {
-      resendClient = new Resend(apiKey);
+    if (apiKey && apiKey !== 're_123456789' && apiKey.trim() !== '') {
+      resendClient = new Resend(apiKey.trim());
     }
   }
   return resendClient;
 }
 
+export function getSmtpTransporter(): nodemailer.Transporter | null {
+  const host = process.env.SMTP_HOST;
+  const port = Number(process.env.SMTP_PORT) || 587;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (host && user && pass) {
+    return nodemailer.createTransport({
+      host: host.trim(),
+      port,
+      secure: port === 465, // true for 465, false for 587 or other ports
+      auth: {
+        user: user.trim(),
+        pass: pass.trim(),
+      },
+      tls: {
+        rejectUnauthorized: false
+      }
+    });
+  }
+  return null;
+}
+
 /**
- * Sends a reservation confirmation email to the guest using Resend API.
+ * Sends generic HTML email using SMTP Transporter first, then Resend API, or falls back to simulation.
+ */
+export async function sendGenericEmail(params: GenericEmailParams) {
+  const { to, subject, htmlBody, fromName = 'Campy.lt', fromEmail = 'noreply@campy.lt' } = params;
+
+  const smtpTransporter = getSmtpTransporter();
+  const resend = getResendClient();
+
+  const senderAddress = `"${fromName}" <${fromEmail}>`;
+
+  // 1. Try Direct SMTP (Nodemailer)
+  if (smtpTransporter) {
+    try {
+      const info = await smtpTransporter.sendMail({
+        from: senderAddress,
+        to,
+        subject,
+        html: htmlBody,
+      });
+
+      return {
+        success: true,
+        method: 'smtp',
+        messageId: info.messageId,
+        message: `El. laiškas sėkmingai išsiųstas per Supabase / Custom SMTP serverį (${info.messageId})`
+      };
+    } catch (smtpErr: any) {
+      console.warn('⚠️ SMTP siuntimo klaida, bandoma per Resend API:', smtpErr.message);
+    }
+  }
+
+  // 2. Try Resend API
+  if (resend) {
+    try {
+      const data = await resend.emails.send({
+        from: senderAddress,
+        to: [to],
+        subject,
+        html: htmlBody,
+      });
+
+      return {
+        success: true,
+        method: 'resend',
+        data,
+        message: `El. laiškas sėkmingai išsiųstas per Resend API`
+      };
+    } catch (resendErr: any) {
+      console.error('❌ Resend API siuntimo klaida:', resendErr.message);
+      return {
+        success: false,
+        method: 'resend',
+        error: resendErr.message || 'Nepavyko išsiųsti laiško per Resend API'
+      };
+    }
+  }
+
+  // 3. Fallback: Simulated Mode
+  console.log(`[Email Simulated Mode]
+  To: ${to}
+  Subject: ${subject}
+  Sender: ${senderAddress}`);
+
+  return {
+    success: true,
+    mock: true,
+    method: 'simulated',
+    message: `El. laiškas simuliuotas (${to}). Nustatykite RESEND_API_KEY arba SMTP_HOST / SMTP_USER / SMTP_PASS aplinkos kintamuosius.`,
+    id: `sim_mail_${Date.now()}`
+  };
+}
+
+/**
+ * Diagnostic function to test SMTP / Resend connection.
+ */
+export async function testSmtpConnection(testRecipient?: string) {
+  const smtpTransporter = getSmtpTransporter();
+  const resend = getResendClient();
+
+  const status = {
+    smtpConfigured: !!smtpTransporter,
+    resendConfigured: !!resend,
+    smtpHost: process.env.SMTP_HOST || 'Nenurodyta',
+    smtpPort: process.env.SMTP_PORT || '587 (numatytasis)',
+    smtpUser: process.env.SMTP_USER ? '***' + process.env.SMTP_USER.slice(-3) : 'Nenurodyta',
+    resendKeyPresent: !!process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== 're_123456789'
+  };
+
+  if (testRecipient) {
+    const testResult = await sendGenericEmail({
+      to: testRecipient,
+      subject: '🧪 Campy.lt / Supabase SMTP Bandomasis Patikrinimas',
+      htmlBody: `
+        <div style="font-family: sans-serif; padding: 20px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; color: #064e3b;">
+          <h2>🟢 SMTP / Resend Ryšys Veikia!</h2>
+          <p>Šis bandomasis laiškas patvirtina, kad el. pašto siuntimo sistema sukonfigūruota sėkmingai.</p>
+          <p><strong>Būsenos informacija:</strong></p>
+          <ul>
+            <li>SMTP Serveris: ${status.smtpHost}:${status.smtpPort}</li>
+            <li>SMTP Aktyvus: ${status.smtpConfigured ? 'TAIP ✅' : 'NE ❌'}</li>
+            <li>Resend API Aktyvus: ${status.resendConfigured ? 'TAIP ✅' : 'NE ❌'}</li>
+            <li>Išsiuntimo Laikas: ${new Date().toISOString()}</li>
+          </ul>
+        </div>
+      `
+    });
+
+    return { status, testResult };
+  }
+
+  return { status };
+}
+
+/**
+ * Sends a reservation confirmation email to the guest using Resend or SMTP.
  */
 export async function sendBookingConfirmationEmail(params: BookingConfirmationEmailParams) {
   const {
@@ -39,8 +185,6 @@ export async function sendBookingConfirmationEmail(params: BookingConfirmationEm
     hostName = 'Stovyklavietės Šeimininkas',
     hostPhone = '+37060000000'
   } = params;
-
-  const resend = getResendClient();
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -112,38 +256,10 @@ export async function sendBookingConfirmationEmail(params: BookingConfirmationEm
     </html>
   `;
 
-  if (!resend) {
-    console.log(`[Resend Email Simulated]
-    To: ${guestEmail}
-    Subject: 🏕️ Rezervacijos patvirtinimas - ${campsiteTitle}
-    Booking ID: ${bookingId}`);
-    
-    return {
-      success: true,
-      mock: true,
-      message: `El. laiškas simuliuotas (${guestEmail}). Nustatykite RESEND_API_KEY aplinkos kintamąjį reaziems laiškams.`,
-      id: `sim_resend_${Date.now()}`
-    };
-  }
-
-  try {
-    const data = await resend.emails.send({
-      from: 'Campy.lt <noreply@campy.lt>',
-      to: [guestEmail],
-      subject: `🏕️ Rezervacijos patvirtinimas - ${campsiteTitle}`,
-      html: htmlContent
-    });
-
-    return {
-      success: true,
-      mock: false,
-      data
-    };
-  } catch (error: any) {
-    console.error('Klaida siunčiant laišką per Resend:', error);
-    return {
-      success: false,
-      error: error.message || 'Nepavyko išsiųsti el. laiško'
-    };
-  }
+  return await sendGenericEmail({
+    to: guestEmail,
+    subject: `🏕️ Rezervacijos patvirtinimas - ${campsiteTitle}`,
+    htmlBody: htmlContent
+  });
 }
+

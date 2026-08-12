@@ -4,7 +4,7 @@ import { INITIAL_CAMPSITES, INITIAL_BOOKINGS } from '../data/mockCampsites';
 import { INITIAL_CHAT_THREADS } from '../data/mockChats';
 import { translations, Language } from '../data/translations';
 import { calculateFullPricing } from '../utils/pricing';
-import { generateSystemEmail, SystemEmailType, EmailPayload } from '../utils/emailSystem';
+import { generateSystemEmail, sendSystemEmailViaApi, SystemEmailType, EmailPayload } from '../utils/emailSystem';
 
 export const INITIAL_USERS: UserProfile[] = [
   // 1 Platform Admin
@@ -576,6 +576,16 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     setEmailLogs(prev => [newLog, ...prev]);
+
+    // Asynchronously dispatch real email via Express API (Resend or Supabase SMTP)
+    sendSystemEmailViaApi(type, payload).then(result => {
+      if (result.success) {
+        console.log(`✅ El. laiškas išsiųstas gavėjui ${generated.recipientEmail} (${type})`);
+      } else {
+        console.warn(`⚠️ El. pašto siuntimo pranešimas:`, result);
+      }
+    });
+
     return newLog;
   };
 

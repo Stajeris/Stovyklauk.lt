@@ -28,6 +28,40 @@ export interface GeneratedEmail {
   htmlBody: string;
 }
 
+/**
+ * Dispatches generated system email to Express backend API route (/api/send-system-email)
+ * which sends via Resend or Supabase SMTP.
+ */
+export async function sendSystemEmailViaApi(type: SystemEmailType, payload: EmailPayload) {
+  const emailData = generateSystemEmail(type, payload);
+
+  try {
+    const res = await fetch('/api/send-system-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        recipientEmail: emailData.recipientEmail,
+        subject: emailData.subject,
+        htmlBody: emailData.htmlBody,
+        fromName: 'Campy.lt Stovyklavietės',
+        fromEmail: 'noreply@campy.lt'
+      })
+    });
+
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      console.warn('API respond with error for email dispatch:', errJson);
+      return { success: false, emailData, error: errJson.error || 'Serverio klaida' };
+    }
+
+    const data = await res.json();
+    return { success: true, emailData, apiResult: data };
+  } catch (err: any) {
+    console.warn('Network error dispatching system email:', err.message);
+    return { success: false, emailData, error: err.message };
+  }
+}
+
 export function generateSystemEmail(type: SystemEmailType, payload: EmailPayload): GeneratedEmail {
   const { user, booking, campsite, verificationCode, declineReason, customNote } = payload;
 
