@@ -1,5 +1,4 @@
 import { Resend } from 'resend';
-import nodemailer from 'nodemailer';
 
 export interface BookingConfirmationEmailParams {
   guestEmail: string;
@@ -33,62 +32,16 @@ export function getResendClient(): Resend | null {
   return resendClient;
 }
 
-export function getSmtpTransporter(): nodemailer.Transporter | null {
-  const host = process.env.SMTP_HOST;
-  const port = Number(process.env.SMTP_PORT) || 587;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-
-  if (host && user && pass) {
-    return nodemailer.createTransport({
-      host: host.trim(),
-      port,
-      secure: port === 465, // true for 465, false for 587 or other ports
-      auth: {
-        user: user.trim(),
-        pass: pass.trim(),
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
-  }
-  return null;
-}
-
 /**
- * Sends generic HTML email using SMTP Transporter first, then Resend API, or falls back to simulation.
+ * Sends generic HTML email using strictly Resend API.
  */
 export async function sendGenericEmail(params: GenericEmailParams) {
   const { to, subject, htmlBody, fromName = 'Campy.lt', fromEmail = 'noreply@campy.lt' } = params;
 
-  const smtpTransporter = getSmtpTransporter();
   const resend = getResendClient();
-
   const senderAddress = `"${fromName}" <${fromEmail}>`;
 
-  // 1. Try Direct SMTP (Nodemailer)
-  if (smtpTransporter) {
-    try {
-      const info = await smtpTransporter.sendMail({
-        from: senderAddress,
-        to,
-        subject,
-        html: htmlBody,
-      });
-
-      return {
-        success: true,
-        method: 'smtp',
-        messageId: info.messageId,
-        message: `El. laiškas sėkmingai išsiųstas per Supabase / Custom SMTP serverį (${info.messageId})`
-      };
-    } catch (smtpErr: any) {
-      console.warn('⚠️ SMTP siuntimo klaida, bandoma per Resend API:', smtpErr.message);
-    }
-  }
-
-  // 2. Try Resend API
+  // Use Resend API
   if (resend) {
     try {
       const data = await resend.emails.send({
@@ -134,45 +87,38 @@ export async function sendGenericEmail(params: GenericEmailParams) {
     }
   }
 
-  // 3. No provider configured or both failed
-  console.warn(`❌ El. pašto tiekėjas nekonfigūruotas arba siuntimas nepavyko (${to})`);
+  // Resend API key missing
+  console.warn(`❌ Resend API raktas nekonfigūruotas (${to})`);
 
   return {
     success: false,
     method: 'none',
-    error: `El. pašto siuntimo sistema nekonfigūruota: trūksta RESEND_API_KEY arba SMTP_HOST / SMTP_USER / SMTP_PASS aplinkos kintamųjų. Prašome nustatyti šiuos kintamuosius projekto aplinkoje.`,
+    error: `Resend API nekonfigūruotas: trūksta RESEND_API_KEY aplinkos kintamojo. Nustatykite šį raktą projekto aplinkoje.`,
     id: `failed_mail_${Date.now()}`
   };
 }
 
 /**
- * Diagnostic function to test SMTP / Resend connection.
+ * Diagnostic function to test Resend connection.
  */
 export async function testSmtpConnection(testRecipient?: string) {
-  const smtpTransporter = getSmtpTransporter();
   const resend = getResendClient();
 
   const status = {
-    smtpConfigured: !!smtpTransporter,
     resendConfigured: !!resend,
-    smtpHost: process.env.SMTP_HOST || 'Nenurodyta',
-    smtpPort: process.env.SMTP_PORT || '587 (numatytasis)',
-    smtpUser: process.env.SMTP_USER ? '***' + process.env.SMTP_USER.slice(-3) : 'Nenurodyta',
     resendKeyPresent: !!process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== 're_123456789'
   };
 
   if (testRecipient) {
     const testResult = await sendGenericEmail({
       to: testRecipient,
-      subject: '🧪 Campy.lt / Supabase SMTP Bandomasis Patikrinimas',
+      subject: '🧪 Campy.lt Resend API Bandomasis Patikrinimas',
       htmlBody: `
         <div style="font-family: sans-serif; padding: 20px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; color: #064e3b;">
-          <h2>🟢 SMTP / Resend Ryšys Veikia!</h2>
-          <p>Šis bandomasis laiškas patvirtina, kad el. pašto siuntimo sistema sukonfigūruota sėkmingai.</p>
+          <h2>🟢 Resend API Ryšys Veikia!</h2>
+          <p>Šis bandomasis laiškas patvirtina, kad el. pašto siuntimo sistema per Resend API veikia sėkmingai.</p>
           <p><strong>Būsenos informacija:</strong></p>
           <ul>
-            <li>SMTP Serveris: ${status.smtpHost}:${status.smtpPort}</li>
-            <li>SMTP Aktyvus: ${status.smtpConfigured ? 'TAIP ✅' : 'NE ❌'}</li>
             <li>Resend API Aktyvus: ${status.resendConfigured ? 'TAIP ✅' : 'NE ❌'}</li>
             <li>Išsiuntimo Laikas: ${new Date().toISOString()}</li>
           </ul>

@@ -103,7 +103,7 @@ async function startServer() {
 
   // Health check endpoint
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", service: "Campy.lt Email & Supabase SMTP Engine" });
+    res.json({ status: "ok", service: "Campy.lt Resend Email Engine" });
   });
 
   // Catch-all 404 handler for /api/* routes to guarantee JSON response instead of HTML

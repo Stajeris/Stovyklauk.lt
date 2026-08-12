@@ -198,7 +198,7 @@ export const HostAutomatedEmailManager: React.FC<HostAutomatedEmailManagerProps>
         </div>
       )}
 
-      {/* Supabase SMTP & Resend Diagnostics Panel */}
+      {/* Resend API Diagnostics Panel */}
       <div className="p-5 rounded-2xl bg-stone-900 text-stone-100 border border-stone-800 space-y-4 shadow-lg">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-800 pb-3">
           <div className="flex items-center gap-2.5">
@@ -207,13 +207,13 @@ export const HostAutomatedEmailManager: React.FC<HostAutomatedEmailManagerProps>
             </span>
             <div>
               <h4 className="font-extrabold text-sm text-stone-100 flex items-center gap-2">
-                <span>Supabase SMTP & Resend Siuntimo Būsenos Skydelis</span>
+                <span>Resend API El. Pašto Siuntimo Skydelis</span>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-wider">
-                  Live Engine
+                  Resend Engine
                 </span>
               </h4>
               <p className="text-[11px] text-stone-400">
-                Tikrasis el. pašto siuntimo serveris (Nodemailer SMTP / Resend API / Simuliacija)
+                Tiesioginis el. pašto siuntimo variklis per Resend API
               </p>
             </div>
           </div>
@@ -231,47 +231,28 @@ export const HostAutomatedEmailManager: React.FC<HostAutomatedEmailManagerProps>
               onClick={() => setShowSmtpGuide(!showSmtpGuide)}
               className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl transition cursor-pointer"
             >
-              <span>{showSmtpGuide ? 'Slėpti gidą' : 'Supabase SMTP Gidas'}</span>
+              <span>{showSmtpGuide ? 'Slėpti gidą' : 'Resend Gidas'}</span>
             </button>
           </div>
         </div>
 
         {/* Live Config Indicators */}
         {smtpStatus && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div className="p-3 rounded-xl bg-stone-800/80 border border-stone-750">
               <div className="text-[10px] uppercase tracking-wider font-extrabold text-stone-400 mb-1">
-                Supabase / Direct SMTP
-              </div>
-              <div className="flex items-center gap-2 font-bold text-stone-200">
-                {smtpStatus.smtpConfigured ? (
-                  <span className="text-emerald-400 flex items-center gap-1">
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>Aktyvus ({smtpStatus.smtpHost})</span>
-                  </span>
-                ) : (
-                  <span className="text-amber-400 flex items-center gap-1">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>Neaktyvus (Simuliacija)</span>
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="p-3 rounded-xl bg-stone-800/80 border border-stone-750">
-              <div className="text-[10px] uppercase tracking-wider font-extrabold text-stone-400 mb-1">
-                Resend API
+                Resend API Raktas
               </div>
               <div className="flex items-center gap-2 font-bold text-stone-200">
                 {smtpStatus.resendConfigured ? (
                   <span className="text-emerald-400 flex items-center gap-1">
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>Prijungtas API Raktas</span>
+                    <span>Prijungtas API Raktas (RESEND_API_KEY)</span>
                   </span>
                 ) : (
-                  <span className="text-stone-400 flex items-center gap-1">
+                  <span className="text-amber-400 flex items-center gap-1">
                     <AlertCircle className="w-4 h-4" />
-                    <span>Numatytasis Mode</span>
+                    <span>Nenurodytas RESEND_API_KEY</span>
                   </span>
                 )}
               </div>
@@ -282,13 +263,13 @@ export const HostAutomatedEmailManager: React.FC<HostAutomatedEmailManagerProps>
                 Siuntėjo Adresas
               </div>
               <div className="font-mono text-emerald-300 font-bold text-[11px] truncate">
-                "Campy.lt" &lt;noreply@campy.lt&gt;
+                "Campy.lt" &lt;noreply@campy.lt&gt; (arba onboarding@resend.dev)
               </div>
             </div>
           </div>
         )}
 
-        {/* Test SMTP connection form */}
+        {/* Test Resend connection form */}
         <form onSubmit={handleTestSmtpConnection} className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <input
             type="email"
@@ -304,7 +285,7 @@ export const HostAutomatedEmailManager: React.FC<HostAutomatedEmailManagerProps>
             className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl transition cursor-pointer flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
           >
             <Send className="w-3.5 h-3.5" />
-            <span>{isTestingSmtp ? 'Siunčiama...' : 'Tikrinti SMTP Ryšį'}</span>
+            <span>{isTestingSmtp ? 'Siunčiama...' : 'Tikrinti Resend Siuntimą'}</span>
           </button>
         </form>
 
@@ -322,29 +303,18 @@ export const HostAutomatedEmailManager: React.FC<HostAutomatedEmailManagerProps>
           </div>
         )}
 
-        {/* Step-by-step Supabase SMTP configuration guide */}
+        {/* Step-by-step Resend configuration guide */}
         {showSmtpGuide && (
           <div className="p-4 rounded-xl bg-stone-950 border border-stone-800 text-xs space-y-2 text-stone-300 animate-in fade-in">
             <h5 className="font-extrabold text-stone-100 text-sm flex items-center gap-1.5 text-emerald-400">
               <ShieldCheck className="w-4 h-4" />
-              <span>Kaip Konfigūruoti Supabase Custom SMTP:</span>
+              <span>Kaip Konfigūruoti Resend API:</span>
             </h5>
             <ol className="list-decimal list-inside space-y-1.5 text-stone-300 text-[11px] leading-relaxed">
-              <li>Atsidarykite <strong>Supabase Dashboard</strong> ir pasirinkite savo projektą.</li>
-              <li>Eikite į <strong>Project Settings → Authentication → SMTP Settings</strong>.</li>
-              <li>Aktivuokite <strong>"Enable Custom SMTP"</strong> jungiklį.</li>
-              <li>
-                Įveskite SMTP nustatymus:
-                <ul className="list-disc list-inside ml-4 text-stone-400 mt-1 space-y-0.5 font-mono text-[10px]">
-                  <li>Host: <span className="text-emerald-300">smtp.resend.com</span></li>
-                  <li>Port: <span className="text-emerald-300">587</span></li>
-                  <li>User: <span className="text-emerald-300">resend</span></li>
-                  <li>Password: <span className="text-emerald-300">jūsų_resend_api_raktas</span></li>
-                  <li>Sender Name: <span className="text-emerald-300">Campy.lt Stovyklavietės</span></li>
-                  <li>Sender Email: <span className="text-emerald-300">noreply@campy.lt</span></li>
-                </ul>
-              </li>
-              <li>Aplikacijos backend `.env` faile taip pat galite nurodyti <code className="text-amber-300">SMTP_HOST</code>, <code className="text-amber-300">SMTP_USER</code>, <code className="text-amber-300">SMTP_PASS</code> kintamuosius tiesioginiam siuntimui per Express backend.</li>
+              <li>Prisijunkite prie savo <strong>Resend.com</strong> paskyros.</li>
+              <li>Eikite į <strong>API Keys</strong> ir sugeneruokite naują raktą.</li>
+              <li>Pridėkite kintamąjį <code className="text-amber-300">RESEND_API_KEY</code> projekto Secrets / .env nustatymuose.</li>
+              <li>Norėdami siųsti iš savo `@campy.lt` domeno, patvirtinkite domeną <strong>Resend → Domains</strong> skiltyje.</li>
             </ol>
           </div>
         )}
