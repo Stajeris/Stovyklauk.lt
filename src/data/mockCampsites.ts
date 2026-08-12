@@ -47,6 +47,61 @@ export const INITIAL_CAMPSITES: Campsite[] = [
       searchImpressions: 1850
     },
     blockedDates: ['2026-08-10', '2026-08-11', '2026-08-12', '2026-08-20', '2026-08-21'],
+    pitches: [
+      {
+        id: 'pitch-1a',
+        campsiteId: 'camp-1',
+        name: 'Vieta A - Ant ežero kranto (su elektra)',
+        type: 'tent',
+        basePrice: 30,
+        maxGuests: 4,
+        hasElectricity: true,
+        description: 'Pirmoje linijoje prie vandens. Yra 220V elektros lizdas ir medinis stalas su suolais.',
+        blockedDates: ['2026-08-15', '2026-08-16']
+      },
+      {
+        id: 'pitch-1b',
+        campsiteId: 'camp-1',
+        name: 'Vieta B - Pušyno laukymė (ramybė)',
+        type: 'tent',
+        basePrice: 22,
+        maxGuests: 6,
+        hasElectricity: false,
+        description: 'Ramioje vietoje tarp aukštų pušų. Idealu natūralios gamtos mėgėjams.',
+        blockedDates: []
+      },
+      {
+        id: 'pitch-1c',
+        campsiteId: 'camp-1',
+        name: 'Vieta C - Kemperių aikštelė su vandeniu',
+        type: 'rv',
+        basePrice: 35,
+        maxGuests: 5,
+        hasElectricity: true,
+        description: 'Kieto grunto aikštelė iki 8m kemperiams su geriamo vandens ir 220V prisijungimu.',
+        blockedDates: ['2026-08-20', '2026-08-21']
+      }
+    ],
+    seasonalRules: [
+      {
+        id: 'rule-1',
+        campsiteId: 'camp-1',
+        name: 'Vasaros Pikis & Joninės',
+        startDate: '2026-06-20',
+        endDate: '2026-08-25',
+        priceMultiplier: 1.2,
+        minStayNights: 2,
+        stayDiscountPercent7Days: 10
+      }
+    ],
+    checkInInstructions: {
+      gpsCoordinates: '55.05812, 25.45231',
+      gateCode: '4829',
+      houseRules: 'Tylos valandos nuo 22:00. Laužus kūrenti tik paruoštoje laužavietėje.',
+      wifiName: 'Asveja_Camp_Guest',
+      wifiPassword: 'stovyklaujamegamtose',
+      specialNotes: 'Dujinis grilis ir malkos laukia šalia medinės stoginės.'
+    },
     rules: [
       'Tylos valandos nuo 22:00 iki 07:00',
       'Išsivežti visas savo šiukšles',

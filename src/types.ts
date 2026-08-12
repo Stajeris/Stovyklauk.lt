@@ -4,7 +4,7 @@ export type CancellationPolicy = 'flexible' | 'moderate' | 'strict';
 
 export type UserType = 'client' | 'host' | 'admin';
 
-export type HostTier = 'free' | 'pro' | 'premium';
+export type HostTier = 'free' | 'pro';
 
 export interface UserProfile {
   id: string;
@@ -66,6 +66,58 @@ export interface Amenity {
   category: 'essentials' | 'hookups' | 'activities' | 'rules';
 }
 
+export interface Pitch {
+  id: string;
+  campsiteId: string;
+  name: string; // e.g. "Vieta A - Prie vandens su elektra"
+  type: PropertyType; // 'tent' | 'glamping' | 'rv' | 'cabin' | 'other'
+  basePrice: number;
+  maxGuests: number;
+  hasElectricity?: boolean;
+  description?: string;
+  blockedDates?: string[]; // ISO YYYY-MM-DD
+  icalImportUrl?: string;
+  icalExportUrl?: string;
+  status?: 'active' | 'maintenance';
+}
+
+export interface SeasonalPriceRule {
+  id: string;
+  campsiteId: string;
+  name: string; // e.g. "Joninių Sūkurys / Vasaros Pikis"
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  pricePerNight?: number;
+  priceMultiplier?: number; // e.g. 1.25 for +25%
+  minStayNights?: number;
+  stayDiscountPercent7Days?: number; // e.g. 10%
+}
+
+export interface CheckInInstructions {
+  gpsCoordinates?: string;
+  gateCode?: string;
+  houseRules?: string;
+  wifiName?: string;
+  wifiPassword?: string;
+  specialNotes?: string;
+}
+
+export interface AutomatedEmailLog {
+  id: string;
+  campsiteId: string;
+  campsiteTitle: string;
+  bookingId: string;
+  type: 'confirmation_checkin' | 'new_reservation_request' | 'ical_sync_alert';
+  recipientEmail: string;
+  recipientName: string;
+  subject: string;
+  sentAt: string;
+  status: 'sent' | 'failed' | 'queued';
+  contentPreview: string;
+  pitchName?: string;
+  checkInInstructions?: CheckInInstructions;
+}
+
 export interface ICalSyncFeed {
   id: string;
   name: string;
@@ -117,6 +169,9 @@ export interface Campsite {
   rules: string[];
   status?: 'approved' | 'pending' | 'rejected';
   isPro?: boolean;
+  pitches?: Pitch[];
+  seasonalRules?: SeasonalPriceRule[];
+  checkInInstructions?: CheckInInstructions;
   videoUrl?: string;
   stats?: {
     views: number;
@@ -153,6 +208,10 @@ export interface Booking {
   paymentMethodType?: 'card' | 'apple_pay' | 'google_pay';
   stripePaymentIntentId?: string;
   status: 'free_inquiry' | 'pending' | 'approved' | 'confirmed' | 'rejected' | 'completed';
+  pitchId?: string;
+  pitchName?: string;
+  automatedEmailSent?: boolean;
+  automatedEmailSentAt?: string;
   hostPlan?: HostTier;
   paymentInstructions?: string;
   createdAt: string;

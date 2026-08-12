@@ -1433,12 +1433,6 @@ export const AdminPanel: React.FC = () => {
                                       <span>PRO (29 €/mėn.)</span>
                                     </span>
                                   )}
-                                  {u.hostTier === 'premium' && (
-                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-600 text-white border border-purple-700 flex items-center gap-1">
-                                      <Zap className="w-3 h-3 fill-white" />
-                                      <span>PREMIUM (6-10%)</span>
-                                    </span>
-                                  )}
                                   {(u.hostTier === 'free' || (!u.hostTier && u.id !== 'host-1' && !u.isSuperhost)) && (
                                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-700 border border-gray-200">
                                       FREE (0 €)
@@ -1475,21 +1469,6 @@ export const AdminPanel: React.FC = () => {
                                     }`}
                                   >
                                     Pro
-                                  </button>
-
-                                  <button
-                                    onClick={() => {
-                                      updateHostTier(u.id, 'premium');
-                                      setToastMessage(`Pakeistas ${u.name} planas į PREMIUM (6-10%)`);
-                                      setTimeout(() => setToastMessage(null), 3000);
-                                    }}
-                                    className={`px-2 py-0.5 text-[9px] font-bold rounded border cursor-pointer transition ${
-                                      u.hostTier === 'premium'
-                                        ? 'bg-purple-600 text-white border-purple-700 font-extrabold shadow-xs'
-                                        : 'bg-purple-50 text-purple-900 hover:bg-purple-100 border-purple-200'
-                                    }`}
-                                  >
-                                    Premium
                                   </button>
                                 </div>
                               </div>

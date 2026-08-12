@@ -36,6 +36,9 @@ export const CampsiteDetailPage: React.FC = () => {
   const [checkIn, setCheckIn] = useState('2026-08-15');
   const [checkOut, setCheckOut] = useState('2026-08-17');
   const [guests, setGuests] = useState(2);
+  const [selectedPitchId, setSelectedPitchId] = useState<string | null>(
+    camp.pitches && camp.pitches.length > 0 ? camp.pitches[0].id : null
+  );
   const [travelerName, setTravelerName] = useState('');
   const [travelerEmail, setTravelerEmail] = useState('');
   const [travelerPhone, setTravelerPhone] = useState('');
@@ -46,6 +49,25 @@ export const CampsiteDetailPage: React.FC = () => {
   const [showWidgetCalendar, setShowWidgetCalendar] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  // Pitch calculation
+  const selectedPitch = camp.pitches?.find(p => p.id === selectedPitchId);
+  const effectiveBasePrice = selectedPitch ? selectedPitch.basePrice : camp.pricePerNight;
+
+  // Calculate Nights
+  const calculateNights = () => {
+    if (!checkIn || !checkOut) return 1;
+    const start = new Date(checkIn);
+    const end = new Date(checkOut);
+    const diffTime = end.getTime() - start.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 1;
+  };
+
+  const nights = calculateNights();
+  const cleaningFee = getCampsiteCleaningFee(camp);
+  const pricing = calculateFullPricing(effectiveBasePrice, nights, cleaningFee, checkIn, checkOut, camp.customPrices, camp.seasonalRules);
+  const totalPrice = pricing.totalGuestPrice;
 
   const handleSendInquiry = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,11 +101,13 @@ export const CampsiteDetailPage: React.FC = () => {
       checkOut,
       guestsCount: guests,
       totalNights: nights,
-      nightlyRate: camp.pricePerNight,
+      nightlyRate: effectiveBasePrice,
       cleaningFee,
       serviceFee: pricing.platformFeeEur,
       totalPrice: pricing.totalGuestPrice,
       propertyType: camp.propertyType,
+      pitchId: selectedPitchId || undefined,
+      pitchName: selectedPitch?.name || undefined,
       status: isHostPro ? 'pending' : 'free_inquiry'
     });
 
@@ -97,21 +121,6 @@ export const CampsiteDetailPage: React.FC = () => {
   // Find user's valid paid booking for this campsite if exists
   const userValidBooking = bookings.find(b => b.campsiteId === camp.id && (b.status === 'approved' || b.status === 'completed'));
   const userHasReviewed = userValidBooking ? camp.reviews.some(r => r.bookingId === userValidBooking.id) : false;
-
-  // Calculate Nights
-  const calculateNights = () => {
-    if (!checkIn || !checkOut) return 1;
-    const start = new Date(checkIn);
-    const end = new Date(checkOut);
-    const diffTime = end.getTime() - start.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : 1;
-  };
-
-  const nights = calculateNights();
-  const cleaningFee = getCampsiteCleaningFee(camp);
-  const pricing = calculateFullPricing(camp.pricePerNight, nights, cleaningFee, checkIn, checkOut, camp.customPrices);
-  const totalPrice = pricing.totalGuestPrice;
 
   // Check if selected date range has any blocked date
   const hasBlockedDateInRange = () => {
@@ -619,6 +628,61 @@ export const CampsiteDetailPage: React.FC = () => {
                       </button>
                     </div>
                   </div>
+
+                  {/* Pitch Selection (Pro Plan Pitch-Level Inventory) */}
+                  {camp.pitches && camp.pitches.length > 0 && (
+                    <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/60 space-y-2 font-sans">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-[10px] font-black uppercase text-emerald-950 tracking-wider flex items-center gap-1">
+                          <Tent className="w-3.5 h-3.5 text-emerald-700" />
+                          <span>Pasirinkite Aikštelę / Vietą</span>
+                        </label>
+                        <span className="text-[9px] font-extrabold text-emerald-800 bg-emerald-100/90 border border-emerald-200 px-2 py-0.5 rounded-full">
+                          {camp.pitches.length} pasirinkimai
+                        </span>
+                      </div>
+
+                      <select
+                        value={selectedPitchId || ''}
+                        onChange={(e) => setSelectedPitchId(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-emerald-300 bg-white text-xs font-bold text-gray-900 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      >
+                        {camp.pitches.map(p => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} ({p.type === 'tent' ? 'Palapinė' : p.type === 'camper' ? 'Kemperis' : p.type === 'glamping' ? 'Glampingas' : 'Namelis'}) — €{p.basePrice}/parai
+                          </option>
+                        ))}
+                      </select>
+
+                      {selectedPitch && (
+                        <div className="p-2.5 rounded-lg bg-white border border-emerald-200 text-xs text-gray-800 space-y-1">
+                          <div className="flex justify-between items-center font-extrabold text-emerald-900 text-xs">
+                            <span>{selectedPitch.name}</span>
+                            <span className="text-emerald-800">€{selectedPitch.basePrice} / parai</span>
+                          </div>
+                          {selectedPitch.description && (
+                            <p className="text-[10px] text-gray-600 leading-tight">{selectedPitch.description}</p>
+                          )}
+                          <div className="flex items-center gap-2 text-[10px] text-gray-700 font-semibold pt-0.5">
+                            <span>👥 Max {selectedPitch.maxGuests} sveč.</span>
+                            {selectedPitch.hasElectricity && (
+                              <span className="bg-amber-100 text-amber-900 px-1.5 py-0.2 rounded font-bold">⚡ Elektra</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Active Seasonal Price Rule Banner */}
+                  {pricing.activeSeasonalRule && (
+                    <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>
+                        Sezoninė Kaina ({pricing.activeSeasonalRule.name}): paros kaina pakoreguota pagal pasirinktas datas!
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Traveler Form Fields (No Registration Required) */}

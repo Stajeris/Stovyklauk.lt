@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Campsite, Booking, SearchFilters, ViewState, PropertyType, Review, UserProfile, ChatThread, ChatMessage, HostTier } from '../types';
+import { Campsite, Booking, SearchFilters, ViewState, PropertyType, Review, UserProfile, ChatThread, ChatMessage, HostTier, Pitch, SeasonalPriceRule, CheckInInstructions, AutomatedEmailLog } from '../types';
 import { INITIAL_CAMPSITES, INITIAL_BOOKINGS } from '../data/mockCampsites';
 import { INITIAL_CHAT_THREADS } from '../data/mockChats';
 import { translations, Language } from '../data/translations';
@@ -434,6 +434,17 @@ interface CampsiteContextType {
   hostTier: HostTier;
   setHostTier: (tier: HostTier) => void;
   updateHostTier: (hostId: string, newTier: HostTier) => void;
+  // Pro Features: Pitches, iCal, Seasonal Rules, Email Automation
+  emailLogs: AutomatedEmailLog[];
+  addPitch: (campsiteId: string, pitch: Omit<Pitch, 'id' | 'campsiteId'>) => void;
+  updatePitch: (campsiteId: string, pitchId: string, updates: Partial<Pitch>) => void;
+  deletePitch: (campsiteId: string, pitchId: string) => void;
+  addSeasonalRule: (campsiteId: string, rule: Omit<SeasonalPriceRule, 'id' | 'campsiteId'>) => void;
+  deleteSeasonalRule: (campsiteId: string, ruleId: string) => void;
+  syncICalFeeds: (campsiteId: string, pitchId?: string) => { syncedEventsCount: number; lastSyncedAt: string };
+  updateCheckInInstructions: (campsiteId: string, instructions: CheckInInstructions) => void;
+  sendAutomatedEmail: (booking: Booking, type: 'confirmation_checkin' | 'new_reservation_request') => AutomatedEmailLog;
+
   setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
   t: (key: keyof typeof translations['lt'], params?: Record<string, string | number>) => string;
@@ -509,6 +520,203 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [favorites, setFavorites] = useState<string[]>([]);
   const [hostTier, setHostTierState] = useState<HostTier>('pro');
 
+  const [emailLogs, setEmailLogs] = useState<AutomatedEmailLog[]>(() => {
+    const local = localStorage.getItem('campy_email_logs');
+    if (local) return JSON.parse(local);
+    return [
+      {
+        id: 'email-init-1',
+        campsiteId: 'camp-1',
+        campsiteTitle: 'Asvejos Pakrantės Stovyklavietė',
+        bookingId: 'bk-101',
+        type: 'confirmation_checkin',
+        recipientEmail: 'gabija.ramanauskaite@gmail.com',
+        recipientName: 'Gabija Ramanauskaitė',
+        subject: '✅ Rezervacija Patvirtinta! Atsvykimo informacija ir GPS kodo duomenys — Asvejos Pakrantės Stovyklavietė',
+        sentAt: '2026-08-10 14:32',
+        status: 'sent',
+        contentPreview: 'Sveikiname! Jūsų viešnagė Asvejos Pakrantėje patvirtinta. Vartų spynos kodas: 4829. GPS koordinatės: 55.05812, 25.45231.',
+        pitchName: 'Vieta A - Ant ežero kranto (su elektra)',
+        checkInInstructions: {
+          gpsCoordinates: '55.05812, 25.45231',
+          gateCode: '4829',
+          houseRules: 'Tylos valandos nuo 22:00. Laužus kūrenti tik tam skirtoje laužavietėje.',
+          wifiName: 'Asveja_Camp_Guest',
+          wifiPassword: 'stovyklaujamegamtose'
+        }
+      }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('campy_email_logs', JSON.stringify(emailLogs));
+  }, [emailLogs]);
+
+  const sendAutomatedEmail = (booking: Booking, type: 'confirmation_checkin' | 'new_reservation_request'): AutomatedEmailLog => {
+    const camp = campsites.find(c => c.id === booking.campsiteId);
+    const instructions: CheckInInstructions = camp?.checkInInstructions || {
+      gpsCoordinates: `${camp?.latitude || 55.058}, ${camp?.longitude || 25.452}`,
+      gateCode: '4829',
+      houseRules: camp?.rules?.join(' • ') || 'Tylos valandos nuo 22:00. Laužus kūrenti tik tam skirtoje vietoje.',
+      wifiName: 'Campy_Guest_WiFi',
+      wifiPassword: 'stovyklaujamegamtose'
+    };
+
+    const subject = type === 'confirmation_checkin'
+      ? `✅ Rezervacija Patvirtinta! Atsvykimo informacija ir GPS kodo duomenys — ${camp?.title || 'Stovyklavietė'}`
+      : `📩 Nauja Rezervacijos Užklausa — ${camp?.title || 'Stovyklavietė'} (${booking.guestName})`;
+
+    const newLog: AutomatedEmailLog = {
+      id: `email-${Date.now()}`,
+      campsiteId: booking.campsiteId,
+      campsiteTitle: camp?.title || booking.campsiteTitle,
+      bookingId: booking.id,
+      type,
+      recipientEmail: type === 'confirmation_checkin' ? booking.guestEmail : (camp?.host.email || 'host@campy.lt'),
+      recipientName: type === 'confirmation_checkin' ? booking.guestName : (camp?.host.name || 'Šeimininkas'),
+      subject,
+      sentAt: new Date().toLocaleDateString('lt-LT') + ' ' + new Date().toLocaleTimeString('lt-LT', { hour: '2-digit', minute: '2-digit' }),
+      status: 'sent',
+      contentPreview: type === 'confirmation_checkin'
+        ? `Labas, ${booking.guestName}! Jūsų rezervacija stovyklavietėje "${camp?.title}" (${booking.checkIn} — ${booking.checkOut}${booking.pitchName ? `, aikštelė: ${booking.pitchName}` : ''}) patvirtinta. Vartų kodas: ${instructions.gateCode || '4829'}, GPS: ${instructions.gpsCoordinates || '55.058, 25.452'}. Mokėjimas: €${booking.totalPrice.toFixed(2)}.`
+        : `Gautas naujas rezervacijos prašymas iš ${booking.guestName} (${booking.guestEmail}) datoms ${booking.checkIn} — ${booking.checkOut}. Suma: €${booking.totalPrice.toFixed(2)}.`,
+      pitchName: booking.pitchName,
+      checkInInstructions: instructions
+    };
+
+    setEmailLogs(prev => [newLog, ...prev]);
+    return newLog;
+  };
+
+  const addPitch = (campsiteId: string, pitchData: Omit<Pitch, 'id' | 'campsiteId'>) => {
+    const newPitch: Pitch = {
+      ...pitchData,
+      id: `pitch-${Date.now()}`,
+      campsiteId,
+      blockedDates: pitchData.blockedDates || [],
+      status: 'active'
+    };
+
+    setCampsites(prev => prev.map(c => {
+      if (c.id === campsiteId) {
+        return {
+          ...c,
+          pitches: [...(c.pitches || []), newPitch]
+        };
+      }
+      return c;
+    }));
+  };
+
+  const updatePitch = (campsiteId: string, pitchId: string, updates: Partial<Pitch>) => {
+    setCampsites(prev => prev.map(c => {
+      if (c.id === campsiteId && c.pitches) {
+        return {
+          ...c,
+          pitches: c.pitches.map(p => p.id === pitchId ? { ...p, ...updates } : p)
+        };
+      }
+      return c;
+    }));
+  };
+
+  const deletePitch = (campsiteId: string, pitchId: string) => {
+    setCampsites(prev => prev.map(c => {
+      if (c.id === campsiteId && c.pitches) {
+        return {
+          ...c,
+          pitches: c.pitches.filter(p => p.id !== pitchId)
+        };
+      }
+      return c;
+    }));
+  };
+
+  const addSeasonalRule = (campsiteId: string, ruleData: Omit<SeasonalPriceRule, 'id' | 'campsiteId'>) => {
+    const newRule: SeasonalPriceRule = {
+      ...ruleData,
+      id: `rule-${Date.now()}`,
+      campsiteId
+    };
+
+    setCampsites(prev => prev.map(c => {
+      if (c.id === campsiteId) {
+        return {
+          ...c,
+          seasonalRules: [...(c.seasonalRules || []), newRule]
+        };
+      }
+      return c;
+    }));
+  };
+
+  const deleteSeasonalRule = (campsiteId: string, ruleId: string) => {
+    setCampsites(prev => prev.map(c => {
+      if (c.id === campsiteId && c.seasonalRules) {
+        return {
+          ...c,
+          seasonalRules: c.seasonalRules.filter(r => r.id !== ruleId)
+        };
+      }
+      return c;
+    }));
+  };
+
+  const syncICalFeeds = (campsiteId: string, pitchId?: string) => {
+    const nowStr = new Date().toLocaleDateString('lt-LT') + ' ' + new Date().toLocaleTimeString('lt-LT', { hour: '2-digit', minute: '2-digit' });
+    const simulatedExternalBlockedDates = ['2026-08-28', '2026-08-29', '2026-08-30'];
+
+    setCampsites(prev => prev.map(c => {
+      if (c.id === campsiteId) {
+        const updatedBlocked = Array.from(new Set([...c.blockedDates, ...simulatedExternalBlockedDates]));
+        
+        let updatedPitches = c.pitches;
+        if (pitchId && c.pitches) {
+          updatedPitches = c.pitches.map(p => {
+            if (p.id === pitchId) {
+              return {
+                ...p,
+                blockedDates: Array.from(new Set([...(p.blockedDates || []), ...simulatedExternalBlockedDates]))
+              };
+            }
+            return p;
+          });
+        }
+
+        return {
+          ...c,
+          blockedDates: updatedBlocked,
+          pitches: updatedPitches,
+          icalSyncUrls: (c.icalSyncUrls || [
+            { id: 'feed-1', name: 'Airbnb Sync', url: 'https://www.airbnb.com/calendar/ical/12345.ics', lastSynced: nowStr, itemCount: 4 }
+          ]).map(feed => ({
+            ...feed,
+            lastSynced: nowStr,
+            itemCount: (feed.itemCount || 3) + 1
+          }))
+        };
+      }
+      return c;
+    }));
+
+    return { syncedEventsCount: simulatedExternalBlockedDates.length, lastSyncedAt: nowStr };
+  };
+
+  const updateCheckInInstructions = (campsiteId: string, instructions: CheckInInstructions) => {
+    setCampsites(prev => prev.map(c => {
+      if (c.id === campsiteId) {
+        return {
+          ...c,
+          checkInInstructions: {
+            ...c.checkInInstructions,
+            ...instructions
+          }
+        };
+      }
+      return c;
+    }));
+  };
+
   const updateHostTier = (hostId: string, newTier: HostTier) => {
     // Update usersList
     setUsersList(prev => {
@@ -542,7 +750,7 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         ) {
           return {
             ...c,
-            isPro: newTier === 'pro' || newTier === 'premium',
+            isPro: newTier === 'pro',
             tier: newTier,
             host: {
               ...c.host,
@@ -1277,6 +1485,11 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return b;
     }));
 
+    // If approved or confirmed, automatically trigger Pro automated check-in email dispatch!
+    if ((newStatus === 'approved' || newStatus === 'confirmed') && targetBooking) {
+      sendAutomatedEmail(targetBooking, 'confirmation_checkin');
+    }
+
     // If rejected, release the temporarily blocked dates from campsite.blockedDates!
     if (newStatus === 'rejected' && targetBooking) {
       const checkIn = new Date(targetBooking.checkIn);
@@ -1614,6 +1827,15 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         hostTier,
         setHostTier,
         updateHostTier,
+        emailLogs,
+        addPitch,
+        updatePitch,
+        deletePitch,
+        addSeasonalRule,
+        deleteSeasonalRule,
+        syncICalFeeds,
+        updateCheckInInstructions,
+        sendAutomatedEmail,
         setLanguage,
         toggleLanguage,
         t,

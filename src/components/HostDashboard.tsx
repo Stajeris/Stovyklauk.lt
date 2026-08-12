@@ -12,6 +12,9 @@ import { HostVerificationSection } from './HostVerificationSection';
 import { VisitArrivalConfirmationCard } from './VisitArrivalConfirmationCard';
 import { HostPhotoUploader } from './HostPhotoUploader';
 import { ProtectedChatMessage, maskContactInfoText } from '../utils/privacyFilter';
+import { HostPitchManager } from './HostPitchManager';
+import { HostSeasonalPricingManager } from './HostSeasonalPricingManager';
+import { HostAutomatedEmailManager } from './HostAutomatedEmailManager';
 
 export const HostDashboard: React.FC = () => {
   const { 
@@ -32,7 +35,9 @@ export const HostDashboard: React.FC = () => {
     updateUserProfile
   } = useCampsites();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'calendar' | 'payouts' | 'reviews' | 'chats' | 'membership'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'calendar' | 'payouts' | 'reviews' | 'chats' | 'membership' | 'pro_tools'>('overview');
+  const [proSubTab, setProSubTab] = useState<'pitches' | 'seasonal' | 'emails'>('pitches');
+  const [proCampsiteId, setProCampsiteId] = useState<string>('');
   const [selectedCalendarCampsiteId, setSelectedCalendarCampsiteId] = useState<string | undefined>(undefined);
   const [editingCampsite, setEditingCampsite] = useState<Campsite | null>(null);
   const [disputingReview, setDisputingReview] = useState<{ campsiteId: string; review: Review } | null>(null);
@@ -75,9 +80,6 @@ export const HostDashboard: React.FC = () => {
   const userBookings = currentUser.isAdmin
     ? bookings
     : bookings.filter(b => userCampsiteIds.has(b.campsiteId));
-
-  // Calculate total PRO monthly cost based on 1 night price for each listing
-  const totalProMonthlyCost = userCampsites.reduce((sum, c) => sum + (c.pricePerNight || 0), 0);
 
   // Calculate metrics
   const approvedBookings = userBookings.filter(b => b.status === 'approved');
@@ -298,6 +300,15 @@ export const HostDashboard: React.FC = () => {
         >
           <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
           <span>Poilsiautojų Žinutės ({chatThreads.filter(t => userCampsites.some(c => c.id === t.campsiteId)).length})</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('pro_tools')}
+          className={`pb-3 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+            activeTab === 'pro_tools' ? 'border-amber-600 text-amber-900 font-black' : 'border-transparent hover:text-gray-800'
+          }`}
+        >
+          <Zap className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+          <span>⚡ PRO Įrankiai (Aikštelės, Sezonai, El. laiškai)</span>
         </button>
         <button
           onClick={() => setActiveTab('membership')}
@@ -1003,24 +1014,17 @@ export const HostDashboard: React.FC = () => {
                   {hostTier === 'pro' && (
                     <span className="flex items-center gap-2">
                       <span>Jūsų aktyvus planas:</span>
-                      <span className="text-amber-400">2. PRO (29 € / mėn.)</span>
-                    </span>
-                  )}
-                  {hostTier === 'premium' && (
-                    <span className="flex items-center gap-2">
-                      <span>Jūsų aktyvus planas:</span>
-                      <span className="text-purple-300">3. PREMIUM (0 € + 6-10% komisinis)</span>
+                      <span className="text-amber-400">PRO (29 € / mėn.)</span>
                     </span>
                   )}
                   {hostTier === 'free' && (
-                    <span>Jūsų aktyvus planas: <span className="text-emerald-300">1. FREE (0 € pirmus 1 m., vėliau 15 €/mėn.)</span></span>
+                    <span>Jūsų aktyvus planas: <span className="text-emerald-300">FREE (0 € / mėn.)</span></span>
                   )}
                 </h2>
                 
                 <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed">
-                  {hostTier === 'pro' && 'Jūsų skelbimai rodomi pirmoje vietoje rekomenduojamose poilsio vietose su „PRO Šeimininkas“ ženkleliu. Nėra jokio rezervacijos komisinio mokesčio!'}
-                  {hostTier === 'premium' && 'Didžiausias patogumas: pilna automatika su Stripe mokėjimais ir automatiniu rezervacijų tvarkymu.'}
-                  {hostTier === 'free' && 'Nemokamas planas pradedantiems smulkiems šeimininkams, norintiems tiesiog būti matomiems.'}
+                  {hostTier === 'pro' && 'Jūsų skelbimai rodomi pirmoje vietoje rekomenduojamose poilsio vietose su „PRO Šeimininkas“ ženkleliu.'}
+                  {hostTier === 'free' && 'Nemokamas planas pradedantiems smulkiems šeimininkams, norintiems gauti tiesiogines lankytojų užklausas.'}
                 </p>
 
                 <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-emerald-200 pt-2">
@@ -1058,16 +1062,6 @@ export const HostDashboard: React.FC = () => {
                     <span>2. Pro (29 €/mėn.)</span>
                     {hostTier === 'pro' && <Check className="w-3.5 h-3.5" />}
                   </button>
-
-                  <button
-                    onClick={() => setHostTier('premium')}
-                    className={`w-full py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-between ${
-                      hostTier === 'premium' ? 'bg-purple-500 text-white font-black shadow-sm' : 'bg-white/20 hover:bg-white/30 text-white'
-                    }`}
-                  >
-                    <span>3. Premium (6-10%)</span>
-                    {hostTier === 'premium' && <Check className="w-3.5 h-3.5" />}
-                  </button>
                 </div>
               </div>
             </div>
@@ -1099,10 +1093,10 @@ export const HostDashboard: React.FC = () => {
 
                   <div className="space-y-1">
                     <div className="text-2xl font-black text-gray-900">
-                      0 € <span className="text-xs font-medium text-gray-500">(1 m. nemokamai)</span>
+                      0 € <span className="text-xs font-medium text-gray-500">/ mėnesį</span>
                     </div>
                     <div className="text-xs font-bold text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-100">
-                      Rinkos mokesčiai (komisiniai): **0% (Mokėjimas tiesiogiai)**
+                      Komisiniai mokesčiai: **0% (Tiesioginės užklausos)**
                     </div>
                   </div>
 
@@ -1144,7 +1138,7 @@ export const HostDashboard: React.FC = () => {
 
               {/* 2. Pro Host Subscription Card */}
               <div className={`bg-gradient-to-b from-amber-50/60 via-white to-amber-50/40 rounded-3xl p-6 border-2 transition-all space-y-5 flex flex-col justify-between relative overflow-hidden ${
-                hostTier === 'pro' || hostTier === 'premium' ? 'border-amber-500 ring-2 ring-amber-500/30 shadow-xl' : 'border-amber-300 hover:border-amber-400'
+                hostTier === 'pro' ? 'border-amber-500 ring-2 ring-amber-500/30 shadow-xl' : 'border-amber-300 hover:border-amber-400'
               }`}>
                 <div className="space-y-4">
                   <div className="flex justify-between items-start">
@@ -1165,7 +1159,7 @@ export const HostDashboard: React.FC = () => {
                       29 € <span className="text-xs font-bold text-gray-500">/ mėn.</span>
                     </div>
                     <div className="text-xs font-bold text-amber-900 bg-amber-100/80 p-2 rounded-lg border border-amber-200">
-                      Rinkos mokesčiai (komisiniai): **0% (Mokėjimas tiesiogiai)**
+                      Komisiniai mokesčiai: **0% (Tiesioginės užklausos)**
                     </div>
                   </div>
 
@@ -1198,75 +1192,18 @@ export const HostDashboard: React.FC = () => {
 
                 <button
                   onClick={() => setHostTier('pro')}
-                  disabled={hostTier === 'pro' || hostTier === 'premium'}
+                  disabled={hostTier === 'pro'}
                   className={`w-full py-3 px-4 rounded-xl text-xs font-black transition mt-4 flex items-center justify-center gap-2 ${
-                    hostTier === 'pro' || hostTier === 'premium'
+                    hostTier === 'pro'
                       ? 'bg-amber-500 text-white cursor-default shadow-xs'
                       : 'bg-amber-400 hover:bg-amber-300 text-amber-950 font-black shadow-md cursor-pointer'
                   }`}
                 >
                   <Crown className="w-4 h-4 fill-current" />
-                  <span>{hostTier === 'pro' || hostTier === 'premium' ? 'Dabartinis PRO Planas' : 'Pasirinkti Pro Planą (29 €/mėn.)'}</span>
+                  <span>{hostTier === 'pro' ? 'Dabartinis PRO Planas' : 'Pasirinkti Pro Planą (29 €/mėn.)'}</span>
                 </button>
               </div>
 
-            </div>
-          </div>
-
-          {/* Dynamic PRO Pricing Calculation Breakdown Card */}
-          <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-amber-100/40 rounded-3xl p-6 sm:p-8 border-2 border-amber-300 font-sans space-y-4 shadow-xs">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-amber-500 text-white rounded-2xl shrink-0 shadow-xs">
-                <Crown className="w-6 h-6 fill-white" />
-              </div>
-              <div>
-                <h4 className="font-black text-lg text-gray-900">Jūsų Skelbimų PRO Mėnesinio Mokesčio Apskaičiavimas</h4>
-                <p className="text-xs text-gray-600">
-                  Taisyklė: PRO narystės kaina už kiekvieną objektą = **to sklypo 1 nakvynės kaina per mėnesį**.
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl p-5 border border-amber-200 space-y-3">
-              <div className="text-xs font-bold text-gray-900 border-b border-gray-150 pb-2 flex justify-between items-center">
-                <span>Jūsų Registruoti Sklypai ({userCampsites.length})</span>
-                <span className="text-amber-900">1 Nakvynės Kaina ➔ PRO Mokestis / mėn.</span>
-              </div>
-
-              {userCampsites.length === 0 ? (
-                <p className="text-xs text-gray-400 italic py-2">
-                  Jūs dar neturite užregistruotų sklypų. Pridėjus sklypą (pvz. už €30/naktį), jo PRO mėnesinis mokestis bus lygiai €30/mėn.
-                </p>
-              ) : (
-                <div className="space-y-2 text-xs">
-                  {userCampsites.map((site) => (
-                    <div key={site.id} className="flex flex-col sm:flex-row justify-between sm:items-center py-1.5 border-b border-gray-50 text-gray-800 font-medium gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-gray-900">• {site.title}</span>
-                        <span className="text-[10px] text-gray-400">({site.location})</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-amber-950 font-bold self-end sm:self-auto">
-                        <span>€{site.pricePerNight} / naktį</span>
-                        <span>➔</span>
-                        <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-black border border-amber-300">
-                          €{site.pricePerNight} / mėn.
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="pt-3 border-t border-amber-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 font-black text-sm text-gray-900">
-                <div className="flex items-center gap-2">
-                  <span>Bendras PRO Mėnesinis Mokestis Visiems Objektams:</span>
-                  <span className="text-xs font-normal text-gray-500">({userCampsites.length} sklypai)</span>
-                </div>
-                <div className="text-emerald-800 text-lg sm:text-xl font-extrabold flex items-center gap-1.5 self-end sm:self-auto">
-                  <Zap className="w-5 h-5 fill-amber-500 text-amber-500" />
-                  <span>€{totalProMonthlyCost} / mėn.</span>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -1340,6 +1277,106 @@ export const HostDashboard: React.FC = () => {
               </div>
             </div>
           </div>
+
+        </div>
+      )}
+
+      {/* 8. PRO ADVANCED TOOLS SECTION */}
+      {activeTab === 'pro_tools' && (
+        <div className="space-y-6 font-sans">
+          
+          {/* Header & Campsite Selector */}
+          <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-black text-stone-900 flex items-center gap-2">
+                <span>⚡ PRO Funkcijų Valdymo Skydas</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-extrabold uppercase border border-amber-300">
+                  Pro Planas
+                </span>
+              </h2>
+              <p className="text-xs text-stone-500 mt-1">
+                Pasirinkite skelbimą ir valdykite aikštelių inventorizaciją, dinaminę kainodarą bei automatizuotus el. laiškus.
+              </p>
+            </div>
+
+            {/* Campsite selector dropdown */}
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-bold text-stone-700 uppercase shrink-0">Skelbimas:</label>
+              <select
+                value={proCampsiteId || userCampsites[0]?.id || ''}
+                onChange={(e) => setProCampsiteId(e.target.value)}
+                className="px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-extrabold text-stone-900 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+              >
+                {userCampsites.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.title} ({c.location})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Sub-tab navigation */}
+          <div className="flex items-center gap-2 border-b border-stone-200 pb-3 text-xs font-extrabold text-stone-600">
+            <button
+              onClick={() => setProSubTab('pitches')}
+              className={`px-4 py-2.5 rounded-2xl transition cursor-pointer flex items-center gap-2 ${
+                proSubTab === 'pitches'
+                  ? 'bg-emerald-700 text-white shadow-sm'
+                  : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-50'
+              }`}
+            >
+              <Tent className="w-4 h-4" />
+              <span>1. Aikštelių (Pitch) Valdymas</span>
+            </button>
+
+            <button
+              onClick={() => setProSubTab('seasonal')}
+              className={`px-4 py-2.5 rounded-2xl transition cursor-pointer flex items-center gap-2 ${
+                proSubTab === 'seasonal'
+                  ? 'bg-amber-700 text-white shadow-sm'
+                  : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-50'
+              }`}
+            >
+              <TrendingUp className="w-4 h-4" />
+              <span>2. Dinaminė Sezoninė Kainodara</span>
+            </button>
+
+            <button
+              onClick={() => setProSubTab('emails')}
+              className={`px-4 py-2.5 rounded-2xl transition cursor-pointer flex items-center gap-2 ${
+                proSubTab === 'emails'
+                  ? 'bg-emerald-700 text-white shadow-sm'
+                  : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-50'
+              }`}
+            >
+              <Mail className="w-4 h-4" />
+              <span>3. Automatizuoti Laiškai & GPS Instrukcijos</span>
+            </button>
+          </div>
+
+          {/* Sub-tab content rendering */}
+          {(() => {
+            const activeProCamp = userCampsites.find(c => c.id === (proCampsiteId || userCampsites[0]?.id)) || userCampsites[0];
+            if (!activeProCamp) {
+              return (
+                <div className="p-8 text-center bg-white rounded-3xl border border-stone-200 text-stone-500 text-xs font-bold">
+                  Norėdami valdyti PRO funkcijas, pirmiausia pridėkite stovyklavietės skelbimą.
+                </div>
+              );
+            }
+
+            if (proSubTab === 'pitches') {
+              return <HostPitchManager campsite={activeProCamp} />;
+            }
+            if (proSubTab === 'seasonal') {
+              return <HostSeasonalPricingManager campsite={activeProCamp} />;
+            }
+            if (proSubTab === 'emails') {
+              return <HostAutomatedEmailManager campsite={activeProCamp} />;
+            }
+            return null;
+          })()}
 
         </div>
       )}
