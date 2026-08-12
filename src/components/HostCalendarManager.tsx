@@ -1102,42 +1102,31 @@ export const HostCalendarManager: React.FC<HostCalendarManagerProps> = ({
 
                               {/* EASY ORDER HANDLING ACTION BUTTONS */}
                               <div className="pt-2 border-t border-gray-800 flex flex-wrap gap-1.5">
-                                {isPending && (
-                                  <>
-                                    <button
-                                      onClick={() => handleApproveOrder(bk.id, bk.guestName)}
-                                      className="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10px] rounded-lg flex items-center justify-center gap-1 cursor-pointer"
-                                    >
-                                      <CheckCircle2 className="w-3 h-3" />
-                                      <span>Patvirtinti</span>
-                                    </button>
-                                    <button
-                                      onClick={() => handleRejectOrder(bk.id, bk.guestName)}
-                                      className="py-1.5 px-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] rounded-lg flex items-center justify-center gap-1 cursor-pointer"
-                                    >
-                                      <XCircle className="w-3 h-3" />
-                                      <span>Atmesti</span>
-                                    </button>
-                                  </>
-                                )}
+                                <button
+                                  onClick={() => handleApproveOrder(bk.id, bk.guestName)}
+                                  className="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10px] rounded-lg flex items-center justify-center gap-1 cursor-pointer"
+                                  title="Patvirtinti / Priimti rezervaciją"
+                                >
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  <span>Patvirtinti</span>
+                                </button>
+                                <button
+                                  onClick={() => handleRejectOrder(bk.id, bk.guestName)}
+                                  className="py-1.5 px-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] rounded-lg flex items-center justify-center gap-1 cursor-pointer"
+                                  title="Atšaukti / Atmesti rezervaciją"
+                                >
+                                  <XCircle className="w-3 h-3" />
+                                  <span>Atšaukti</span>
+                                </button>
 
                                 {isApproved && (
-                                  <>
-                                    <button
-                                      onClick={() => handleCompleteOrder(bk.id, bk.guestName)}
-                                      className="flex-1 py-1.5 px-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-[10px] rounded-lg flex items-center justify-center gap-1 cursor-pointer"
-                                    >
-                                      <ShieldCheck className="w-3 h-3" />
-                                      <span>Atvykimas (Išmoka)</span>
-                                    </button>
-                                    <button
-                                      onClick={() => handleRejectOrder(bk.id, bk.guestName)}
-                                      className="py-1.5 px-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] rounded-lg flex items-center justify-center gap-1 cursor-pointer"
-                                    >
-                                      <XCircle className="w-3 h-3" />
-                                      <span>Atšaukti</span>
-                                    </button>
-                                  </>
+                                  <button
+                                    onClick={() => handleCompleteOrder(bk.id, bk.guestName)}
+                                    className="w-full py-1.5 px-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-[10px] rounded-lg flex items-center justify-center gap-1 cursor-pointer mt-1"
+                                  >
+                                    <ShieldCheck className="w-3 h-3" />
+                                    <span>Atvykimas (Išmoka)</span>
+                                  </button>
                                 )}
 
                                 <button
@@ -1275,61 +1264,47 @@ export const HostCalendarManager: React.FC<HostCalendarManagerProps> = ({
 
             {/* Action Buttons */}
             <div className="pt-2 border-t border-gray-100 flex flex-wrap items-center gap-2">
-              {selectedBookingForModal.status === 'pending' && (
-                <>
-                  <button
-                    onClick={() => {
-                      handleApproveOrder(selectedBookingForModal.id, selectedBookingForModal.guestName);
-                      setSelectedBookingForModal(null);
-                    }}
-                    className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-xs"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Patvirtinti Užsakymą</span>
-                  </button>
+              {/* Accept Reservation Button */}
+              <button
+                onClick={() => {
+                  handleApproveOrder(selectedBookingForModal.id, selectedBookingForModal.guestName);
+                  setSelectedBookingForModal(null);
+                }}
+                className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-xs transition"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Patvirtinti (Priimti) Užsakymą</span>
+              </button>
 
-                  <button
-                    onClick={() => {
-                      handleRejectOrder(selectedBookingForModal.id, selectedBookingForModal.guestName);
-                      setSelectedBookingForModal(null);
-                    }}
-                    className="py-3 px-4 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <XCircle className="w-4 h-4" />
-                    <span>Atmesti</span>
-                  </button>
-                </>
-              )}
-
+              {/* Complete Payout Check-in Button */}
               {selectedBookingForModal.status === 'approved' && (
-                <>
-                  <button
-                    onClick={() => {
-                      handleCompleteOrder(selectedBookingForModal.id, selectedBookingForModal.guestName);
-                      setSelectedBookingForModal(null);
-                    }}
-                    className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-xs"
-                  >
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>Registruoti Atvykimą & Atversti Išmoką</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      handleRejectOrder(selectedBookingForModal.id, selectedBookingForModal.guestName);
-                      setSelectedBookingForModal(null);
-                    }}
-                    className="py-3 px-4 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <XCircle className="w-4 h-4" />
-                    <span>Atšaukti Užsakymą</span>
-                  </button>
-                </>
+                <button
+                  onClick={() => {
+                    handleCompleteOrder(selectedBookingForModal.id, selectedBookingForModal.guestName);
+                    setSelectedBookingForModal(null);
+                  }}
+                  className="py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-xs transition"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Registruoti Atvykimą</span>
+                </button>
               )}
+
+              {/* Cancel / Reject Reservation Button */}
+              <button
+                onClick={() => {
+                  handleRejectOrder(selectedBookingForModal.id, selectedBookingForModal.guestName);
+                  setSelectedBookingForModal(null);
+                }}
+                className="py-3 px-4 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer transition"
+              >
+                <XCircle className="w-4 h-4" />
+                <span>Atšaukti Užsakymą</span>
+              </button>
 
               <button
                 onClick={() => setSelectedBookingForModal(null)}
-                className="py-3 px-5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded-xl cursor-pointer ml-auto"
+                className="py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded-xl cursor-pointer ml-auto"
               >
                 Uždaryti
               </button>

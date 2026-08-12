@@ -1495,6 +1495,27 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const targetCamp = campsites.find(c => c.id === targetBooking.campsiteId);
       dispatchSystemEmail('reservation_confirmed', { booking: targetBooking, campsite: targetCamp });
       dispatchSystemEmail('arrival_instructions', { booking: targetBooking, campsite: targetCamp });
+
+      // Execute Server Action call to /api/send-confirmation-email via Resend
+      fetch('/api/send-confirmation-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guestEmail: targetBooking.guestEmail,
+          guestName: targetBooking.guestName,
+          campsiteTitle: targetCamp?.title || targetBooking.campsiteTitle,
+          checkIn: targetBooking.checkIn,
+          checkOut: targetBooking.checkOut,
+          totalPrice: targetBooking.totalPrice,
+          bookingId: targetBooking.id,
+          hostName: targetCamp?.host?.name,
+          hostPhone: targetCamp?.host?.phone
+        })
+      }).then(res => res.json()).then(data => {
+        console.log('✅ [Resend Server Action Success]:', data);
+      }).catch(err => {
+        console.error('❌ [Resend Server Action Error]:', err);
+      });
     }
 
     // If rejected, dispatch decline email to guest and release the temporarily blocked dates!
