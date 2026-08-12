@@ -37,6 +37,21 @@ export const HostDashboard: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'calendar' | 'reviews' | 'chats' | 'membership' | 'pro_tools'>('overview');
   const [proSubTab, setProSubTab] = useState<'pitches' | 'seasonal' | 'emails'>('pitches');
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      if (tab === 'pending') {
+        setView('pending-requests');
+      } else if (tab === 'emails') {
+        setActiveTab('pro_tools');
+        setProSubTab('emails');
+      } else if (tab && ['overview', 'listings', 'calendar', 'reviews', 'chats', 'membership', 'pro_tools'].includes(tab)) {
+        setActiveTab(tab as any);
+      }
+    }
+  }, []);
   const [proCampsiteId, setProCampsiteId] = useState<string>('');
   const [selectedCalendarCampsiteId, setSelectedCalendarCampsiteId] = useState<string | undefined>(undefined);
   const [editingCampsite, setEditingCampsite] = useState<Campsite | null>(null);

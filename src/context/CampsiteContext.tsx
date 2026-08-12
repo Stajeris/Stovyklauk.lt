@@ -515,7 +515,39 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return local ? JSON.parse(local) : INITIAL_CHAT_THREADS;
   });
 
-  const [currentView, setCurrentView] = useState<ViewState>('landing');
+  const getInitialViewFromUrl = (): ViewState => {
+    if (typeof window === 'undefined') return 'landing';
+    const pathName = window.location.pathname.toLowerCase().replace(/^\/+|\/+$/g, '');
+    const searchParams = new URLSearchParams(window.location.search);
+    const viewParam = searchParams.get('view');
+    const tabParam = searchParams.get('tab');
+
+    if (pathName === 'host-dashboard' || viewParam === 'host-dashboard' || tabParam === 'pending') {
+      return 'host-dashboard';
+    }
+    if (pathName === 'pending-requests' || viewParam === 'pending-requests') {
+      return 'pending-requests';
+    }
+    if (pathName === 'search' || viewParam === 'search') return 'search';
+    if (pathName === 'detail' || viewParam === 'detail') return 'detail';
+    if (pathName === 'add-listing' || viewParam === 'add-listing') return 'add-listing';
+    if (pathName === 'my-trips' || viewParam === 'my-trips') return 'my-trips';
+    if (pathName === 'client-dashboard' || viewParam === 'client-dashboard') return 'client-dashboard';
+    if (pathName === 'rules' || viewParam === 'rules') return 'rules';
+    if (pathName === 'admin' || viewParam === 'admin') return 'admin';
+
+    return 'landing';
+  };
+
+  const [currentView, setCurrentView] = useState<ViewState>(getInitialViewFromUrl);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentView(getInitialViewFromUrl());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
   const [selectedCampsite, setSelectedCampsite] = useState<Campsite | null>(INITIAL_CAMPSITES[0]);
   const [searchFilters, setSearchFilters] = useState<SearchFilters>(DEFAULT_FILTERS);
   const [userMode, setUserMode] = useState<'guest' | 'host'>('guest');
@@ -837,6 +869,14 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (found) setSelectedCampsite(found);
     }
     setCurrentView(view);
+    try {
+      const newPath = view === 'landing' ? '/' : `/${view}`;
+      if (window.location.pathname !== newPath) {
+        window.history.pushState({ view }, '', newPath);
+      }
+    } catch (e) {
+      // ignore history errors in sandboxed iframes
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
