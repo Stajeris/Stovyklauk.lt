@@ -4,6 +4,7 @@ import { INITIAL_CAMPSITES, INITIAL_BOOKINGS } from '../data/mockCampsites';
 import { INITIAL_CHAT_THREADS } from '../data/mockChats';
 import { translations, Language } from '../data/translations';
 import { calculateFullPricing } from '../utils/pricing';
+import { generateSystemEmail, SystemEmailType, EmailPayload } from '../utils/emailSystem';
 
 export const INITIAL_USERS: UserProfile[] = [
   // 1 Platform Admin
@@ -444,6 +445,7 @@ interface CampsiteContextType {
   syncICalFeeds: (campsiteId: string, pitchId?: string) => { syncedEventsCount: number; lastSyncedAt: string };
   updateCheckInInstructions: (campsiteId: string, instructions: CheckInInstructions) => void;
   sendAutomatedEmail: (booking: Booking, type: 'confirmation_checkin' | 'new_reservation_request') => AutomatedEmailLog;
+  dispatchSystemEmail: (type: SystemEmailType, payload: EmailPayload) => AutomatedEmailLog;
 
   setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
@@ -552,40 +554,35 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem('campy_email_logs', JSON.stringify(emailLogs));
   }, [emailLogs]);
 
-  const sendAutomatedEmail = (booking: Booking, type: 'confirmation_checkin' | 'new_reservation_request'): AutomatedEmailLog => {
-    const camp = campsites.find(c => c.id === booking.campsiteId);
-    const instructions: CheckInInstructions = camp?.checkInInstructions || {
-      gpsCoordinates: `${camp?.latitude || 55.058}, ${camp?.longitude || 25.452}`,
-      gateCode: '4829',
-      houseRules: camp?.rules?.join(' • ') || 'Tylos valandos nuo 22:00. Laužus kūrenti tik tam skirtoje vietoje.',
-      wifiName: 'Campy_Guest_WiFi',
-      wifiPassword: 'stovyklaujamegamtose'
-    };
-
-    const subject = type === 'confirmation_checkin'
-      ? `✅ Rezervacija Patvirtinta! Atsvykimo informacija ir GPS kodo duomenys — ${camp?.title || 'Stovyklavietė'}`
-      : `📩 Nauja Rezervacijos Užklausa — ${camp?.title || 'Stovyklavietė'} (${booking.guestName})`;
+  const dispatchSystemEmail = (type: SystemEmailType, payload: EmailPayload): AutomatedEmailLog => {
+    const generated = generateSystemEmail(type, payload);
+    const nowStr = new Date().toLocaleDateString('lt-LT') + ' ' + new Date().toLocaleTimeString('lt-LT', { hour: '2-digit', minute: '2-digit' });
 
     const newLog: AutomatedEmailLog = {
-      id: `email-${Date.now()}`,
-      campsiteId: booking.campsiteId,
-      campsiteTitle: camp?.title || booking.campsiteTitle,
-      bookingId: booking.id,
-      type,
-      recipientEmail: type === 'confirmation_checkin' ? booking.guestEmail : (camp?.host.email || 'host@campy.lt'),
-      recipientName: type === 'confirmation_checkin' ? booking.guestName : (camp?.host.name || 'Šeimininkas'),
-      subject,
-      sentAt: new Date().toLocaleDateString('lt-LT') + ' ' + new Date().toLocaleTimeString('lt-LT', { hour: '2-digit', minute: '2-digit' }),
+      id: `email-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      campsiteId: payload.campsite?.id || payload.booking?.campsiteId,
+      campsiteTitle: payload.campsite?.title || payload.booking?.campsiteTitle,
+      bookingId: payload.booking?.id,
+      type: type as any,
+      recipientEmail: generated.recipientEmail,
+      recipientName: generated.recipientName,
+      subject: generated.subject,
+      sentAt: nowStr,
       status: 'sent',
-      contentPreview: type === 'confirmation_checkin'
-        ? `Labas, ${booking.guestName}! Jūsų rezervacija stovyklavietėje "${camp?.title}" (${booking.checkIn} — ${booking.checkOut}${booking.pitchName ? `, aikštelė: ${booking.pitchName}` : ''}) patvirtinta. Vartų kodas: ${instructions.gateCode || '4829'}, GPS: ${instructions.gpsCoordinates || '55.058, 25.452'}. Mokėjimas: €${booking.totalPrice.toFixed(2)}.`
-        : `Gautas naujas rezervacijos prašymas iš ${booking.guestName} (${booking.guestEmail}) datoms ${booking.checkIn} — ${booking.checkOut}. Suma: €${booking.totalPrice.toFixed(2)}.`,
-      pitchName: booking.pitchName,
-      checkInInstructions: instructions
+      contentPreview: generated.contentPreview,
+      htmlBody: generated.htmlBody,
+      pitchName: payload.booking?.pitchName,
+      checkInInstructions: payload.campsite?.checkInInstructions
     };
 
     setEmailLogs(prev => [newLog, ...prev]);
     return newLog;
+  };
+
+  const sendAutomatedEmail = (booking: Booking, type: 'confirmation_checkin' | 'new_reservation_request'): AutomatedEmailLog => {
+    const camp = campsites.find(c => c.id === booking.campsiteId);
+    const mappedType: SystemEmailType = type === 'confirmation_checkin' ? 'reservation_confirmed' : 'new_reservation_request_host';
+    return dispatchSystemEmail(mappedType, { booking, campsite: camp });
   };
 
   const addPitch = (campsiteId: string, pitchData: Omit<Pitch, 'id' | 'campsiteId'>) => {
@@ -1058,11 +1055,13 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setUsersList(prev => [...prev, newUser]);
     setCurrentUser(newUser);
     
-    // Automatically set corresponding mode
+    // Automatically set corresponding mode and dispatch welcome email
     if (assignedType === 'host') {
       setUserMode('host');
+      dispatchSystemEmail('welcome_host', { user: newUser });
     } else {
       setUserMode('guest');
+      dispatchSystemEmail('welcome_user', { user: newUser });
     }
 
     const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
@@ -1208,6 +1207,7 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return { success: false, message: 'Vartotojas su šiuo el. paštu nerastas.' };
     }
     const code = Math.floor(1000 + Math.random() * 9000).toString();
+    dispatchSystemEmail('password_reset_code', { user, verificationCode: code });
     return { success: true, code, userId: user.id };
   };
 
@@ -1329,6 +1329,7 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     setCampsites(prev => [fullCamp, ...prev]);
     setSelectedCampsite(fullCamp);
+    dispatchSystemEmail('welcome_host', { user: hostUser, campsite: fullCamp });
     return fullCamp;
   };
 
@@ -1455,6 +1456,10 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       );
     }
 
+    // Automatically send system confirmation emails for request submission
+    dispatchSystemEmail('reservation_request_received', { booking: newBooking, campsite: targetCampsite });
+    dispatchSystemEmail('new_reservation_request_host', { booking: newBooking, campsite: targetCampsite });
+
     return newBooking;
   };
 
@@ -1485,13 +1490,18 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return b;
     }));
 
-    // If approved or confirmed, automatically trigger Pro automated check-in email dispatch!
+    // If approved or confirmed, automatically trigger confirmation & arrival instructions email dispatch!
     if ((newStatus === 'approved' || newStatus === 'confirmed') && targetBooking) {
-      sendAutomatedEmail(targetBooking, 'confirmation_checkin');
+      const targetCamp = campsites.find(c => c.id === targetBooking.campsiteId);
+      dispatchSystemEmail('reservation_confirmed', { booking: targetBooking, campsite: targetCamp });
+      dispatchSystemEmail('arrival_instructions', { booking: targetBooking, campsite: targetCamp });
     }
 
-    // If rejected, release the temporarily blocked dates from campsite.blockedDates!
+    // If rejected, dispatch decline email to guest and release the temporarily blocked dates!
     if (newStatus === 'rejected' && targetBooking) {
+      const targetCamp = campsites.find(c => c.id === targetBooking.campsiteId);
+      dispatchSystemEmail('reservation_declined', { booking: targetBooking, campsite: targetCamp });
+
       const checkIn = new Date(targetBooking.checkIn);
       const checkOut = new Date(targetBooking.checkOut);
       const datesToRemove: string[] = [];
@@ -1836,6 +1846,7 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         syncICalFeeds,
         updateCheckInInstructions,
         sendAutomatedEmail,
+        dispatchSystemEmail,
         setLanguage,
         toggleLanguage,
         t,

@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Mail, CheckCircle2, Send, Crown, Sparkles, MapPin, Key, Wifi, FileText, Clock, AlertCircle, Eye, RefreshCw } from 'lucide-react';
+import { Mail, CheckCircle2, Send, Crown, MapPin, Key, Wifi, FileText, Clock, Eye } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
-import { Campsite, CheckInInstructions } from '../types';
+import { Campsite } from '../types';
+import { generateSystemEmail, SystemEmailType } from '../utils/emailSystem';
 
 interface HostAutomatedEmailManagerProps {
   campsite: Campsite;
 }
 
 export const HostAutomatedEmailManager: React.FC<HostAutomatedEmailManagerProps> = ({ campsite }) => {
-  const { updateCheckInInstructions, emailLogs, sendAutomatedEmail, bookings } = useCampsites();
+  const { updateCheckInInstructions, emailLogs, dispatchSystemEmail, bookings } = useCampsites();
 
   const instructions = campsite.checkInInstructions || {
     gpsCoordinates: `${campsite.latitude || 55.05812}, ${campsite.longitude || 25.45231}`,
@@ -25,7 +26,7 @@ export const HostAutomatedEmailManager: React.FC<HostAutomatedEmailManagerProps>
   const [wifiPassword, setWifiPassword] = useState(instructions.wifiPassword || '');
 
   const [savedSuccess, setSavedSuccess] = useState(false);
-  const [activeTemplateTab, setActiveTemplateTab] = useState<'traveler_confirmation' | 'host_notice'>('traveler_confirmation');
+  const [activeTemplateTab, setActiveTemplateTab] = useState<SystemEmailType>('reservation_confirmed');
   const [testEmailSentToast, setTestEmailSentToast] = useState<string | null>(null);
 
   const handleSaveInstructions = (e: React.FormEvent) => {
@@ -41,38 +42,66 @@ export const HostAutomatedEmailManager: React.FC<HostAutomatedEmailManagerProps>
     setTimeout(() => setSavedSuccess(false), 3000);
   };
 
-  const handleSendTestEmail = () => {
-    // Find or construct a sample booking
-    const sampleBooking = bookings.find(b => b.campsiteId === campsite.id) || {
-      id: `bk-test-${Date.now()}`,
-      campsiteId: campsite.id,
-      campsiteTitle: campsite.title,
-      campsiteImage: campsite.images[0],
-      location: campsite.location,
-      guestName: 'Gintarė Petraitienė',
-      guestEmail: 'gintare.petraitiene@gmail.com',
-      guestPhone: '+370 612 34567',
-      guestNote: 'Noriu atvykti apie 14:00 su šunimi.',
-      checkIn: '2026-08-20',
-      checkOut: '2026-08-22',
-      guestsCount: 2,
-      totalNights: 2,
-      nightlyRate: campsite.pricePerNight,
-      cleaningFee: 0,
-      serviceFee: 3,
-      totalPrice: campsite.pricePerNight * 2 + 3,
-      propertyType: campsite.propertyType,
-      pitchName: campsite.pitches && campsite.pitches.length > 0 ? campsite.pitches[0].name : undefined,
-      status: 'approved',
-      createdAt: new Date().toISOString()
-    };
+  const sampleBooking = bookings.find(b => b.campsiteId === campsite.id) || {
+    id: `bk-sample-101`,
+    campsiteId: campsite.id,
+    campsiteTitle: campsite.title,
+    campsiteImage: campsite.images[0],
+    location: campsite.location,
+    guestName: 'Gintarė Petraitienė',
+    guestEmail: 'gintare.petraitiene@gmail.com',
+    guestPhone: '+370 612 34567',
+    guestNote: 'Noriu atvykti apie 14:00 su šunimi.',
+    checkIn: '2026-08-20',
+    checkOut: '2026-08-22',
+    guestsCount: 2,
+    totalNights: 2,
+    nightlyRate: campsite.pricePerNight,
+    cleaningFee: 0,
+    serviceFee: 3,
+    totalPrice: campsite.pricePerNight * 2 + 3,
+    propertyType: campsite.propertyType,
+    pitchName: campsite.pitches && campsite.pitches.length > 0 ? campsite.pitches[0].name : 'Vieta prie ežero',
+    status: 'approved',
+    createdAt: '2026-08-12'
+  };
 
-    sendAutomatedEmail(sampleBooking, activeTemplateTab === 'traveler_confirmation' ? 'confirmation_checkin' : 'new_reservation_request');
-    setTestEmailSentToast(`✅ Testinis el. laiškas sėkmingai sugeneruotas ir išsiųstas adresatui!`);
+  const handleSendTestEmail = () => {
+    dispatchSystemEmail(activeTemplateTab, {
+      booking: sampleBooking as any,
+      campsite,
+      user: {
+        id: 'u-test',
+        name: 'Gintarė Petraitienė',
+        email: 'gintare.petraitiene@gmail.com',
+        avatar: '',
+        joinedDate: '2026',
+        isAdmin: false
+      },
+      verificationCode: '4829',
+      declineReason: 'Užsakytoms datoms planuojami profilaktiniai sodybos tvarkymo darbai.'
+    });
+
+    setTestEmailSentToast(`✅ Testinis el. laiškas (${activeTemplateTab}) sugeneruotas ir įrašytas į išsiųstųjų žurnalą!`);
     setTimeout(() => setTestEmailSentToast(null), 4000);
   };
 
-  const campsiteEmailLogs = emailLogs.filter(l => l.campsiteId === campsite.id);
+  const previewEmail = generateSystemEmail(activeTemplateTab, {
+    booking: sampleBooking as any,
+    campsite,
+    user: {
+      id: 'u-test',
+      name: 'Gintarė Petraitienė',
+      email: 'gintare.petraitiene@gmail.com',
+      avatar: '',
+      joinedDate: '2026',
+      isAdmin: false
+    },
+    verificationCode: '4829',
+    declineReason: 'Atsiprašome, šiomis dienomis sodyboje vyks suplanuotas pirties remontas.'
+  });
+
+  const campsiteEmailLogs = emailLogs.filter(l => l.campsiteId === campsite.id || !l.campsiteId);
 
   return (
     <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm space-y-8 font-sans">
@@ -85,14 +114,14 @@ export const HostAutomatedEmailManager: React.FC<HostAutomatedEmailManagerProps>
           </span>
           <div>
             <h3 className="font-extrabold text-xl text-stone-900 flex items-center gap-2">
-              <span>Automatizuoti El. Laiškai & Atvykimo Instrukcijos</span>
+              <span>Automatizuota El. Pašto Sistema</span>
               <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black uppercase tracking-wider border border-amber-300 flex items-center gap-1">
                 <Crown className="w-3 h-3 text-amber-700" />
-                <span>PRO Planas</span>
+                <span>Visas Sistemos Ciklas</span>
               </span>
             </h3>
             <p className="text-xs text-stone-500 mt-0.5">
-              Patvirtinus užsakymą, sistema automatizuotai išsiunčia svečiui atvykimo instrukcijas, vartų kodus bei GPS koordinates.
+              Automatizuotas laiškų siuntimas: registracija, užklausos, patvirtinimai / atmetimai, atvykimo kodai bei atsiliepimai.
             </p>
           </div>
         </div>
@@ -102,7 +131,7 @@ export const HostAutomatedEmailManager: React.FC<HostAutomatedEmailManagerProps>
           className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold rounded-xl text-xs flex items-center justify-center gap-2 shadow-sm transition cursor-pointer shrink-0"
         >
           <Send className="w-4 h-4" />
-          <span>Siųsti bandomąjį el. laišką</span>
+          <span>Siųsti pasirinktą laišką</span>
         </button>
       </div>
 
@@ -118,7 +147,7 @@ export const HostAutomatedEmailManager: React.FC<HostAutomatedEmailManagerProps>
         <div className="flex items-center justify-between">
           <h4 className="font-extrabold text-stone-900 text-sm flex items-center gap-2">
             <Key className="w-4 h-4 text-emerald-700" />
-            <span>Svečio Atsiuntimo Duomenys (Atvykimo Instrukcijos)</span>
+            <span>Atvykimo Instrukcijos ir Patekimo Kodai</span>
           </h4>
           {savedSuccess && (
             <span className="text-xs font-bold text-emerald-700 flex items-center gap-1 animate-in fade-in">
@@ -206,120 +235,54 @@ export const HostAutomatedEmailManager: React.FC<HostAutomatedEmailManagerProps>
         </div>
       </form>
 
-      {/* Live Email Template Preview Section */}
+      {/* Live Email Template Switcher & HTML Preview */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between border-b border-stone-200 pb-3">
+        <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-stone-200 pb-3 gap-3">
           <h4 className="font-extrabold text-stone-900 text-sm flex items-center gap-2">
             <Eye className="w-4 h-4 text-emerald-700" />
-            <span>El. Laiškų Šablonų Peržiūra (Live HTML Templates)</span>
+            <span>Sistemos El. Laiškų Šablonų Peržiūra (Live Preview)</span>
           </h4>
 
-          {/* Template Switcher */}
-          <div className="flex items-center gap-2 text-xs font-extrabold">
-            <button
-              onClick={() => setActiveTemplateTab('traveler_confirmation')}
-              className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${
-                activeTemplateTab === 'traveler_confirmation'
-                  ? 'bg-emerald-700 text-white shadow-xs'
-                  : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-              }`}
-            >
-              1. Svečio Patvirtinimo Laiškas
-            </button>
-            <button
-              onClick={() => setActiveTemplateTab('host_notice')}
-              className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${
-                activeTemplateTab === 'host_notice'
-                  ? 'bg-amber-700 text-white shadow-xs'
-                  : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-              }`}
-            >
-              2. Šeimininko Užklausos Pranešimas
-            </button>
+          {/* Template Tabs */}
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-extrabold">
+            {[
+              { id: 'welcome_user', label: '1. Vartotojo Registracija' },
+              { id: 'welcome_host', label: '2. Šeimininko Registracija' },
+              { id: 'reservation_request_received', label: '3. Užklausa Svečiui' },
+              { id: 'new_reservation_request_host', label: '4. Užklausa Šeimininkui' },
+              { id: 'reservation_confirmed', label: '5. Patvirtinimas' },
+              { id: 'reservation_declined', label: '6. Atmetimas' },
+              { id: 'arrival_instructions', label: '7. Atvykimo Kodai' },
+              { id: 'password_reset_code', label: '8. Slaptažodžio Kodas' },
+              { id: 'stay_completed_thank_you', label: '9. Atsiliepimo Kvietimas' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTemplateTab(tab.id as SystemEmailType)}
+                className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${
+                  activeTemplateTab === tab.id
+                    ? 'bg-emerald-800 text-white shadow-xs'
+                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Render Live Preview Frame */}
-        {activeTemplateTab === 'traveler_confirmation' ? (
-          <div className="p-6 rounded-3xl bg-emerald-950/5 border border-emerald-200 space-y-4 font-sans max-w-2xl mx-auto shadow-inner">
-            <div className="bg-white rounded-2xl border border-stone-200 p-6 space-y-4 shadow-sm text-stone-900">
-              <div className="border-b border-stone-100 pb-3 space-y-1">
-                <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Tema:</span>
-                <p className="font-black text-sm text-emerald-900">
-                  ✅ Rezervacija Patvirtinta! Atsvykimo informacija ir GPS kodo duomenys — {campsite.title}
-                </p>
-                <span className="text-[11px] text-stone-500 font-medium block">
-                  Siuntėjas: <strong>Campy.lt Rezervacijos &lt;noreply@campy.lt&gt;</strong>
-                </span>
-              </div>
-
-              <div className="space-y-3 text-xs leading-relaxed text-stone-800">
-                <p className="font-bold">Sveiki, [Svečio Vardas]!</p>
-                <p>
-                  Jūsų rezervacija stovyklavietėje <strong>„{campsite.title}“</strong> yra sėkmingai patvirtinta!
-                </p>
-
-                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 space-y-1 text-emerald-950 font-medium">
-                  <span className="font-bold block text-emerald-900 uppercase text-[10px]">Viešnagės Detalės:</span>
-                  <p>📅 Datos: <strong>2026-08-20 — 2026-08-22 (2 naktys)</strong></p>
-                  <p>⛺ Aikštelė: <strong>{campsite.pitches?.[0]?.name || 'Pagrindinė stovyklavietės vieta'}</strong></p>
-                  <p>💶 Suma: <strong>€{campsite.pricePerNight * 2} (Apmokėta)</strong></p>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 space-y-2 text-stone-900">
-                  <span className="font-black text-amber-900 uppercase text-[10px] block flex items-center gap-1">
-                    <Key className="w-3.5 h-3.5" />
-                    <span>Atsvykimo ir Patekimo Instrukcijos:</span>
-                  </span>
-                  <p>📍 <strong>GPS Koordinatės:</strong> {gpsCoordinates}</p>
-                  <p>🔑 <strong>Vartų spynos kodas:</strong> {gateCode}</p>
-                  {wifiName && <p>📶 <strong>Wi-Fi Tinklas:</strong> {wifiName} (Slaptažodis: {wifiPassword})</p>}
-                  {houseRules && <p>📜 <strong>Taisyklės:</strong> {houseRules}</p>}
-                </div>
-
-                <p className="text-stone-500 text-[11px] pt-2 border-t border-stone-100">
-                  Kilus klausimams galite susisiekti su šeimininku <strong>{campsite.host.name}</strong> per Campy.lt platformos žinutes.
-                </p>
-              </div>
-            </div>
+        {/* Render Live Email HTML Box */}
+        <div className="p-4 rounded-3xl bg-stone-100 border border-stone-200 space-y-3 font-sans max-w-2xl mx-auto shadow-inner">
+          <div className="bg-white rounded-2xl border border-stone-200 p-3 space-y-1 text-xs">
+            <p className="text-stone-500 font-bold">Adresatas: <span className="text-stone-900 font-extrabold">{previewEmail.recipientName} ({previewEmail.recipientEmail})</span></p>
+            <p className="text-stone-500 font-bold">Tema: <span className="text-emerald-900 font-extrabold">{previewEmail.subject}</span></p>
           </div>
-        ) : (
-          <div className="p-6 rounded-3xl bg-amber-950/5 border border-amber-200 space-y-4 font-sans max-w-2xl mx-auto shadow-inner">
-            <div className="bg-white rounded-2xl border border-stone-200 p-6 space-y-4 shadow-sm text-stone-900">
-              <div className="border-b border-stone-100 pb-3 space-y-1">
-                <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Tema:</span>
-                <p className="font-black text-sm text-amber-900">
-                  📩 Nauja Rezervacijos Užklausa — {campsite.title} ([Svečio Vardas])
-                </p>
-                <span className="text-[11px] text-stone-500 font-medium block">
-                  Kam: <strong>{campsite.host.email || 'seimininkas@campy.lt'}</strong>
-                </span>
-              </div>
 
-              <div className="space-y-3 text-xs leading-relaxed text-stone-800">
-                <p className="font-bold">Sveiki, {campsite.host.name}!</p>
-                <p>
-                  Gautas naujas rezervacijos prašymas stovyklavietėje <strong>„{campsite.title}“</strong>. Datos kalendoriuje laikinai užrakintos.
-                </p>
-
-                <div className="p-3.5 rounded-xl bg-stone-50 border border-stone-200 space-y-1 text-stone-900">
-                  <p>👤 Poilsiautojas: <strong>Gintarė Petraitienė</strong></p>
-                  <p>📅 Užsakymo datos: <strong>2026-08-20 — 2026-08-22</strong></p>
-                  <p>💶 Užsakymo vertė: <strong>€{campsite.pricePerNight * 2}</strong></p>
-                </div>
-
-                <div className="flex gap-2 pt-2">
-                  <span className="px-4 py-2 bg-emerald-700 text-white font-bold text-xs rounded-xl">
-                    ✅ Patvirtinti užsakymą
-                  </span>
-                  <span className="px-4 py-2 bg-rose-100 text-rose-800 font-bold text-xs rounded-xl">
-                    ❌ Atmesti
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+          <div 
+            className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden"
+            dangerouslySetInnerHTML={{ __html: previewEmail.htmlBody }}
+          />
+        </div>
       </div>
 
       {/* Log History */}
@@ -327,7 +290,7 @@ export const HostAutomatedEmailManager: React.FC<HostAutomatedEmailManagerProps>
         <h4 className="font-extrabold text-stone-900 text-sm flex items-center justify-between">
           <span className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-emerald-700" />
-            <span>Automatizuotų El. Laiškų Išsiuntimo Žurnalas (Sent Logs)</span>
+            <span>El. Laiškų Išsiuntimo Žurnalas (System Sent Logs)</span>
           </span>
           <span className="text-xs font-bold text-stone-500">Iš viso: {campsiteEmailLogs.length}</span>
         </h4>
@@ -337,21 +300,22 @@ export const HostAutomatedEmailManager: React.FC<HostAutomatedEmailManagerProps>
             El. laiškų žurnale dar nėra registruotų pranešimų.
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
             {campsiteEmailLogs.map((log) => (
               <div key={log.id} className="p-3.5 rounded-xl bg-stone-50 border border-stone-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 text-[9px] font-black uppercase">
-                      {log.type === 'confirmation_checkin' ? '✅ Svečio Patvirtinimas' : '📩 Užklausa Šeimininkui'}
+                      {log.type}
                     </span>
                     <span className="font-bold text-stone-900">{log.recipientName} ({log.recipientEmail})</span>
                   </div>
-                  <p className="text-stone-600 font-medium text-[11px] line-clamp-1">{log.contentPreview}</p>
+                  <p className="text-stone-800 font-bold text-[11px]">{log.subject}</p>
+                  <p className="text-stone-600 font-medium text-[10px] line-clamp-1">{log.contentPreview}</p>
                 </div>
                 <div className="text-right shrink-0 text-[10px] text-stone-400 font-bold">
                   <span>{log.sentAt}</span>
-                  <span className="block text-emerald-700 font-extrabold">🟢 Delivered</span>
+                  <span className="block text-emerald-700 font-extrabold">🟢 Sent</span>
                 </div>
               </div>
             ))}
@@ -362,3 +326,4 @@ export const HostAutomatedEmailManager: React.FC<HostAutomatedEmailManagerProps>
     </div>
   );
 };
+

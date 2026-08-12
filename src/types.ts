@@ -104,16 +104,29 @@ export interface CheckInInstructions {
 
 export interface AutomatedEmailLog {
   id: string;
-  campsiteId: string;
-  campsiteTitle: string;
-  bookingId: string;
-  type: 'confirmation_checkin' | 'new_reservation_request' | 'ical_sync_alert';
+  campsiteId?: string;
+  campsiteTitle?: string;
+  bookingId?: string;
+  type: 
+    | 'welcome_user'
+    | 'welcome_host'
+    | 'reservation_request_received'
+    | 'new_reservation_request'
+    | 'new_reservation_request_host'
+    | 'confirmation_checkin'
+    | 'reservation_confirmed'
+    | 'reservation_declined'
+    | 'arrival_instructions'
+    | 'password_reset_code'
+    | 'stay_completed_thank_you'
+    | 'ical_sync_alert';
   recipientEmail: string;
   recipientName: string;
   subject: string;
   sentAt: string;
   status: 'sent' | 'failed' | 'queued';
   contentPreview: string;
+  htmlBody?: string;
   pitchName?: string;
   checkInInstructions?: CheckInInstructions;
 }
