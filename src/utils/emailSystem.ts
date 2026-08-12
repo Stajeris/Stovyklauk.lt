@@ -48,13 +48,20 @@ export async function sendSystemEmailViaApi(type: SystemEmailType, payload: Emai
       })
     });
 
-    if (!res.ok) {
-      const errJson = await res.json().catch(() => ({}));
-      console.warn('API respond with error for email dispatch:', errJson);
-      return { success: false, emailData, error: errJson.error || 'Serverio klaida' };
+    const text = await res.text();
+    let data: any = {};
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.warn('API non-JSON response:', text);
+      return { success: false, emailData, error: text || 'Serveris negrąžino galiojančio JSON' };
     }
 
-    const data = await res.json();
+    if (!res.ok) {
+      console.warn('API respond with error for email dispatch:', data);
+      return { success: false, emailData, error: data.error || 'Serverio klaida' };
+    }
+
     return { success: true, emailData, apiResult: data };
   } catch (err: any) {
     console.warn('Network error dispatching system email:', err.message);

@@ -1561,7 +1561,10 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           hostName: targetCamp?.host?.name,
           hostPhone: targetCamp?.host?.phone
         })
-      }).then(res => res.json()).then(data => {
+      }).then(async res => {
+        const text = await res.text();
+        try { return JSON.parse(text); } catch { return { success: false, error: text }; }
+      }).then(data => {
         console.log('✅ [Resend Server Action Success]:', data);
       }).catch(err => {
         console.error('❌ [Resend Server Action Error]:', err);

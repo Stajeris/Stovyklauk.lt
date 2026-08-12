@@ -41,7 +41,9 @@ export const HostAutomatedEmailManager: React.FC<HostAutomatedEmailManagerProps>
     setIsLoadingSmtpStatus(true);
     try {
       const res = await fetch('/api/smtp-status');
-      const data = await res.json();
+      const text = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(text); } catch {}
       if (data.success) {
         setSmtpStatus(data.status);
       }
@@ -68,7 +70,13 @@ export const HostAutomatedEmailManager: React.FC<HostAutomatedEmailManagerProps>
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ testEmail: testRecipientInput })
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data: any = {};
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { success: false, error: text || 'Serverio atsakas nėra galiojantis JSON' };
+      }
       setTestSmtpOutput(data);
     } catch (err: any) {
       setTestSmtpOutput({ success: false, error: err.message });

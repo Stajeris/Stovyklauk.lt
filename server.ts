@@ -106,6 +106,14 @@ async function startServer() {
     res.json({ status: "ok", service: "Campy.lt Email & Supabase SMTP Engine" });
   });
 
+  // Catch-all 404 handler for /api/* routes to guarantee JSON response instead of HTML
+  app.all("/api/*", (req, res) => {
+    return res.status(404).json({
+      success: false,
+      error: `API maršrutas ${req.method} ${req.originalUrl} nerastas`
+    });
+  });
+
   // Vite middleware for development vs static build for production
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
