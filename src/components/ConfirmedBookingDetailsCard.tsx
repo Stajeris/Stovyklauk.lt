@@ -54,7 +54,7 @@ export const ConfirmedBookingDetailsCard: React.FC<ConfirmedBookingDetailsCardPr
       <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-600 font-sans text-xs flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Compass className="w-4 h-4 text-slate-400 shrink-0" />
-          <span>Tiksli vieta ir šeimininko kontaktai bus parodyti, kai šeimininkas patvirtins rezervaciją ir bus atliktas apmokėjimas.</span>
+          <span>Tiksli vieta ir šeimininko kontaktai bus parodyti, kai šeimininkas patvirtins užklausą.</span>
         </div>
       </div>
     );
@@ -75,7 +75,7 @@ export const ConfirmedBookingDetailsCard: React.FC<ConfirmedBookingDetailsCardPr
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-extrabold text-sm sm:text-base text-white">
-                Kelionė Patvirtinta ir Apmokėta
+                Kelionė Patvirtinta
               </h3>
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-400 text-slate-950 font-black text-[10px] uppercase tracking-wider">
                 Tiksli Vieta & Kontaktai Atverti

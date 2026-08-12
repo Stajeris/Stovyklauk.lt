@@ -131,14 +131,9 @@ export const MyTripsPage: React.FC = () => {
 
                     <div className="text-right ml-2">
                       <span className="block text-[10px] uppercase font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                        🔒 Stripe Escrow
+                        Tiesioginė užklausa
                       </span>
                       <span className="text-xl font-black text-emerald-800 block mt-0.5">€{bk.totalPrice}</span>
-                      {bk.platformFeeEur && (
-                        <span className="text-[10px] text-gray-400 block">
-                          (Platformos mokestis: €{bk.platformFeeEur})
-                        </span>
-                      )}
                     </div>
 
                     {/* Review Action for Paid/Approved Bookings */}

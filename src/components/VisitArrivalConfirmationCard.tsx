@@ -66,7 +66,7 @@ export const VisitArrivalConfirmationCard: React.FC<VisitArrivalConfirmationCard
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="font-extrabold text-sm text-white">Stripe Escrow Apsilankymo Saugumas</h4>
+              <h4 className="font-extrabold text-sm text-white">Apsilankymo Saugumas IR Būsenos Patvirtinimas</h4>
               <span className="px-2 py-0.5 rounded-md bg-emerald-950 text-emerald-300 border border-emerald-800 font-bold text-[10px] uppercase tracking-wider">
                 16:00 Check-In Taisyklė
               </span>

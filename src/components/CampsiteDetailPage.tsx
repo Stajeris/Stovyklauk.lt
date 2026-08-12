@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
 import { Campsite, Booking, Review } from '../types';
-import { BookingModal } from './BookingModal';
 import { AmenityBadge } from './AmenityBadge';
 import { DateRangePicker } from './DateRangePicker';
 import { HostChatModal } from './HostChatModal';
@@ -44,7 +43,6 @@ export const CampsiteDetailPage: React.FC = () => {
   const [inquirySubmittedBooking, setInquirySubmittedBooking] = useState<Booking | null>(null);
   const [inquiryFormError, setInquiryFormError] = useState<string | null>(null);
 
-  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [showWidgetCalendar, setShowWidgetCalendar] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -826,22 +824,6 @@ export const CampsiteDetailPage: React.FC = () => {
             className="max-w-4xl max-h-[85vh] rounded-2xl object-contain shadow-2xl"
           />
         </div>
-      )}
-
-      {/* Booking Confirmation Modal */}
-      {isBookingModalOpen && (
-        <BookingModal
-          campsite={camp}
-          checkIn={checkIn}
-          checkOut={checkOut}
-          guestsCount={guests}
-          totalNights={nights}
-          nightlyRate={camp.pricePerNight}
-          cleaningFee={cleaningFee}
-          serviceFee={pricing.platformFeeEur}
-          totalPrice={totalPrice}
-          onClose={() => setIsBookingModalOpen(false)}
-        />
       )}
 
       {/* Host Direct Inquiry Chat Modal */}
