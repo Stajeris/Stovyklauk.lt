@@ -1080,16 +1080,16 @@ export const HostDashboard: React.FC = () => {
               <p className="text-xs text-gray-500">Pasirinkite sau tinkamiausią bendradarbiavimo ir matomumo lygį.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
               
-              {/* 1. Free Card */}
+              {/* 1. Free Host Subscription Card */}
               <div className={`bg-white rounded-3xl p-6 border transition-all space-y-5 flex flex-col justify-between ${
                 hostTier === 'free' ? 'border-emerald-600 ring-2 ring-emerald-600/20 shadow-md' : 'border-gray-200'
               }`}>
                 <div className="space-y-4">
                   <div className="flex justify-between items-start">
                     <div>
-                      <span className="text-[10px] font-black text-emerald-800 uppercase tracking-wider">1. Plano lygis</span>
+                      <span className="text-[10px] font-black text-emerald-800 uppercase tracking-wider">1. Šeimininko Planas</span>
                       <h4 className="text-2xl font-black text-gray-900 mt-0.5">Free</h4>
                     </div>
                     <span className="px-2.5 py-1 bg-emerald-50 text-emerald-800 font-bold text-xs rounded-full border border-emerald-200">
@@ -1099,15 +1099,15 @@ export const HostDashboard: React.FC = () => {
 
                   <div className="space-y-1">
                     <div className="text-2xl font-black text-gray-900">
-                      0 € <span className="text-xs font-medium text-gray-500">(1 m. nemokamai, vėliau 15 €/mėn.)</span>
+                      0 € <span className="text-xs font-medium text-gray-500">(1 m. nemokamai)</span>
                     </div>
                     <div className="text-xs font-bold text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-100">
-                      Komisinis (nuo rezervacijos): **Nėra (0%)**
+                      Rinkos mokesčiai (komisiniai): **0% (Mokėjimas tiesiogiai)**
                     </div>
                   </div>
 
                   <p className="text-xs text-gray-600 leading-relaxed font-medium bg-gray-50 p-3 rounded-xl border border-gray-100">
-                    <strong>Kam skirta:</strong> Pradedantiems, smulkiems hostams, kurie nori tik „būti matomi“.
+                    <strong>Kam skirta:</strong> Pradedantiems ir smulkiems sklypų šeimininkams, norintiems gauti tiesiogines lankytojų užklausas.
                   </p>
 
                   <div className="space-y-2.5 pt-2 text-xs">
@@ -1119,11 +1119,11 @@ export const HostDashboard: React.FC = () => {
                       </li>
                       <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                        <span>Tiesioginiai klientų užklausų srautai</span>
+                        <span>Tiesioginiai poilsiautojų kontaktų srautai (el. paštas, tel. nr.)</span>
                       </li>
                       <li className="flex items-start gap-2 text-gray-400 line-through">
                         <XCircle className="w-4 h-4 text-gray-300 shrink-0 mt-0.5" />
-                        <span>Prioritetinis rodymas rekomendacijose viršuje</span>
+                        <span>Prioritetinis rodymas paieškos rezultatų viršuje</span>
                       </li>
                     </ul>
                   </div>
@@ -1138,25 +1138,25 @@ export const HostDashboard: React.FC = () => {
                       : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer'
                   }`}
                 >
-                  {hostTier === 'free' ? 'Dabartinis Planas' : 'Pasirinkti Free Planą'}
+                  {hostTier === 'free' ? 'Dabartinis Free Planas' : 'Pasirinkti Free Planą'}
                 </button>
               </div>
 
-              {/* 2. Pro Card */}
+              {/* 2. Pro Host Subscription Card */}
               <div className={`bg-gradient-to-b from-amber-50/60 via-white to-amber-50/40 rounded-3xl p-6 border-2 transition-all space-y-5 flex flex-col justify-between relative overflow-hidden ${
-                hostTier === 'pro' ? 'border-amber-500 ring-2 ring-amber-500/30 shadow-xl' : 'border-amber-300 hover:border-amber-400'
+                hostTier === 'pro' || hostTier === 'premium' ? 'border-amber-500 ring-2 ring-amber-500/30 shadow-xl' : 'border-amber-300 hover:border-amber-400'
               }`}>
                 <div className="space-y-4">
                   <div className="flex justify-between items-start">
                     <div>
-                      <span className="text-[10px] font-black text-amber-800 uppercase tracking-wider">2. Plano lygis</span>
+                      <span className="text-[10px] font-black text-amber-800 uppercase tracking-wider">2. Šeimininko Planas</span>
                       <h4 className="text-2xl font-black text-gray-900 mt-0.5 flex items-center gap-1.5">
                         <span>Pro</span>
                         <Crown className="w-5 h-5 text-amber-500 fill-amber-500" />
                       </h4>
                     </div>
                     <span className="px-2.5 py-1 bg-amber-400 text-amber-950 font-black text-xs rounded-full shadow-xs">
-                      PRO REKOMENDUOJAMA
+                      REKOMENDUOJAMA
                     </span>
                   </div>
 
@@ -1165,12 +1165,12 @@ export const HostDashboard: React.FC = () => {
                       29 € <span className="text-xs font-bold text-gray-500">/ mėn.</span>
                     </div>
                     <div className="text-xs font-bold text-amber-900 bg-amber-100/80 p-2 rounded-lg border border-amber-200">
-                      Komisinis (nuo rezervacijos): **Nėra (0%)**
+                      Rinkos mokesčiai (komisiniai): **0% (Mokėjimas tiesiogiai)**
                     </div>
                   </div>
 
                   <p className="text-xs text-gray-700 leading-relaxed font-medium bg-amber-50/80 p-3 rounded-xl border border-amber-100">
-                    <strong>Kam skirta:</strong> Profesionaliems hostams, kurie nori skelbti kemperius, valdyti kalendorius ir gauti tiesioginius klientų užklausų srautus.
+                    <strong>Kam skirta:</strong> Profesionaliems stovyklaviečių ir kemperių šeimininkams, siekiantiems maksimalaus matomumo ir automatinio užklausų valdymo.
                   </p>
 
                   <div className="space-y-2.5 pt-2 text-xs">
@@ -1178,15 +1178,19 @@ export const HostDashboard: React.FC = () => {
                     <ul className="space-y-2 text-gray-700 font-medium">
                       <li className="flex items-start gap-2 bg-amber-100/60 p-2 rounded-lg border border-amber-200 text-amber-950 font-extrabold">
                         <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                        <span><strong>Rekomenduojamų vietų pirmenybė:</strong> Rodo PRO skelbimus pačioje viršuje</span>
+                        <span><strong>Prioritetinis matomumas:</strong> Rodo PRO skelbimus pačioje paieškos viršuje</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                        <span>Kalendorių ir iCal sinchronizavimo valdymas</span>
+                        <span>Automatinis datų užrakinimas kalendoriuje gautos užklausos metu</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <Check className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                        <span>Kemperių, palapinių ir sodybų skelbimų valdymas</span>
+                        <span>iCal / išorinių kalendorių sinchronizavimas</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                        <span>Kemperių, sodybų ir stovyklaviečių neribotas skelbimų valdymas</span>
                       </li>
                     </ul>
                   </div>
@@ -1194,78 +1198,15 @@ export const HostDashboard: React.FC = () => {
 
                 <button
                   onClick={() => setHostTier('pro')}
-                  disabled={hostTier === 'pro'}
+                  disabled={hostTier === 'pro' || hostTier === 'premium'}
                   className={`w-full py-3 px-4 rounded-xl text-xs font-black transition mt-4 flex items-center justify-center gap-2 ${
-                    hostTier === 'pro'
+                    hostTier === 'pro' || hostTier === 'premium'
                       ? 'bg-amber-500 text-white cursor-default shadow-xs'
                       : 'bg-amber-400 hover:bg-amber-300 text-amber-950 font-black shadow-md cursor-pointer'
                   }`}
                 >
                   <Crown className="w-4 h-4 fill-current" />
-                  <span>{hostTier === 'pro' ? 'Dabartinis PRO Planas' : 'Pasirinkti Pro Planą'}</span>
-                </button>
-              </div>
-
-              {/* 3. Premium Card */}
-              <div className={`bg-gradient-to-b from-purple-50/60 via-white to-purple-50/40 rounded-3xl p-6 border-2 transition-all space-y-5 flex flex-col justify-between ${
-                hostTier === 'premium' ? 'border-purple-600 ring-2 ring-purple-600/30 shadow-xl' : 'border-purple-200 hover:border-purple-300'
-              }`}>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="text-[10px] font-black text-purple-800 uppercase tracking-wider">3. Plano lygis</span>
-                      <h4 className="text-2xl font-black text-gray-900 mt-0.5 flex items-center gap-1.5">
-                        <span>Premium</span>
-                        <Zap className="w-5 h-5 text-purple-600 fill-purple-600" />
-                      </h4>
-                    </div>
-                    <span className="px-2.5 py-1 bg-purple-100 text-purple-900 font-bold text-xs rounded-full border border-purple-200">
-                      Pilna automatika
-                    </span>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="text-2xl font-black text-purple-950">
-                      0 € <span className="text-xs font-bold text-gray-500">(tik prenumeratos nereikia)</span>
-                    </div>
-                    <div className="text-xs font-bold text-purple-900 bg-purple-100/80 p-2 rounded-lg border border-purple-200">
-                      Komisinis (nuo rezervacijos): **6% – 10%**
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-gray-700 leading-relaxed font-medium bg-purple-50/80 p-3 rounded-xl border border-purple-100">
-                    <strong>Kam skirta:</strong> Didžiausio patogumo ieškantiems: pilna automatika su Stripe, klientas rezervuoja pats, hostui nereikia nieko administruoti.
-                  </p>
-
-                  <div className="space-y-2.5 pt-2 text-xs">
-                    <div className="font-bold text-gray-900">Premium Privalumai:</div>
-                    <ul className="space-y-2 text-gray-700">
-                      <li className="flex items-start gap-2">
-                        <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-                        <span>Pilnas Stripe momentinis apmokėjimas ir Escrow apsauga</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-                        <span>Automatiniai pranešimai ir patvirtinimai svečiams</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-                        <span>Nuliniam administravimo poreikiui – automatizuotas srautas</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => setHostTier('premium')}
-                  disabled={hostTier === 'premium'}
-                  className={`w-full py-3 px-4 rounded-xl text-xs font-black transition mt-4 ${
-                    hostTier === 'premium'
-                      ? 'bg-purple-600 text-white cursor-default font-extrabold shadow-xs'
-                      : 'bg-purple-600 hover:bg-purple-700 text-white shadow-md cursor-pointer'
-                  }`}
-                >
-                  {hostTier === 'premium' ? 'Dabartinis Premium Planas' : 'Pasirinkti Premium Planą'}
+                  <span>{hostTier === 'pro' || hostTier === 'premium' ? 'Dabartinis PRO Planas' : 'Pasirinkti Pro Planą (29 €/mėn.)'}</span>
                 </button>
               </div>
 

@@ -724,23 +724,14 @@ export const CampsiteDetailPage: React.FC = () => {
                   <span>Siųsti užklausą šeimininkui</span>
                 </button>
 
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setIsBookingModalOpen(true)}
-                    className="w-full py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-bold text-[11px] border border-emerald-200 transition cursor-pointer"
-                  >
-                    ⚡ Stripe Greitas Užsakymas
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsChatOpen(true)}
-                    className="w-full py-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-800 font-bold text-[11px] border border-gray-200 transition cursor-pointer"
-                  >
-                    💬 Rašyti žinutę
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsChatOpen(true)}
+                  className="w-full py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-800 font-bold text-xs border border-gray-200 transition cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <MessageSquare className="w-4 h-4 text-emerald-700" />
+                  <span>Rašyti žinutę šeimininkui</span>
+                </button>
 
               </form>
             ) : (

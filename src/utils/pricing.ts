@@ -20,29 +20,9 @@ export function getCampsiteCleaningFee(campsite: { propertyType?: string; hasCle
  * Minimum fee threshold: 5.00 EUR (protects against Stripe transaction fees)
  * Returns fee in cents (required for Stripe API)
  */
-export function calculatePlatformFee(bookingSubtotal: number): number {
-  let feePercentage: number;
-
-  // Determine percentage according to tiers
-  if (bookingSubtotal >= 250) {
-    feePercentage = 0.05; // 5% for >= 250 EUR
-  } else if (bookingSubtotal >= 200) {
-    feePercentage = 0.07; // 7% for 200 to 249.99 EUR
-  } else if (bookingSubtotal >= 180) {
-    feePercentage = 0.08; // 8% for 180 to 199.99 EUR
-  } else {
-    feePercentage = 0.10; // 10% standard rate
-  }
-
-  // Calculate amount in EUR
-  const calculatedFee = bookingSubtotal * feePercentage;
-  const minimumFee = 5.00; // 5 EUR minimum protection against Stripe fees
-
-  // Final fee cannot be lower than 5 EUR
-  const finalFee = Math.max(calculatedFee, minimumFee);
-
-  // Return amount in cents for Stripe API
-  return Math.round(finalFee * 100);
+export function calculatePlatformFee(_bookingSubtotal: number): number {
+  // No platform reservation fee for marketplace
+  return 0;
 }
 
 export interface DetailedPricingBreakdown {
@@ -84,15 +64,11 @@ export function calculateFullPricing(
 
   const bookingSubtotal = nightsSubtotal + cleaningFee;
   
-  const platformFeeCents = calculatePlatformFee(bookingSubtotal);
-  const platformFeeEur = parseFloat((platformFeeCents / 100).toFixed(2));
-  
-  let feePercentage = 10;
-  if (bookingSubtotal >= 250) feePercentage = 5;
-  else if (bookingSubtotal >= 200) feePercentage = 7;
-  else if (bookingSubtotal >= 180) feePercentage = 8;
+  const platformFeeCents = 0;
+  const platformFeeEur = 0;
+  const feePercentage = 0;
 
-  const totalGuestPrice = parseFloat((bookingSubtotal + platformFeeEur).toFixed(2));
+  const totalGuestPrice = parseFloat(bookingSubtotal.toFixed(2));
   const hostPayoutAmount = parseFloat(bookingSubtotal.toFixed(2));
 
   return {
@@ -104,7 +80,7 @@ export function calculateFullPricing(
     platformFeeCents,
     platformFeeEur,
     feePercentage,
-    feePercentageLabel: `${feePercentage}%`,
+    feePercentageLabel: '0%',
     totalGuestPrice,
     hostPayoutAmount,
   };
