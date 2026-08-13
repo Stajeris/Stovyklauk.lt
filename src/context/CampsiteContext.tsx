@@ -136,7 +136,91 @@ export const INITIAL_USERS: UserProfile[] = [
     isSuperhost: true,
     isEmailVerified: true
   },
-  // 15 Demo Users (Clients / Travelers)
+  {
+    id: 'host-9',
+    name: 'Vytautas Kazlauskas',
+    email: 'vytautas.kazlauskas@campy.lt',
+    password: 'slaptazodis123',
+    phone: '+370 699 90001',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
+    bio: 'Trakų istorinio parko ir Galvės ežero pakrantės sodybos šeimininkas.',
+    joinedDate: 'Rugpjūtis 2026',
+    userType: 'host',
+    isAdmin: false,
+    isSuperhost: true,
+    isEmailVerified: true
+  },
+  {
+    id: 'host-10',
+    name: 'Milda Navickienė',
+    email: 'milda.navickiene@campy.lt',
+    password: 'slaptazodis123',
+    phone: '+370 699 90002',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    bio: 'Merkinės piliakalnio ir Dzūkijos nacionalinio parko kupolinių glamping namelių įkūrėja.',
+    joinedDate: 'Rugpjūtis 2026',
+    userType: 'host',
+    isAdmin: false,
+    isSuperhost: true,
+    isEmailVerified: true
+  },
+  {
+    id: 'host-11',
+    name: 'Tomas Grigas',
+    email: 'tomas.grigas@campy.lt',
+    password: 'slaptazodis123',
+    phone: '+370 699 90003',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+    bio: 'Labanoro girios ir Lakajų ežerų privačių stovyklaviečių puoselėtojas.',
+    joinedDate: 'Rugpjūtis 2026',
+    userType: 'host',
+    isAdmin: false,
+    isSuperhost: false,
+    isEmailVerified: true
+  },
+  {
+    id: 'host-12',
+    name: 'Simona Paulauskaitė',
+    email: 'simona.paulauskaite@campy.lt',
+    password: 'slaptazodis123',
+    phone: '+370 699 90004',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
+    bio: 'Nidos ir Kuršių nerijos pajūrio stovyklavietės bei kemperių parko šeimininkė.',
+    joinedDate: 'Rugpjūtis 2026',
+    userType: 'host',
+    isAdmin: false,
+    isSuperhost: true,
+    isEmailVerified: true
+  },
+  {
+    id: 'host-13',
+    name: 'Algirdas Vaitkus',
+    email: 'algirdas.vaitkus@campy.lt',
+    password: 'slaptazodis123',
+    phone: '+370 699 90005',
+    avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=200&q=80',
+    bio: 'Anykščių šilelio ir Šventosios upės pakrantės poilsiavietės įkūrėjas.',
+    joinedDate: 'Rugpjūtis 2026',
+    userType: 'host',
+    isAdmin: false,
+    isSuperhost: false,
+    isEmailVerified: true
+  },
+  {
+    id: 'host-14',
+    name: 'Jolanta Butkienė',
+    email: 'jolanta.butkiene@campy.lt',
+    password: 'slaptazodis123',
+    phone: '+370 699 90006',
+    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
+    bio: 'Šventosios marių ir Žemaitijos biosferos rezervato miško oazės savininkė.',
+    joinedDate: 'Rugpjūtis 2026',
+    userType: 'host',
+    isAdmin: false,
+    isSuperhost: true,
+    isEmailVerified: true
+  },
+  // 20 Demo Users (Clients / Travelers)
   {
     id: 'user-1',
     name: 'Lukas Navickas',
@@ -346,6 +430,76 @@ export const INITIAL_USERS: UserProfile[] = [
     isAdmin: false,
     isSuperhost: false,
     isEmailVerified: true
+  },
+  {
+    id: 'user-16',
+    name: 'Deimantė Sabaliauskaitė',
+    email: 'deimante.sabaliauskaite@gmail.com',
+    password: 'slaptazodis123',
+    phone: '+370 601 11016',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    bio: 'Architektė ir keliautoja, mėgstanti stovyklavimą su šeima.',
+    joinedDate: 'Rugpjūtis 2026',
+    userType: 'client',
+    isAdmin: false,
+    isSuperhost: false,
+    isEmailVerified: true
+  },
+  {
+    id: 'user-17',
+    name: 'Mindaugas Šimkus',
+    email: 'mindaugas.simkus@gmail.com',
+    password: 'slaptazodis123',
+    phone: '+370 601 11017',
+    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80',
+    bio: 'Žygeivis ir bekelės dviratininkas, ieškantis nuošalių stovyklaviečių.',
+    joinedDate: 'Rugpjūtis 2026',
+    userType: 'client',
+    isAdmin: false,
+    isSuperhost: false,
+    isEmailVerified: true
+  },
+  {
+    id: 'user-18',
+    name: 'Gabija Valaitė',
+    email: 'gabija.valaite@gmail.com',
+    password: 'slaptazodis123',
+    phone: '+370 601 11018',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
+    bio: 'Vandens sporto ir irklenčių entuziastė iš Kauno.',
+    joinedDate: 'Rugpjūtis 2026',
+    userType: 'client',
+    isAdmin: false,
+    isSuperhost: false,
+    isEmailVerified: true
+  },
+  {
+    id: 'user-19',
+    name: 'Tadas Jankauskas',
+    email: 'tadas.jankauskas@gmail.com',
+    password: 'slaptazodis123',
+    phone: '+370 601 11019',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+    bio: 'Gamtos fotografas ir naktinio dangaus stebėtojas.',
+    joinedDate: 'Rugpjūtis 2026',
+    userType: 'client',
+    isAdmin: false,
+    isSuperhost: false,
+    isEmailVerified: true
+  },
+  {
+    id: 'user-20',
+    name: 'Austėja Noreikaitė',
+    email: 'austeja.noreikaite@gmail.com',
+    password: 'slaptazodis123',
+    phone: '+370 601 11020',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
+    bio: 'Sveikos gyvensenos trenerė, mėgstanti glamping namelius prie vandens.',
+    joinedDate: 'Rugpjūtis 2026',
+    userType: 'client',
+    isAdmin: false,
+    isSuperhost: false,
+    isEmailVerified: true
   }
 ];
 
@@ -470,8 +624,15 @@ const CampsiteContext = createContext<CampsiteContextType | undefined>(undefined
 
 export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [campsites, setCampsites] = useState<Campsite[]>(() => {
+    const CAMPSITE_VER = 'v5_14_campsites_with_6_new_hosts';
+    const savedVer = localStorage.getItem('campscape_campsites_ver');
     const local = localStorage.getItem('campscape_campsites');
-    return local ? JSON.parse(local) : INITIAL_CAMPSITES;
+    if (savedVer !== CAMPSITE_VER || !local) {
+      localStorage.setItem('campscape_campsites_ver', CAMPSITE_VER);
+      localStorage.setItem('campscape_campsites', JSON.stringify(INITIAL_CAMPSITES));
+      return INITIAL_CAMPSITES;
+    }
+    return JSON.parse(local);
   });
 
   const [bookings, setBookings] = useState<Booking[]>(() => {
@@ -480,7 +641,7 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
 
   const [usersList, setUsersList] = useState<UserProfile[]>(() => {
-    const DATASET_VER = 'v4_seimininkas_keliautojas_badges';
+    const DATASET_VER = 'v5_6_new_hosts_5_new_travelers';
     const savedVer = localStorage.getItem('campscape_users_ver');
     const local = localStorage.getItem('campscape_users');
     if (savedVer !== DATASET_VER || !local) {
