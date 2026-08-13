@@ -613,8 +613,10 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     sendSystemEmailViaApi(type, payload).then(result => {
       if (result.success) {
         console.log(`✅ El. laiškas išsiųstas gavėjui ${generated.recipientEmail} (${type})`);
+        setEmailLogs(prev => prev.map(log => log.id === newLog.id ? { ...log, status: 'sent' } : log));
       } else {
         console.warn(`⚠️ El. pašto siuntimo pranešimas:`, result);
+        setEmailLogs(prev => prev.map(log => log.id === newLog.id ? { ...log, status: 'failed' } : log));
       }
     });
 
@@ -1506,15 +1508,21 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       );
     }
 
-    // Automatically send system confirmation emails for request submission
-    dispatchSystemEmail('reservation_request_received', { booking: newBooking, campsite: targetCampsite });
-    dispatchSystemEmail('new_reservation_request_host', { booking: newBooking, campsite: targetCampsite });
+    // Automatically send system confirmation emails
+    if (initialStatus === 'approved' || initialStatus === 'confirmed') {
+      dispatchSystemEmail('reservation_confirmed', { booking: newBooking, campsite: targetCampsite });
+      dispatchSystemEmail('arrival_instructions', { booking: newBooking, campsite: targetCampsite });
+    } else {
+      dispatchSystemEmail('reservation_request_received', { booking: newBooking, campsite: targetCampsite });
+      dispatchSystemEmail('new_reservation_request_host', { booking: newBooking, campsite: targetCampsite });
+    }
 
     return newBooking;
   };
 
   const updateBookingStatus = (bookingId: string, newStatus: 'approved' | 'confirmed' | 'rejected' | 'completed') => {
     const targetBooking = bookings.find(b => b.id === bookingId);
+    const effectiveStatus = newStatus === 'confirmed' ? 'approved' : newStatus;
 
     setBookings(prev => prev.map(b => {
       if (b.id === bookingId) {
@@ -1529,10 +1537,10 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
         return {
           ...b,
-          status: newStatus === 'confirmed' ? 'approved' : newStatus,
+          status: effectiveStatus,
           escrowStatus: updatedEscrow,
           stripePaymentStatus: updatedStripe,
-          paymentInstructions: (newStatus === 'approved' || newStatus === 'confirmed')
+          paymentInstructions: (effectiveStatus === 'approved')
             ? 'Apmokėjimo rekvizitai: Banko sąskaita LT79 7044 0600 0123 4567, Gavėjas: Šeimininkas / Campy.lt. Pervedime nurodykite užsakymo ID.'
             : b.paymentInstructions
         };
@@ -1541,10 +1549,11 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }));
 
     // If approved or confirmed, automatically trigger confirmation & arrival instructions email dispatch!
-    if ((newStatus === 'approved' || newStatus === 'confirmed') && targetBooking) {
+    if ((effectiveStatus === 'approved') && targetBooking) {
+      const updatedBooking = { ...targetBooking, status: 'approved' as const };
       const targetCamp = campsites.find(c => c.id === targetBooking.campsiteId);
-      dispatchSystemEmail('reservation_confirmed', { booking: targetBooking, campsite: targetCamp });
-      dispatchSystemEmail('arrival_instructions', { booking: targetBooking, campsite: targetCamp });
+      dispatchSystemEmail('reservation_confirmed', { booking: updatedBooking, campsite: targetCamp });
+      dispatchSystemEmail('arrival_instructions', { booking: updatedBooking, campsite: targetCamp });
 
       // Execute Server Action call to /api/send-confirmation-email via Resend
       fetch('/api/send-confirmation-email', {
