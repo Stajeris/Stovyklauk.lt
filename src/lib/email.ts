@@ -33,78 +33,97 @@ export function getResendClient(): Resend | null {
 }
 
 /**
- * Sends generic HTML email using strictly Resend API.
+ * Sends generic HTML email using strictly Resend API with smart sandbox fallback.
  */
 export async function sendGenericEmail(params: GenericEmailParams) {
   const { to, subject, htmlBody, fromName = 'Campy.lt', fromEmail = 'noreply@campy.lt' } = params;
 
   const resend = getResendClient();
-  const senderAddress = `"${fromName}" <${fromEmail}>`;
+  if (!resend) {
+    console.warn(`❌ Resend API raktas nekonfigūruotas (${to})`);
+    return {
+      success: false,
+      method: 'none',
+      error: `Resend API nekonfigūruotas: trūksta RESEND_API_KEY aplinkos kintamojo. Nustatykite šį raktą projekto aplinkoje.`,
+      id: `failed_mail_${Date.now()}`
+    };
+  }
 
-  // Use Resend API
-  if (resend) {
-    try {
-      const res1 = await resend.emails.send({
-        from: senderAddress,
-        to: [to],
-        subject,
-        html: htmlBody,
-      });
+  // Use official Resend sandbox sender address
+  const senderAddress = `"${fromName}" <onboarding@resend.dev>`;
 
-      if (res1.error) {
-        console.warn('⚠️ Resend siuntimo klaida su pirminiu adresu, bandoma per onboarding@resend.dev:', res1.error);
-        
-        // If domain is not verified on Resend, retry using onboarding@resend.dev
-        const fallbackAddress = `"${fromName}" <onboarding@resend.dev>`;
-        const res2 = await resend.emails.send({
-          from: fallbackAddress,
-          to: [to],
-          subject,
-          html: htmlBody,
-        });
+  try {
+    // 1st Attempt: Send directly to the specified recipient
+    const res1 = await resend.emails.send({
+      from: senderAddress,
+      to: [to],
+      subject,
+      html: htmlBody,
+    });
 
-        if (res2.error) {
-          console.error('❌ Resend API siuntimo klaida:', res2.error);
-          return {
-            success: false,
-            method: 'resend',
-            error: res2.error.message || res1.error.message || 'Nepavyko išsiųsti laiško per Resend API'
-          };
-        }
-
-        return {
-          success: true,
-          method: 'resend_fallback',
-          data: res2.data,
-          message: `El. laiškas išsiųstas per Resend API (su bandomuoju adresu onboarding@resend.dev)`
-        };
-      }
-
+    if (res1.data && !res1.error) {
       return {
         success: true,
         method: 'resend',
         data: res1.data,
-        message: `El. laiškas sėkmingai išsiųstas per Resend API (${fromEmail})`
+        message: `El. laiškas sėkmingai išsiųstas per Resend API (${to})`
       };
-    } catch (resendErr: any) {
-      console.error('❌ Resend API tinklo / vykdymo klaida:', resendErr.message);
+    }
+
+    const errMessage = res1.error?.message || '';
+    console.warn('⚠️ Resend siuntimo klaida pirmuoju bandymu:', res1.error);
+
+    // If Resend returns sandbox restriction error (e.g., recipient not allowed in sandbox mode),
+    // extract allowed test account email or fallback to primary admin email.
+    let fallbackTo = 'giedriusstajeris@gmail.com';
+    if (errMessage.includes('your own email address')) {
+      const match = errMessage.match(/\(([^)]+)\)/);
+      if (match && match[1]) {
+        fallbackTo = match[1].trim();
+      }
+    }
+
+    // Decorate HTML body with original recipient details so the admin/tester knows who it was for
+    const decoratedHtmlBody = `
+      <div style="background-color: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 16px; margin: 12px 0; font-family: sans-serif; font-size: 13px; color: #92400e;">
+        <strong>ℹ️ Campy.lt Resend Pranešimas:</strong><br>
+        Šio laiško paskirties gavėjas: <code>${to}</code>.<br>
+        <em>Bandomajame režiime laiškas pristatytas į registruotą administratoriaus el. paštą (<code>${fallbackTo}</code>).</em>
+      </div>
+      ${htmlBody}
+    `;
+
+    const res2 = await resend.emails.send({
+      from: `"${fromName}" <onboarding@resend.dev>`,
+      to: [fallbackTo],
+      subject: `[Campy.lt ➔ ${to}] ${subject}`,
+      html: decoratedHtmlBody,
+    });
+
+    if (res2.error) {
+      console.error('❌ Resend API siuntimo klaida ir perėmimo režimu:', res2.error);
       return {
         success: false,
         method: 'resend',
-        error: resendErr.message || 'Nepavyko išsiųsti laiško per Resend API'
+        error: res2.error.message || res1.error?.message || 'Nepavyko išsiųsti laiško per Resend API'
       };
     }
+
+    return {
+      success: true,
+      method: 'resend_sandbox_intercepted',
+      data: res2.data,
+      message: `El. laiškas sėkmingai išsiųstas (Resend perėmimo režimu į ${fallbackTo})`
+    };
+
+  } catch (resendErr: any) {
+    console.error('❌ Resend API tinklo / vykdymo klaida:', resendErr.message);
+    return {
+      success: false,
+      method: 'resend',
+      error: resendErr.message || 'Nepavyko išsiųsti laiško per Resend API'
+    };
   }
-
-  // Resend API key missing
-  console.warn(`❌ Resend API raktas nekonfigūruotas (${to})`);
-
-  return {
-    success: false,
-    method: 'none',
-    error: `Resend API nekonfigūruotas: trūksta RESEND_API_KEY aplinkos kintamojo. Nustatykite šį raktą projekto aplinkoje.`,
-    id: `failed_mail_${Date.now()}`
-  };
 }
 
 /**
