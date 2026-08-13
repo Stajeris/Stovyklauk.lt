@@ -142,6 +142,201 @@ export async function testSmtpConnection(testRecipient?: string) {
 }
 
 /**
+ * Sends a notification email to the Host when a Guest submits a new reservation request (status: 'pending').
+ */
+export async function sendNewReservationRequestHostEmail(params: {
+  hostEmail: string;
+  hostName?: string;
+  guestName: string;
+  guestEmail: string;
+  guestPhone?: string;
+  campsiteTitle: string;
+  checkIn: string;
+  checkOut: string;
+  totalPrice: number;
+  bookingId: string;
+}) {
+  const {
+    hostEmail,
+    hostName = 'Šeimininke',
+    guestName,
+    guestEmail,
+    guestPhone = 'Nenurodytas',
+    campsiteTitle,
+    checkIn,
+    checkOut,
+    totalPrice,
+    bookingId
+  } = params;
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f5f6; margin: 0; padding: 20px; color: #1c1917; }
+          .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+          .header { background: linear-gradient(135deg, #065f46 0%, #064e3b 100%); padding: 32px 24px; text-align: center; color: #ffffff; }
+          .header h1 { margin: 0; font-size: 24px; font-weight: 800; }
+          .badge { display: inline-block; background: #fef08a; color: #854d0e; font-weight: 800; font-size: 12px; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; margin-top: 10px; }
+          .content { padding: 32px 24px; }
+          .greeting { font-size: 18px; font-weight: 700; color: #064e3b; margin-bottom: 16px; }
+          .details-card { background: #fafaf9; border: 1px solid #e7e5e4; border-radius: 12px; padding: 20px; margin: 20px 0; }
+          .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #e7e5e4; font-size: 14px; }
+          .detail-row:last-child { border-bottom: none; }
+          .detail-label { color: #78716c; font-weight: 600; }
+          .detail-value { font-weight: 700; color: #1c1917; }
+          .total-row { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 12px; margin-top: 16px; font-size: 16px; font-weight: 800; color: #065f46; display: flex; justify-content: space-between; }
+          .footer { background: #f5f5f4; padding: 20px 24px; text-align: center; font-size: 12px; color: #78716c; border-top: 1px solid #e7e5e4; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>⛺ Nauja Užsakymo Užklausa!</h1>
+            <div class="badge">Laukia Jūsų Patvirtinimo</div>
+          </div>
+          <div class="content">
+            <div class="greeting">Sveiki, ${hostName}!</div>
+            <p>Gauta nauja stovyklavietės rezervacijos užklausa jūsų objektui <strong>${campsiteTitle}</strong>.</p>
+            
+            <div class="details-card">
+              <div class="detail-row">
+                <span class="detail-label">Svečias:</span>
+                <span class="detail-value">${guestName} (${guestEmail})</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Telefonas:</span>
+                <span class="detail-value">${guestPhone}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Atvykimas:</span>
+                <span class="detail-value">${checkIn}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Išvykimas:</span>
+                <span class="detail-value">${checkOut}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Užsakymo ID:</span>
+                <span class="detail-value">#${bookingId}</span>
+              </div>
+
+              <div class="total-row">
+                <span>Rezervacijos Suma:</span>
+                <span>€${totalPrice}</span>
+              </div>
+            </div>
+
+            <p>Prisijunkite prie savo <strong>Campy.lt Valdymo Skydelio</strong>, kad patvirtintumėte arba atmestumėte šią užklausą.</p>
+          </div>
+          <div class="footer">
+            Campy.lt — Stovyklaviečių ir Sklypų Rezervacijos Sistema
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return await sendGenericEmail({
+    to: hostEmail,
+    subject: `⛺ Nauja užsakymo užklausa - ${campsiteTitle}`,
+    htmlBody: htmlContent
+  });
+}
+
+/**
+ * Sends a notification email to the Guest when a Host rejects a reservation request (status: 'rejected').
+ */
+export async function sendReservationRejectedGuestEmail(params: {
+  guestEmail: string;
+  guestName: string;
+  campsiteTitle: string;
+  checkIn: string;
+  checkOut: string;
+  bookingId: string;
+  reason?: string;
+}) {
+  const {
+    guestEmail,
+    guestName,
+    campsiteTitle,
+    checkIn,
+    checkOut,
+    bookingId,
+    reason = 'Pasirinktomis datomis stovyklavietė nėra prieinama.'
+  } = params;
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f5f6; margin: 0; padding: 20px; color: #1c1917; }
+          .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+          .header { background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%); padding: 32px 24px; text-align: center; color: #ffffff; }
+          .header h1 { margin: 0; font-size: 24px; font-weight: 800; }
+          .badge { display: inline-block; background: #fecaca; color: #991b1b; font-weight: 800; font-size: 12px; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; margin-top: 10px; }
+          .content { padding: 32px 24px; }
+          .greeting { font-size: 18px; font-weight: 700; color: #991b1b; margin-bottom: 16px; }
+          .details-card { background: #fafaf9; border: 1px solid #e7e5e4; border-radius: 12px; padding: 20px; margin: 20px 0; }
+          .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #e7e5e4; font-size: 14px; }
+          .detail-row:last-child { border-bottom: none; }
+          .detail-label { color: #78716c; font-weight: 600; }
+          .detail-value { font-weight: 700; color: #1c1917; }
+          .reason-box { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; margin-top: 16px; color: #991b1b; font-size: 13px; font-weight: 600; }
+          .footer { background: #f5f5f4; padding: 20px 24px; text-align: center; font-size: 12px; color: #78716c; border-top: 1px solid #e7e5e4; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>❌ Rezervacijos Užklausa Atmesta</h1>
+            <div class="badge">Atšaukta / Atmesta</div>
+          </div>
+          <div class="content">
+            <div class="greeting">Sveiki, ${guestName},</div>
+            <p>Apgailestaujame, tačiau jūsų rezervacijos užklausa stovyklavietėje <strong>${campsiteTitle}</strong> nebuvo patvirtinta.</p>
+            
+            <div class="details-card">
+              <div class="detail-row">
+                <span class="detail-label">Stovyklavietė:</span>
+                <span class="detail-value">${campsiteTitle}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Datos:</span>
+                <span class="detail-value">${checkIn} — ${checkOut}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Užsakymo ID:</span>
+                <span class="detail-value">#${bookingId}</span>
+              </div>
+
+              <div class="reason-box">
+                <strong>Priežastis:</strong> ${reason}
+              </div>
+            </div>
+
+            <p>Kviečiame pasirinkti kitas datas arba peržiūrėti kitas puikias <strong>Campy.lt</strong> stovyklavietes!</p>
+          </div>
+          <div class="footer">
+            Campy.lt — Stovyklaviečių ir Sklypų Rezervacijos Sistema
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return await sendGenericEmail({
+    to: guestEmail,
+    subject: `❌ Rezervacijos užklausa nepatvirtinta - ${campsiteTitle}`,
+    htmlBody: htmlContent
+  });
+}
+
+/**
  * Sends a reservation confirmation email to the guest using Resend or SMTP.
  */
 export async function sendBookingConfirmationEmail(params: BookingConfirmationEmailParams) {

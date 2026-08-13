@@ -5,6 +5,7 @@ import { INITIAL_CHAT_THREADS } from '../data/mockChats';
 import { translations, Language } from '../data/translations';
 import { calculateFullPricing } from '../utils/pricing';
 import { generateSystemEmail, sendSystemEmailViaApi, SystemEmailType, EmailPayload } from '../utils/emailSystem';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 export const INITIAL_USERS: UserProfile[] = [
   // 1 Platform Admin
@@ -1106,6 +1107,19 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     setUsersList(prev => [...prev, newUser]);
     setCurrentUser(newUser);
+
+    // Sync profile data to Supabase if configured
+    if (isSupabaseConfigured()) {
+      Promise.resolve(supabase.from('profiles').insert([{
+        email: newUser.email,
+        full_name: newUser.name,
+        phone: newUser.phone,
+        role: newUser.userType === 'host' ? 'host' : 'traveler'
+      }])).then(res => {
+        if (res.error) console.warn('⚠️ Supabase profile insert sync error:', res.error);
+        else console.log('✅ Supabase profile sync successful!');
+      }).catch(err => console.warn('⚠️ Supabase network error:', err));
+    }
     
     // Automatically set corresponding mode and dispatch welcome email
     if (assignedType === 'host') {
@@ -1508,6 +1522,24 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       );
     }
 
+    // Sync booking to Supabase database if configured
+    if (isSupabaseConfigured()) {
+      Promise.resolve(supabase.from('bookings').insert([{
+        campsite_id: newBooking.campsiteId,
+        guest_name: newBooking.guestName,
+        guest_email: newBooking.guestEmail,
+        guest_phone: newBooking.guestPhone || '',
+        check_in: newBooking.checkIn,
+        check_out: newBooking.checkOut,
+        guests_count: newBooking.guestsCount,
+        total_price: newBooking.totalPrice,
+        status: (initialStatus === 'approved' || initialStatus === 'confirmed') ? 'confirmed' : 'pending'
+      }])).then(res => {
+        if (res.error) console.warn('⚠️ Supabase booking insert sync error:', res.error);
+        else console.log('✅ Supabase booking insert successful!');
+      }).catch(err => console.warn('⚠️ Supabase network error:', err));
+    }
+
     // Automatically send system confirmation emails
     if (initialStatus === 'approved' || initialStatus === 'confirmed') {
       dispatchSystemEmail('reservation_confirmed', { booking: newBooking, campsite: targetCampsite });
@@ -1523,6 +1555,18 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const updateBookingStatus = (bookingId: string, newStatus: 'approved' | 'confirmed' | 'rejected' | 'completed') => {
     const targetBooking = bookings.find(b => b.id === bookingId);
     const effectiveStatus = newStatus === 'confirmed' ? 'approved' : newStatus;
+
+    // Sync booking status update to Supabase
+    if (isSupabaseConfigured()) {
+      const dbStatus = effectiveStatus === 'approved' ? 'confirmed' : effectiveStatus;
+      Promise.resolve(supabase.from('bookings').update({
+        status: dbStatus,
+        updated_at: new Date().toISOString()
+      }).eq('id', bookingId)).then(res => {
+        if (res.error) console.warn('⚠️ Supabase booking update sync error:', res.error);
+        else console.log('✅ Supabase booking update successful!');
+      }).catch(err => console.warn('⚠️ Supabase network error:', err));
+    }
 
     setBookings(prev => prev.map(b => {
       if (b.id === bookingId) {
