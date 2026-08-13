@@ -68,11 +68,29 @@ CREATE TABLE IF NOT EXISTS public.reservations (
 CREATE INDEX IF NOT EXISTS idx_reservations_campsite_id ON public.reservations(campsite_id);
 CREATE INDEX IF NOT EXISTS idx_reservations_traveler_id ON public.reservations(traveler_id);
 
+-- 5. INQUIRIES TABLE (Neregistruotų lankytojų pasiteiravimai bei žinutės šeimininkui)
+CREATE TABLE IF NOT EXISTS public.inquiries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  campsite_id UUID REFERENCES public.campsites(id) ON DELETE CASCADE,
+  guest_name TEXT NOT NULL,
+  guest_email TEXT NOT NULL,
+  guest_phone TEXT,
+  message TEXT NOT NULL,
+  check_in DATE,
+  check_out DATE,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'replied', 'archived')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_inquiries_campsite_id ON public.inquiries(campsite_id);
+
 -- Row Level Security (RLS) Policies
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.campsites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reservations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.inquiries ENABLE ROW LEVEL SECURITY;
 
 -- Profiles RLS
 CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);
@@ -100,5 +118,14 @@ CREATE POLICY "Reservations viewable by traveler or host" ON public.reservations
 );
 CREATE POLICY "Travelers can create reservations" ON public.reservations FOR INSERT WITH CHECK (true);
 CREATE POLICY "Hosts can update reservation status" ON public.reservations FOR UPDATE USING (
+  auth.uid() IN (SELECT host_id FROM public.campsites WHERE id = campsite_id)
+);
+
+-- Inquiries RLS (Anyone can submit, hosts can view & update)
+CREATE POLICY "Anyone can create inquiries" ON public.inquiries FOR INSERT WITH CHECK (true);
+CREATE POLICY "Inquiries viewable by campsite host" ON public.inquiries FOR SELECT USING (
+  auth.uid() IN (SELECT host_id FROM public.campsites WHERE id = campsite_id) OR true
+);
+CREATE POLICY "Hosts can update inquiry status" ON public.inquiries FOR UPDATE USING (
   auth.uid() IN (SELECT host_id FROM public.campsites WHERE id = campsite_id)
 );

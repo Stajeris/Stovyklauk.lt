@@ -2,7 +2,7 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
-import { sendBookingConfirmationEmail, sendGenericEmail, testSmtpConnection } from "./src/lib/email";
+import { sendBookingConfirmationEmail, sendGenericEmail, sendGuestInquiryHostEmail, testSmtpConnection } from "./src/lib/email";
 
 dotenv.config();
 
@@ -11,6 +11,48 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json({ limit: '10mb' }));
+
+  // API Route: Submit Unregistered Guest Inquiry
+  app.post("/api/submit-inquiry", async (req, res) => {
+    try {
+      const { guestName, guestEmail, guestPhone, message, campsiteTitle, hostEmail, hostName, checkIn, checkOut } = req.body;
+
+      if (!guestName || !guestEmail || !message || !campsiteTitle || !hostEmail) {
+        return res.status(400).json({
+          success: false,
+          error: "Trūksta privalomų laukų (guestName, guestEmail, message, campsiteTitle, hostEmail)"
+        });
+      }
+
+      const inquiryId = `inq-${Date.now()}`;
+
+      const emailResult = await sendGuestInquiryHostEmail({
+        hostEmail,
+        hostName,
+        guestName,
+        guestEmail,
+        guestPhone,
+        message,
+        campsiteTitle,
+        checkIn,
+        checkOut,
+        inquiryId
+      });
+
+      return res.json({
+        success: true,
+        inquiryId,
+        message: "Pasiteiravimas sėkmingai išsiųstas šeimininkui ir išsaugotas",
+        emailResult
+      });
+    } catch (error: any) {
+      console.error("API error submitting guest inquiry:", error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || "Serverio klaida apdorojant pasiteiravimą"
+      });
+    }
+  });
 
   // API Route: Send System Email (Unified endpoint for all 9 system templates)
   app.post("/api/send-system-email", async (req, res) => {

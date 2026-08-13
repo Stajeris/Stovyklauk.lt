@@ -1522,7 +1522,7 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       );
     }
 
-    // Sync booking to Supabase database if configured
+    // Sync booking & inquiry to Supabase database if configured
     if (isSupabaseConfigured()) {
       Promise.resolve(supabase.from('bookings').insert([{
         campsite_id: newBooking.campsiteId,
@@ -1537,6 +1537,20 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }])).then(res => {
         if (res.error) console.warn('⚠️ Supabase booking insert sync error:', res.error);
         else console.log('✅ Supabase booking insert successful!');
+      }).catch(err => console.warn('⚠️ Supabase network error:', err));
+
+      Promise.resolve(supabase.from('inquiries').insert([{
+        campsite_id: newBooking.campsiteId,
+        guest_name: newBooking.guestName,
+        guest_email: newBooking.guestEmail,
+        guest_phone: newBooking.guestPhone || '',
+        message: newBooking.guestNote || 'Pasiteiravimas dėl stovyklavietės',
+        check_in: newBooking.checkIn,
+        check_out: newBooking.checkOut,
+        status: 'pending'
+      }])).then(res => {
+        if (res.error) console.warn('⚠️ Supabase inquiry insert sync error:', res.error);
+        else console.log('✅ Supabase inquiry insert successful!');
       }).catch(err => console.warn('⚠️ Supabase network error:', err));
     }
 

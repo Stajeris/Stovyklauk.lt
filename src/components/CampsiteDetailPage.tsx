@@ -120,6 +120,23 @@ export const CampsiteDetailPage: React.FC = () => {
       status: isHostPro ? 'pending' : 'free_inquiry'
     });
 
+    // Call Server Action / API Endpoint to send Resend email to host
+    fetch('/api/submit-inquiry', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        guestName: travelerName,
+        guestEmail: travelerEmail,
+        guestPhone: travelerPhone,
+        message: travelerMessage || 'Pasiteiravimas dėl stovyklavietės ir laisvų datų.',
+        campsiteTitle: camp.title,
+        hostEmail: (camp.host as any)?.email || 'noreply@campy.lt',
+        hostName: camp.host?.name || 'Šeimininkas',
+        checkIn,
+        checkOut
+      })
+    }).catch(err => console.warn('Inquiry API dispatch error:', err));
+
     setInquirySubmittedBooking(created);
   };
 
