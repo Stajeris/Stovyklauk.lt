@@ -587,6 +587,7 @@ interface CampsiteContextType {
   declineBooking: (bookingId: string, reason?: string) => void;
   lookupBookingByCode: (codeOrEmail: string) => Booking | undefined;
   checkAndExpireHolds: () => void;
+  resetTestReservations: () => void;
   releaseEscrowPayout: (bookingId: string) => void;
   addReview: (campsiteId: string, bookingId: string, rating: number, comment: string, authorName?: string) => void;
   disputeReview: (campsiteId: string, reviewId: string, category: 'profanity' | 'hate_speech' | 'no_show' | 'other_violation', reason: string) => void;
@@ -1910,6 +1911,26 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }));
   };
 
+  // Clear all test reservations, availability blocks, and inquiries for clean test cycles
+  const resetTestReservations = () => {
+    // 1. Clear bookings list
+    setBookings([]);
+
+    // 2. Unblock all dates across campsites
+    setCampsites(prev => prev.map(c => ({ ...c, blockedDates: [] })));
+
+    // 3. Clear Supabase tables if connected
+    if (isSupabaseConfigured()) {
+      Promise.all([
+        supabase.from('bookings').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('reservations').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('inquiries').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+      ]).then(() => {
+        console.log('✅ Supabase test reservations, bookings & inquiries successfully cleared!');
+      }).catch(err => console.warn('⚠️ Error clearing Supabase test records:', err));
+    }
+  };
+
   // Traveler Lookup by Reservation Code / Access Code or Email
   const lookupBookingByCode = (codeOrEmail: string): Booking | undefined => {
     const clean = codeOrEmail.trim().toLowerCase();
@@ -2246,6 +2267,7 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         declineBooking,
         lookupBookingByCode,
         checkAndExpireHolds,
+        resetTestReservations,
         releaseEscrowPayout,
         addReview,
         disputeReview,

@@ -39,6 +39,7 @@ export const AdminPanel: React.FC = () => {
     resolveReviewDispute,
     selectCampsiteById,
     updateHostTier,
+    resetTestReservations,
     setView 
   } = useCampsites();
 
@@ -249,6 +250,19 @@ export const AdminPanel: React.FC = () => {
 
         {/* Quick Pending Alert Pill & Unlogin Button */}
         <div className="z-10 flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={() => {
+              if (window.confirm('Ar tikrai norite išvalyti visus testinius užsakymus bei atlaisvinti kalendorių naujam testavimo ciklui?')) {
+                resetTestReservations();
+                showToast('🧹 Visi testiniai užsakymai ir kalendorių blokavimai sėkmingai išvalyti!');
+              }
+            }}
+            className="px-4 py-3 rounded-2xl bg-amber-400/90 hover:bg-amber-400 text-emerald-950 font-black text-xs flex items-center gap-2 transition cursor-pointer shadow-md"
+            title="Išvalo testinius užsakymus, rezervacijas ir atlaisvina kalendorius"
+          >
+            <span>🧹 Išvalyti testines rezervacijas</span>
+          </button>
+
           <button
             onClick={() => setActiveTab('pending')}
             className={`px-5 py-3 rounded-2xl font-bold text-xs flex items-center gap-2.5 transition cursor-pointer shadow-md ${

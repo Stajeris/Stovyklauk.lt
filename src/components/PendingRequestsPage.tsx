@@ -12,7 +12,7 @@ import { HoldCountdownTimer } from './HoldCountdownTimer';
 export const PendingRequestsPage: React.FC = () => {
   const { 
     campsites, bookings, approveHostAvailability, confirmHostPayment, 
-    markPaymentNotFound, declineBooking, setView, t 
+    markPaymentNotFound, declineBooking, resetTestReservations, setView, t 
   } = useCampsites();
 
   const [filterTab, setFilterTab] = useState<'all' | 'awaiting' | 'held' | 'proof' | 'confirmed'>('all');
@@ -125,6 +125,20 @@ export const PendingRequestsPage: React.FC = () => {
               4 žingsnių sistema: Užklausa ➔ 12 val. Laikymas ➔ Banko Kvitų Tikrinimas ➔ Patvirtinimas.
             </p>
           </div>
+
+          <button
+            onClick={() => {
+              if (window.confirm('Ar tikrai norite išvalyti visus testinius užsakymus bei atlaisvinti kalendoriaus datas naujam testavimo ciklui?')) {
+                resetTestReservations();
+                setToastMessage('🧹 Visi testiniai užsakymai ir kalendorių užraktai išvalyti!');
+                setTimeout(() => setToastMessage(null), 4000);
+              }
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-extrabold text-xs rounded-xl border border-rose-200 transition cursor-pointer self-start md:self-auto shrink-0 shadow-xs"
+            title="Išvalo testinius užsakymus, rezervacijas ir atblokuoja datas"
+          >
+            <span>🧹 Išvalyti testines rezervacijas</span>
+          </button>
         </div>
       </div>
 
