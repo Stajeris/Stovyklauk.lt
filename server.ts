@@ -2,7 +2,7 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
-import { sendBookingConfirmationEmail, sendGenericEmail, sendGuestInquiryHostEmail, testSmtpConnection } from "./src/lib/email";
+import { sendBookingConfirmationEmail, sendGenericEmail, sendGuestInquiryHostEmail, sendVerificationEmail, testSmtpConnection } from "./src/lib/email";
 
 dotenv.config();
 
@@ -11,6 +11,29 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json({ limit: '10mb' }));
+
+  // API Route: Send Verification Email via Resend
+  app.post("/api/send-verification-email", async (req, res) => {
+    try {
+      const { email, code, name } = req.body;
+
+      if (!email || !code) {
+        return res.status(400).json({
+          success: false,
+          error: "Trūksta privalomų laukų: email ir code"
+        });
+      }
+
+      const result = await sendVerificationEmail({ email, code, name });
+      return res.json(result);
+    } catch (error: any) {
+      console.error("API error sending verification email:", error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || "Serverio klaida siunčiant verifikacijos el. laišką"
+      });
+    }
+  });
 
   // API Route: Submit Unregistered Guest Inquiry
   app.post("/api/submit-inquiry", async (req, res) => {

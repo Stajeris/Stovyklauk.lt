@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Campsite, Booking, SearchFilters, ViewState, PropertyType, Review, UserProfile, ChatThread, ChatMessage, HostTier, Pitch, SeasonalPriceRule, CheckInInstructions, AutomatedEmailLog } from '../types';
+import { Campsite, Booking, SearchFilters, ViewState, PropertyType, Review, UserProfile, ChatThread, ChatMessage, HostTier, Pitch, SeasonalPriceRule, CheckInInstructions, AutomatedEmailLog, ReservationStatus, HostBankDetails } from '../types';
 import { INITIAL_CAMPSITES, INITIAL_BOOKINGS } from '../data/mockCampsites';
 import { INITIAL_CHAT_THREADS } from '../data/mockChats';
 import { translations, Language } from '../data/translations';
@@ -579,7 +579,14 @@ interface CampsiteContextType {
   rejectCampsite: (id: string) => void;
   updateCampsiteStatus: (id: string, status: 'approved' | 'pending' | 'rejected') => void;
   addBooking: (bookingData: Omit<Booking, 'id' | 'createdAt' | 'status'>) => Booking;
-  updateBookingStatus: (bookingId: string, newStatus: 'approved' | 'rejected' | 'completed') => void;
+  updateBookingStatus: (bookingId: string, newStatus: ReservationStatus) => void;
+  approveHostAvailability: (bookingId: string) => void;
+  uploadPaymentProof: (bookingId: string, proofUrl: string, proofNote?: string) => void;
+  confirmHostPayment: (bookingId: string) => void;
+  markPaymentNotFound: (bookingId: string) => void;
+  declineBooking: (bookingId: string, reason?: string) => void;
+  lookupBookingByCode: (codeOrEmail: string) => Booking | undefined;
+  checkAndExpireHolds: () => void;
   releaseEscrowPayout: (bookingId: string) => void;
   addReview: (campsiteId: string, bookingId: string, rating: number, comment: string, authorName?: string) => void;
   disputeReview: (campsiteId: string, reviewId: string, category: 'profanity' | 'hate_speech' | 'no_show' | 'other_violation', reason: string) => void;
@@ -1269,16 +1276,18 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setUsersList(prev => [...prev, newUser]);
     setCurrentUser(newUser);
 
-    // Sync profile data to Supabase if configured
+    // Sync profile data to Supabase if configured with unverified status
     if (isSupabaseConfigured()) {
       Promise.resolve(supabase.from('profiles').insert([{
         email: newUser.email,
         full_name: newUser.name,
         phone: newUser.phone,
-        role: newUser.userType === 'host' ? 'host' : 'traveler'
+        role: newUser.userType === 'host' ? 'host' : 'traveler',
+        is_verified: false,
+        is_email_verified: false
       }])).then(res => {
         if (res.error) console.warn('⚠️ Supabase profile insert sync error:', res.error);
-        else console.log('✅ Supabase profile sync successful!');
+        else console.log('✅ Supabase profile sync successful (account set to unverified)!');
       }).catch(err => console.warn('⚠️ Supabase network error:', err));
     }
     
@@ -1424,6 +1433,22 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setUsersList(prev => prev.map(u => u.id === userId ? { ...u, isEmailVerified: true } : u));
     if (currentUser && currentUser.id === userId) {
       setCurrentUser({ ...currentUser, isEmailVerified: true });
+    }
+
+    // Sync verification status to Supabase
+    if (isSupabaseConfigured()) {
+      const targetUser = usersList.find(u => u.id === userId) || (currentUser && currentUser.id === userId ? currentUser : null);
+      if (targetUser?.email) {
+        Promise.resolve(
+          supabase
+            .from('profiles')
+            .update({ is_verified: true, is_email_verified: true })
+            .eq('email', targetUser.email)
+        ).then(res => {
+          if (res.error) console.warn('⚠️ Supabase profile verification update error:', res.error);
+          else console.log('✅ Supabase profile marked as verified!');
+        }).catch(err => console.warn('⚠️ Supabase network error:', err));
+      }
     }
   };
 
@@ -1629,40 +1654,19 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       paymentMethodType: bookingData.paymentMethodType || 'card',
       stripePaymentIntentId: bookingData.stripePaymentIntentId || `pi_stripe_escrow_${Date.now()}`,
       id: `bk-${Date.now().toString().slice(-4)}`,
+      accessCode: `BK-${Math.floor(1000 + Math.random() * 9000)}`,
       createdAt: new Date().toISOString().split('T')[0],
-      status: initialStatus,
+      status: 'awaiting_host_response',
     };
 
     setBookings(prev => [newBooking, ...prev]);
 
-    // Calendar blocking logic:
-    // ONLY block dates automatically if status is 'pending' or 'approved'/'confirmed' (i.e. PRO plan or approved booking)
-    // Free plan inquiries do NOT block calendar dates on platform!
-    if (initialStatus === 'pending' || initialStatus === 'approved' || initialStatus === 'confirmed') {
-      const checkIn = new Date(bookingData.checkIn);
-      const checkOut = new Date(bookingData.checkOut);
-      const datesToBlock: string[] = [];
-      
-      for (let d = new Date(checkIn); d <= checkOut; d.setDate(d.getDate() + 1)) {
-        datesToBlock.push(d.toISOString().split('T')[0]);
-      }
-
-      setCampsites(prev => prev.map(c => {
-        if (c.id === bookingData.campsiteId) {
-          return {
-            ...c,
-            blockedDates: Array.from(new Set([...c.blockedDates, ...datesToBlock]))
-          };
-        }
-        return c;
-      }));
-    }
+    // Note: Dates are NOT blocked during inquiry ('awaiting_host_response') according to spec.
+    // Dates are only blocked when host approves availability ('held_for_payment').
 
     // Automatically send chat message to host notification
     if (targetCampsite) {
-      const msgText = initialStatus === 'free_inquiry'
-        ? `[Tiesioginė Free Užklausa] Svečias ${bookingData.guestName} (${bookingData.guestEmail}, ${bookingData.guestPhone || 'tel. nenurodytas'}) atsiuntė užklausą datoms: ${bookingData.checkIn} — ${bookingData.checkOut}. Žinutė: "${bookingData.guestNote || 'Nėra papildomos žinutės'}"`
-        : `[Pro Rezervacijos Užklausa] Svečias ${bookingData.guestName} (${bookingData.guestEmail}, ${bookingData.guestPhone || 'tel. nenurodytas'}) laukia jūsų patvirtinimo datoms: ${bookingData.checkIn} — ${bookingData.checkOut}. Datos laikinai užrakintos. Žinutė: "${bookingData.guestNote || 'Nėra papildomos žinutės'}"`;
+      const msgText = `[Nauja Užklausa] Svečias ${bookingData.guestName} (${bookingData.guestEmail}, ${bookingData.guestPhone || 'tel. nenurodytas'}) atsiuntė užklausą datoms: ${bookingData.checkIn} — ${bookingData.checkOut}. Žinutė: "${bookingData.guestNote || 'Nėra papildomos žinutės'}"`;
 
       sendMessageInThread(
         bookingData.campsiteId,
@@ -1694,132 +1698,238 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         check_out: newBooking.checkOut,
         guests_count: newBooking.guestsCount,
         total_price: newBooking.totalPrice,
-        status: (initialStatus === 'approved' || initialStatus === 'confirmed') ? 'confirmed' : 'pending'
+        status: 'pending'
       }])).then(res => {
         if (res.error) console.warn('⚠️ Supabase booking insert sync error:', res.error);
         else console.log('✅ Supabase booking insert successful!');
       }).catch(err => console.warn('⚠️ Supabase network error:', err));
-
-      Promise.resolve(supabase.from('inquiries').insert([{
-        campsite_id: newBooking.campsiteId,
-        guest_name: newBooking.guestName,
-        guest_email: newBooking.guestEmail,
-        guest_phone: newBooking.guestPhone || '',
-        message: newBooking.guestNote || 'Pasiteiravimas dėl stovyklavietės',
-        check_in: newBooking.checkIn,
-        check_out: newBooking.checkOut,
-        status: 'pending'
-      }])).then(res => {
-        if (res.error) console.warn('⚠️ Supabase inquiry insert sync error:', res.error);
-        else console.log('✅ Supabase inquiry insert successful!');
-      }).catch(err => console.warn('⚠️ Supabase network error:', err));
     }
 
-    // Automatically send system confirmation emails
-    if (initialStatus === 'approved' || initialStatus === 'confirmed') {
-      dispatchSystemEmail('reservation_confirmed', { booking: newBooking, campsite: targetCampsite });
-      dispatchSystemEmail('arrival_instructions', { booking: newBooking, campsite: targetCampsite });
-    } else {
-      dispatchSystemEmail('reservation_request_received', { booking: newBooking, campsite: targetCampsite });
-      dispatchSystemEmail('new_reservation_request_host', { booking: newBooking, campsite: targetCampsite });
-    }
+    // Automatically send system inquiry notification emails
+    dispatchSystemEmail('reservation_request_received', { booking: newBooking, campsite: targetCampsite });
+    dispatchSystemEmail('new_reservation_request_host', { booking: newBooking, campsite: targetCampsite });
 
     return newBooking;
   };
 
-  const updateBookingStatus = (bookingId: string, newStatus: 'approved' | 'confirmed' | 'rejected' | 'completed') => {
+  // STEP 2: Host Approves Availability -> Sets 12-hour Hold & Blocks Dates
+  const approveHostAvailability = (bookingId: string) => {
     const targetBooking = bookings.find(b => b.id === bookingId);
-    const effectiveStatus = newStatus === 'confirmed' ? 'approved' : newStatus;
+    if (!targetBooking) return;
 
-    // Sync booking status update to Supabase
-    if (isSupabaseConfigured()) {
-      const dbStatus = effectiveStatus === 'approved' ? 'confirmed' : effectiveStatus;
-      Promise.resolve(supabase.from('bookings').update({
-        status: dbStatus,
-        updated_at: new Date().toISOString()
-      }).eq('id', bookingId)).then(res => {
-        if (res.error) console.warn('⚠️ Supabase booking update sync error:', res.error);
-        else console.log('✅ Supabase booking update successful!');
-      }).catch(err => console.warn('⚠️ Supabase network error:', err));
+    const targetCamp = campsites.find(c => c.id === targetBooking.campsiteId);
+    const holdExpiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
+
+    const bankDetails: HostBankDetails = {
+      iban: 'LT79 7044 0600 0123 4567',
+      bankName: 'Swedbank',
+      receiverName: targetCamp?.host.name || 'Šeimininkas',
+      paymentReference: targetBooking.id
+    };
+
+    // Calculate dates to block on campsite calendar
+    const checkIn = new Date(targetBooking.checkIn);
+    const checkOut = new Date(targetBooking.checkOut);
+    const datesToBlock: string[] = [];
+    for (let d = new Date(checkIn); d <= checkOut; d.setDate(d.getDate() + 1)) {
+      datesToBlock.push(d.toISOString().split('T')[0]);
     }
 
+    // Block dates on campsite
+    setCampsites(prev => prev.map(c => {
+      if (c.id === targetBooking.campsiteId) {
+        return {
+          ...c,
+          blockedDates: Array.from(new Set([...c.blockedDates, ...datesToBlock]))
+        };
+      }
+      return c;
+    }));
+
+    // Update booking status
     setBookings(prev => prev.map(b => {
       if (b.id === bookingId) {
-        let updatedEscrow = b.escrowStatus;
-        let updatedStripe = b.stripePaymentStatus;
-        if (newStatus === 'completed') {
-          updatedEscrow = 'payout_released_to_host';
-          updatedStripe = 'payout_released';
-        } else if (newStatus === 'rejected') {
-          updatedEscrow = 'refunded_to_guest';
-          updatedStripe = 'refunded';
-        }
         return {
           ...b,
-          status: effectiveStatus,
-          escrowStatus: updatedEscrow,
-          stripePaymentStatus: updatedStripe,
-          paymentInstructions: (effectiveStatus === 'approved')
-            ? 'Apmokėjimo rekvizitai: Banko sąskaita LT79 7044 0600 0123 4567, Gavėjas: Šeimininkas / Campy.lt. Pervedime nurodykite užsakymo ID.'
-            : b.paymentInstructions
+          status: 'held_for_payment' as const,
+          holdExpiresAt,
+          hostBankDetails: bankDetails
         };
       }
       return b;
     }));
 
-    // If approved or confirmed, automatically trigger confirmation & arrival instructions email dispatch!
-    if ((effectiveStatus === 'approved') && targetBooking) {
-      const updatedBooking = { ...targetBooking, status: 'approved' as const };
-      const targetCamp = campsites.find(c => c.id === targetBooking.campsiteId);
-      dispatchSystemEmail('reservation_confirmed', { booking: updatedBooking, campsite: targetCamp });
-      dispatchSystemEmail('arrival_instructions', { booking: updatedBooking, campsite: targetCamp });
+    // Dispatch email to traveler
+    const updatedBk: Booking = { ...targetBooking, status: 'held_for_payment', holdExpiresAt, hostBankDetails: bankDetails };
+    dispatchSystemEmail('reservation_approved_held_payment', { booking: updatedBk, campsite: targetCamp });
+  };
 
-      // Execute Server Action call to /api/send-confirmation-email via Resend
-      fetch('/api/send-confirmation-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          guestEmail: targetBooking.guestEmail,
-          guestName: targetBooking.guestName,
-          campsiteTitle: targetCamp?.title || targetBooking.campsiteTitle,
-          checkIn: targetBooking.checkIn,
-          checkOut: targetBooking.checkOut,
-          totalPrice: targetBooking.totalPrice,
-          bookingId: targetBooking.id,
-          hostName: targetCamp?.host?.name,
-          hostPhone: targetCamp?.host?.phone
-        })
-      }).then(async res => {
-        const text = await res.text();
-        try { return JSON.parse(text); } catch { return { success: false, error: text }; }
-      }).then(data => {
-        console.log('✅ [Resend Server Action Success]:', data);
-      }).catch(err => {
-        console.error('❌ [Resend Server Action Error]:', err);
-      });
+  // STEP 3: Traveler Submits Bank Transfer Payment Proof
+  const uploadPaymentProof = (bookingId: string, proofUrl: string, proofNote?: string) => {
+    const targetBooking = bookings.find(b => b.id === bookingId);
+    if (!targetBooking) return;
+
+    const targetCamp = campsites.find(c => c.id === targetBooking.campsiteId);
+    const uploadedAt = new Date().toISOString();
+
+    setBookings(prev => prev.map(b => {
+      if (b.id === bookingId) {
+        return {
+          ...b,
+          status: 'payment_submitted' as const,
+          paymentProofUrl: proofUrl,
+          paymentProofNote: proofNote,
+          paymentProofUploadedAt: uploadedAt
+        };
+      }
+      return b;
+    }));
+
+    // Notify host
+    const updatedBk: Booking = { ...targetBooking, status: 'payment_submitted', paymentProofUrl: proofUrl, paymentProofNote: proofNote, paymentProofUploadedAt: uploadedAt };
+    dispatchSystemEmail('payment_proof_submitted_host', { booking: updatedBk, campsite: targetCamp });
+  };
+
+  // STEP 4: Host Confirms Payment Received -> Unlocks Arrival Instructions
+  const confirmHostPayment = (bookingId: string) => {
+    const targetBooking = bookings.find(b => b.id === bookingId);
+    if (!targetBooking) return;
+
+    const targetCamp = campsites.find(c => c.id === targetBooking.campsiteId);
+
+    setBookings(prev => prev.map(b => {
+      if (b.id === bookingId) {
+        return {
+          ...b,
+          status: 'confirmed' as const,
+          stripePaymentStatus: 'succeeded_escrow_held',
+          escrowStatus: 'held_in_escrow'
+        };
+      }
+      return b;
+    }));
+
+    const updatedBk: Booking = { ...targetBooking, status: 'confirmed' };
+    dispatchSystemEmail('reservation_confirmed', { booking: updatedBk, campsite: targetCamp });
+    dispatchSystemEmail('arrival_instructions', { booking: updatedBk, campsite: targetCamp });
+
+    // Send server confirmation email
+    fetch('/api/send-confirmation-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        guestEmail: targetBooking.guestEmail,
+        guestName: targetBooking.guestName,
+        campsiteTitle: targetCamp?.title || targetBooking.campsiteTitle,
+        checkIn: targetBooking.checkIn,
+        checkOut: targetBooking.checkOut,
+        totalPrice: targetBooking.totalPrice,
+        bookingId: targetBooking.id,
+        hostName: targetCamp?.host?.name,
+        hostPhone: targetCamp?.host?.phone
+      })
+    }).catch(err => console.error('❌ Resend email dispatch error:', err));
+  };
+
+  // Host Marks Payment Not Found
+  const markPaymentNotFound = (bookingId: string) => {
+    setBookings(prev => prev.map(b => {
+      if (b.id === bookingId) {
+        return { ...b, status: 'payment_not_found' as const };
+      }
+      return b;
+    }));
+  };
+
+  // Host Declines Request
+  const declineBooking = (bookingId: string, reason?: string) => {
+    const targetBooking = bookings.find(b => b.id === bookingId);
+    if (!targetBooking) return;
+
+    const targetCamp = campsites.find(c => c.id === targetBooking.campsiteId);
+
+    // Release blocked dates
+    const checkIn = new Date(targetBooking.checkIn);
+    const checkOut = new Date(targetBooking.checkOut);
+    const datesToRemove: string[] = [];
+    for (let d = new Date(checkIn); d <= checkOut; d.setDate(d.getDate() + 1)) {
+      datesToRemove.push(d.toISOString().split('T')[0]);
     }
 
-    // If rejected, dispatch decline email to guest and release the temporarily blocked dates!
-    if (newStatus === 'rejected' && targetBooking) {
-      const targetCamp = campsites.find(c => c.id === targetBooking.campsiteId);
-      dispatchSystemEmail('reservation_declined', { booking: targetBooking, campsite: targetCamp });
-
-      const checkIn = new Date(targetBooking.checkIn);
-      const checkOut = new Date(targetBooking.checkOut);
-      const datesToRemove: string[] = [];
-      for (let d = new Date(checkIn); d <= checkOut; d.setDate(d.getDate() + 1)) {
-        datesToRemove.push(d.toISOString().split('T')[0]);
+    setCampsites(prev => prev.map(c => {
+      if (c.id === targetBooking.campsiteId) {
+        return {
+          ...c,
+          blockedDates: c.blockedDates.filter(date => !datesToRemove.includes(date))
+        };
       }
+      return c;
+    }));
 
-      setCampsites(prev => prev.map(c => {
-        if (c.id === targetBooking.campsiteId) {
-          return {
-            ...c,
-            blockedDates: c.blockedDates.filter(date => !datesToRemove.includes(date))
-          };
+    setBookings(prev => prev.map(b => {
+      if (b.id === bookingId) {
+        return { ...b, status: 'declined_by_host' as const };
+      }
+      return b;
+    }));
+
+    dispatchSystemEmail('reservation_declined', { booking: targetBooking, campsite: targetCamp, declineReason: reason });
+  };
+
+  // Automatic 12-Hour Hold Expiration Sweeper
+  const checkAndExpireHolds = () => {
+    const now = new Date();
+    setBookings(prev => prev.map(b => {
+      if ((b.status === 'held_for_payment' || b.status === 'payment_submitted') && b.holdExpiresAt) {
+        if (new Date(b.holdExpiresAt) < now) {
+          // Unblock campsite dates
+          const checkIn = new Date(b.checkIn);
+          const checkOut = new Date(b.checkOut);
+          const datesToRemove: string[] = [];
+          for (let d = new Date(checkIn); d <= checkOut; d.setDate(d.getDate() + 1)) {
+            datesToRemove.push(d.toISOString().split('T')[0]);
+          }
+
+          setCampsites(cPrev => cPrev.map(c => {
+            if (c.id === b.campsiteId) {
+              return {
+                ...c,
+                blockedDates: c.blockedDates.filter(date => !datesToRemove.includes(date))
+              };
+            }
+            return c;
+          }));
+
+          const targetCamp = campsites.find(c => c.id === b.campsiteId);
+          dispatchSystemEmail('payment_expired', { booking: b, campsite: targetCamp });
+
+          return { ...b, status: 'payment_hold_expired' as const };
         }
-        return c;
-      }));
+      }
+      return b;
+    }));
+  };
+
+  // Traveler Lookup by Reservation Code / Access Code or Email
+  const lookupBookingByCode = (codeOrEmail: string): Booking | undefined => {
+    const clean = codeOrEmail.trim().toLowerCase();
+    if (!clean) return undefined;
+
+    return bookings.find(b => 
+      b.id.toLowerCase() === clean || 
+      (b.accessCode && b.accessCode.toLowerCase() === clean) ||
+      b.guestEmail.toLowerCase() === clean
+    );
+  };
+
+  // Legacy status updater helper for backward compatibility
+  const updateBookingStatus = (bookingId: string, newStatus: ReservationStatus) => {
+    if (newStatus === 'approved' || newStatus === 'confirmed') {
+      confirmHostPayment(bookingId);
+    } else if (newStatus === 'rejected' || newStatus === 'declined_by_host') {
+      declineBooking(bookingId);
+    } else {
+      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: newStatus } : b));
     }
   };
 
@@ -2129,6 +2239,13 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         updateCampsiteStatus,
         addBooking,
         updateBookingStatus,
+        approveHostAvailability,
+        uploadPaymentProof,
+        confirmHostPayment,
+        markPaymentNotFound,
+        declineBooking,
+        lookupBookingByCode,
+        checkAndExpireHolds,
         releaseEscrowPayout,
         addReview,
         disputeReview,

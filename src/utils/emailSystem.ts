@@ -5,8 +5,11 @@ export type SystemEmailType =
   | 'welcome_host'
   | 'reservation_request_received'
   | 'new_reservation_request_host'
+  | 'reservation_approved_held_payment'
+  | 'payment_proof_submitted_host'
   | 'reservation_confirmed'
   | 'reservation_declined'
+  | 'payment_expired'
   | 'arrival_instructions'
   | 'password_reset_code'
   | 'stay_completed_thank_you';
@@ -164,6 +167,136 @@ export function generateSystemEmail(type: SystemEmailType, payload: EmailPayload
       return { subject, recipientEmail: hostEmail, recipientName: hostName, contentPreview: preview, htmlBody };
     }
 
+    case 'reservation_approved_held_payment': {
+      const guestName = booking?.guestName || 'Keliautojau';
+      const guestEmail = booking?.guestEmail || 'svecio@gmail.com';
+      const bank = booking?.hostBankDetails || {
+        iban: 'LT79 7044 0600 0123 4567',
+        bankName: 'Swedbank',
+        receiverName: campsite?.host.name || 'Šeimininkas',
+        paymentReference: booking?.id || 'CAMPY-RESERV'
+      };
+      const subject = `⏳ Datos patvirtintos! Apmokėjimui skirtos 12 val. — ${campsiteTitle}`;
+      const preview = `Labas, ${guestName}! Šeimininkas patvirtino, kad datos ${booking?.checkIn} — ${booking?.checkOut} laisvos. Datos laikinai rezervuotos 12 valandų. Atlikite bankinį pavedimą.`;
+
+      const htmlBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; overflow: hidden;">
+          <div style="background-color: #0d9488; padding: 22px; text-align: center; color: #ffffff;">
+            <h1 style="margin: 0; font-size: 22px; font-weight: 800;">⏳ Datos Laikinai Rezervuotos (12 val.)</h1>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: #ccfbf1;">Atlikite bankinį pavedimą tiesiogiai šeimininkui</p>
+          </div>
+
+          <div style="padding: 24px; color: #1f2937; line-height: 1.6;">
+            <p style="font-size: 14px; font-weight: bold;">Labas, ${guestName}!</p>
+            <p>Šeimininkas patvirtino jūsų užklausos datų laisvumą stovyklavietėje <strong>„${campsiteTitle}“</strong>!</p>
+            <p style="color: #0f766e; font-weight: bold; font-size: 13px;">
+              ⏱️ Jūsų pasirinktos datos (${booking?.checkIn} — ${booking?.checkOut}) yra užrakintos ir laikomos tik JUMS ateinančias 12 valandų.
+            </p>
+
+            <div style="background-color: #f0fdf4; border: 1px dashed #059669; padding: 18px; border-radius: 12px; margin: 18px 0; font-size: 13px;">
+              <h3 style="margin: 0 0 10px 0; font-size: 14px; color: #065f46;">🏦 Šeimininko Bankinio Pavedimo Rekvizitai:</h3>
+              <p style="margin: 4px 0;">• Gavėjas: <strong>${bank.receiverName}</strong></p>
+              <p style="margin: 4px 0;">• Bankas: <strong>${bank.bankName}</strong></p>
+              <p style="margin: 4px 0;">• IBAN Sąskaita: <strong style="font-size: 15px; color: #064e3b; letter-spacing: 0.5px;">${bank.iban}</strong></p>
+              <p style="margin: 4px 0;">• Paskirtis: <strong>${bank.paymentReference}</strong> (būtina nurodyti)</p>
+              <p style="margin: 4px 0; font-size: 14px; font-weight: bold; color: #047857;">• Suma apmokėjimui: €${(booking?.totalPrice || 0).toFixed(2)}</p>
+            </div>
+
+            <p style="font-size: 13px;">Atlikę bankinį pavedimą, įkelkite mokėjimo kvitą (arba pavedimo išrašą) per savo rezervacijos portalą:</p>
+
+            <p style="text-align: center; margin-top: 20px;">
+              <a href="https://campy.lt/my-trips?code=${booking?.accessCode || booking?.id || ''}" style="display: inline-block; background-color: #0d9488; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 10px; font-weight: bold; font-size: 14px;">📤 Įkelti Mokėjimo Įrodymą</a>
+            </p>
+          </div>
+
+          <div style="background-color: #f9fafb; padding: 14px; text-align: center; border-top: 1px solid #e5e7eb; font-size: 11px; color: #6b7280;">
+            Nepateikus mokėjimo įrodymo per 12 val., datų laikymas automatiškai nutrūksta.
+          </div>
+        </div>
+      `;
+
+      return { subject, recipientEmail: guestEmail, recipientName: guestName, contentPreview: preview, htmlBody };
+    }
+
+    case 'payment_proof_submitted_host': {
+      const hostName = campsite?.host.name || 'Šeimininkas';
+      const hostEmail = campsite?.host.email || 'seimininkas@campy.lt';
+      const guestName = booking?.guestName || 'Svečias';
+      const subject = `📄 Pateiktas bankinio pavedimo įrodymas — ${campsiteTitle} (${guestName})`;
+      const preview = `Sveiki, ${hostName}! Svečias ${guestName} įkėlė banko išrašą rezervacijai ${booking?.checkIn} — ${booking?.checkOut}. Patikrinkite ir patvirtinkite gautus pinigus.`;
+
+      const htmlBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; overflow: hidden;">
+          <div style="background-color: #2563eb; padding: 20px; text-align: center; color: #ffffff;">
+            <h1 style="margin: 0; font-size: 22px; font-weight: 800;">📄 Pateiktas Mokėjimo Įrodymas</h1>
+            <p style="margin: 4px 0 0 0; font-size: 12px; color: #dbeafe;">Laukiama jūsų bankinio patikrinimo</p>
+          </div>
+
+          <div style="padding: 24px; color: #1f2937; line-height: 1.6;">
+            <p style="font-size: 14px; font-weight: bold;">Sveiki, ${hostName}!</p>
+            <p>Svečias <strong>${guestName}</strong> pateikė bankinio pavedimo įrodymą rezervacijai <strong>„${campsiteTitle}“</strong>.</p>
+
+            <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; padding: 16px; border-radius: 12px; margin: 16px 0; font-size: 13px; color: #1e40af;">
+              <p style="margin: 4px 0;">👤 Svečias: <strong>${guestName}</strong> (${booking?.guestEmail || ''}, ${booking?.guestPhone || ''})</p>
+              <p style="margin: 4px 0;">📅 Atvykimas/Išvykimas: <strong>${booking?.checkIn} — ${booking?.checkOut}</strong></p>
+              <p style="margin: 4px 0;">💶 Gautina suma: <strong>€${(booking?.totalPrice || 0).toFixed(2)}</strong></p>
+              <p style="margin: 4px 0;">🔖 Pavedimo paskirtis: <strong>${booking?.id}</strong></p>
+              ${booking?.paymentProofNote ? `<p style="margin: 8px 0 0 0; font-style: italic;">💬 Svečio pastaba: "${booking.paymentProofNote}"</p>` : ''}
+            </div>
+
+            <p style="font-size: 13px;">Patikrinkite savo banko sąskaitą ir patvirtinkite mokėjimą, kad svečiui būtų atvertos tikslios atvykimo instrukcijos:</p>
+
+            <p style="text-align: center; margin-top: 20px;">
+              <a href="https://campy.lt/host-dashboard?tab=pending" style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 10px; font-weight: bold; font-size: 14px;">✅ Peržiūrėti ir Patvirtinti Gavimą</a>
+            </p>
+          </div>
+
+          <div style="background-color: #f9fafb; padding: 14px; text-align: center; border-top: 1px solid #e5e7eb; font-size: 11px; color: #6b7280;">
+            Campy.lt Šeimininkų Saugumo Sistema
+          </div>
+        </div>
+      `;
+
+      return { subject, recipientEmail: hostEmail, recipientName: hostName, contentPreview: preview, htmlBody };
+    }
+
+    case 'payment_expired': {
+      const guestName = booking?.guestName || 'Svečiui';
+      const guestEmail = booking?.guestEmail || 'svecio@gmail.com';
+      const subject = `⏱️ Pasibaigė 12 val. apmokėjimo laikas — ${campsiteTitle}`;
+      const preview = `Informuojame, kad 12 valandų datų laikymo terminas rezervacijai „${campsiteTitle}“ pasibaigė. Datos atlaisvintos kitiems stovyklautojams.`;
+
+      const htmlBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; overflow: hidden;">
+          <div style="background-color: #6b7280; padding: 20px; text-align: center; color: #ffffff;">
+            <h1 style="margin: 0; font-size: 22px; font-weight: 800;">⏱️ 12 Val. Laikymo Terminas Pasibaigė</h1>
+            <p style="margin: 4px 0 0 0; font-size: 12px; color: #e5e7eb;">Datų laikymo būsena anuliuota</p>
+          </div>
+
+          <div style="padding: 24px; color: #1f2937; line-height: 1.6;">
+            <p style="font-size: 14px; font-weight: bold;">Sveiki, ${guestName},</p>
+            <p>Pranešame, kad pasibaigė 12 valandų apmokėjimo laikymo laikas jūsų rezervacijai stovyklavietėje <strong>„${campsiteTitle}“</strong> (${booking?.checkIn} — ${booking?.checkOut}).</p>
+
+            <div style="background-color: #f3f4f6; border: 1px solid #e5e7eb; padding: 14px; border-radius: 10px; margin: 16px 0; font-size: 13px; color: #4b5563;">
+              Kadangi nebuvo gautas patvirtintas apmokėjimas, pasirinktos datos buvo automatiškai atlaisvintos kitiems poilsiautojams.
+            </div>
+
+            <p style="font-size: 13px;">Jei vis dar norite vykti, galite pateikti naują užklausą Campy.lt platformoje:</p>
+
+            <p style="text-align: center; margin-top: 20px;">
+              <a href="https://campy.lt/search" style="display: inline-block; background-color: #047857; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 13px;">Ieškoti Kito Laiko</a>
+            </p>
+          </div>
+
+          <div style="background-color: #f9fafb; padding: 14px; text-align: center; border-top: 1px solid #e5e7eb; font-size: 11px; color: #6b7280;">
+            Campy.lt Pagalba
+          </div>
+        </div>
+      `;
+
+      return { subject, recipientEmail: guestEmail, recipientName: guestName, contentPreview: preview, htmlBody };
+    }
+
     case 'reservation_request_received': {
       const guestName = booking?.guestName || 'Poilsiautojau';
       const guestEmail = booking?.guestEmail || 'svecio@gmail.com';
@@ -239,6 +372,136 @@ export function generateSystemEmail(type: SystemEmailType, payload: EmailPayload
       `;
 
       return { subject, recipientEmail: hostEmail, recipientName: hostName, contentPreview: preview, htmlBody };
+    }
+
+    case 'reservation_approved_held_payment': {
+      const guestName = booking?.guestName || 'Keliautojau';
+      const guestEmail = booking?.guestEmail || 'svecio@gmail.com';
+      const bank = booking?.hostBankDetails || {
+        iban: 'LT79 7044 0600 0123 4567',
+        bankName: 'Swedbank',
+        receiverName: campsite?.host.name || 'Šeimininkas',
+        paymentReference: booking?.id || 'CAMPY-RESERV'
+      };
+      const subject = `⏳ Datos patvirtintos! Apmokėjimui skirtos 12 val. — ${campsiteTitle}`;
+      const preview = `Labas, ${guestName}! Šeimininkas patvirtino, kad datos ${booking?.checkIn} — ${booking?.checkOut} laisvos. Datos laikinai rezervuotos 12 valandų. Atlikite bankinį pavedimą.`;
+
+      const htmlBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; overflow: hidden;">
+          <div style="background-color: #0d9488; padding: 22px; text-align: center; color: #ffffff;">
+            <h1 style="margin: 0; font-size: 22px; font-weight: 800;">⏳ Datos Laikinai Rezervuotos (12 val.)</h1>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: #ccfbf1;">Atlikite bankinį pavedimą tiesiogiai šeimininkui</p>
+          </div>
+
+          <div style="padding: 24px; color: #1f2937; line-height: 1.6;">
+            <p style="font-size: 14px; font-weight: bold;">Labas, ${guestName}!</p>
+            <p>Šeimininkas patvirtino jūsų užklausos datų laisvumą stovyklavietėje <strong>„${campsiteTitle}“</strong>!</p>
+            <p style="color: #0f766e; font-weight: bold; font-size: 13px;">
+              ⏱️ Jūsų pasirinktos datos (${booking?.checkIn} — ${booking?.checkOut}) yra užrakintos ir laikomos tik JUMS ateinančias 12 valandų.
+            </p>
+
+            <div style="background-color: #f0fdf4; border: 1px dashed #059669; padding: 18px; border-radius: 12px; margin: 18px 0; font-size: 13px;">
+              <h3 style="margin: 0 0 10px 0; font-size: 14px; color: #065f46;">🏦 Šeimininko Bankinio Pavedimo Rekvizitai:</h3>
+              <p style="margin: 4px 0;">• Gavėjas: <strong>${bank.receiverName}</strong></p>
+              <p style="margin: 4px 0;">• Bankas: <strong>${bank.bankName}</strong></p>
+              <p style="margin: 4px 0;">• IBAN Sąskaita: <strong style="font-size: 15px; color: #064e3b; letter-spacing: 0.5px;">${bank.iban}</strong></p>
+              <p style="margin: 4px 0;">• Paskirtis: <strong>${bank.paymentReference}</strong> (būtina nurodyti)</p>
+              <p style="margin: 4px 0; font-size: 14px; font-weight: bold; color: #047857;">• Suma apmokėjimui: €${(booking?.totalPrice || 0).toFixed(2)}</p>
+            </div>
+
+            <p style="font-size: 13px;">Atlikę bankinį pavedimą, įkelkite mokėjimo kvitą (arba pavedimo išrašą) per savo rezervacijos portalą:</p>
+
+            <p style="text-align: center; margin-top: 20px;">
+              <a href="https://campy.lt/my-trips?code=${booking?.accessCode || booking?.id || ''}" style="display: inline-block; background-color: #0d9488; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 10px; font-weight: bold; font-size: 14px;">📤 Įkelti Mokėjimo Įrodymą</a>
+            </p>
+          </div>
+
+          <div style="background-color: #f9fafb; padding: 14px; text-align: center; border-top: 1px solid #e5e7eb; font-size: 11px; color: #6b7280;">
+            Nepateikus mokėjimo įrodymo per 12 val., datų laikymas automatiškai nutrūksta.
+          </div>
+        </div>
+      `;
+
+      return { subject, recipientEmail: guestEmail, recipientName: guestName, contentPreview: preview, htmlBody };
+    }
+
+    case 'payment_proof_submitted_host': {
+      const hostName = campsite?.host.name || 'Šeimininkas';
+      const hostEmail = campsite?.host.email || 'seimininkas@campy.lt';
+      const guestName = booking?.guestName || 'Svečias';
+      const subject = `📄 Pateiktas bankinio pavedimo įrodymas — ${campsiteTitle} (${guestName})`;
+      const preview = `Sveiki, ${hostName}! Svečias ${guestName} įkėlė banko išrašą rezervacijai ${booking?.checkIn} — ${booking?.checkOut}. Patikrinkite ir patvirtinkite gautus pinigus.`;
+
+      const htmlBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; overflow: hidden;">
+          <div style="background-color: #2563eb; padding: 20px; text-align: center; color: #ffffff;">
+            <h1 style="margin: 0; font-size: 22px; font-weight: 800;">📄 Pateiktas Mokėjimo Įrodymas</h1>
+            <p style="margin: 4px 0 0 0; font-size: 12px; color: #dbeafe;">Laukiama jūsų bankinio patikrinimo</p>
+          </div>
+
+          <div style="padding: 24px; color: #1f2937; line-height: 1.6;">
+            <p style="font-size: 14px; font-weight: bold;">Sveiki, ${hostName}!</p>
+            <p>Svečias <strong>${guestName}</strong> pateikė bankinio pavedimo įrodymą rezervacijai <strong>„${campsiteTitle}“</strong>.</p>
+
+            <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; padding: 16px; border-radius: 12px; margin: 16px 0; font-size: 13px; color: #1e40af;">
+              <p style="margin: 4px 0;">👤 Svečias: <strong>${guestName}</strong> (${booking?.guestEmail || ''}, ${booking?.guestPhone || ''})</p>
+              <p style="margin: 4px 0;">📅 Atvykimas/Išvykimas: <strong>${booking?.checkIn} — ${booking?.checkOut}</strong></p>
+              <p style="margin: 4px 0;">💶 Gautina suma: <strong>€${(booking?.totalPrice || 0).toFixed(2)}</strong></p>
+              <p style="margin: 4px 0;">🔖 Pavedimo paskirtis: <strong>${booking?.id}</strong></p>
+              ${booking?.paymentProofNote ? `<p style="margin: 8px 0 0 0; font-style: italic;">💬 Svečio pastaba: "${booking.paymentProofNote}"</p>` : ''}
+            </div>
+
+            <p style="font-size: 13px;">Patikrinkite savo banko sąskaitą ir patvirtinkite mokėjimą, kad svečiui būtų atvertos tikslios atvykimo instrukcijos:</p>
+
+            <p style="text-align: center; margin-top: 20px;">
+              <a href="https://campy.lt/host-dashboard?tab=pending" style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 10px; font-weight: bold; font-size: 14px;">✅ Peržiūrėti ir Patvirtinti Gavimą</a>
+            </p>
+          </div>
+
+          <div style="background-color: #f9fafb; padding: 14px; text-align: center; border-top: 1px solid #e5e7eb; font-size: 11px; color: #6b7280;">
+            Campy.lt Šeimininkų Saugumo Sistema
+          </div>
+        </div>
+      `;
+
+      return { subject, recipientEmail: hostEmail, recipientName: hostName, contentPreview: preview, htmlBody };
+    }
+
+    case 'payment_expired': {
+      const guestName = booking?.guestName || 'Svečiui';
+      const guestEmail = booking?.guestEmail || 'svecio@gmail.com';
+      const subject = `⏱️ Pasibaigė 12 val. apmokėjimo laikas — ${campsiteTitle}`;
+      const preview = `Informuojame, kad 12 valandų datų laikymo terminas rezervacijai „${campsiteTitle}“ pasibaigė. Datos atlaisvintos kitiems stovyklautojams.`;
+
+      const htmlBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; overflow: hidden;">
+          <div style="background-color: #6b7280; padding: 20px; text-align: center; color: #ffffff;">
+            <h1 style="margin: 0; font-size: 22px; font-weight: 800;">⏱️ 12 Val. Laikymo Terminas Pasibaigė</h1>
+            <p style="margin: 4px 0 0 0; font-size: 12px; color: #e5e7eb;">Datų laikymo būsena anuliuota</p>
+          </div>
+
+          <div style="padding: 24px; color: #1f2937; line-height: 1.6;">
+            <p style="font-size: 14px; font-weight: bold;">Sveiki, ${guestName},</p>
+            <p>Pranešame, kad pasibaigė 12 valandų apmokėjimo laikymo laikas jūsų rezervacijai stovyklavietėje <strong>„${campsiteTitle}“</strong> (${booking?.checkIn} — ${booking?.checkOut}).</p>
+
+            <div style="background-color: #f3f4f6; border: 1px solid #e5e7eb; padding: 14px; border-radius: 10px; margin: 16px 0; font-size: 13px; color: #4b5563;">
+              Kadangi nebuvo gautas patvirtintas apmokėjimas, pasirinktos datos buvo automatiškai atlaisvintos kitiems poilsiautojams.
+            </div>
+
+            <p style="font-size: 13px;">Jei vis dar norite vykti, galite pateikti naują užklausą Campy.lt platformoje:</p>
+
+            <p style="text-align: center; margin-top: 20px;">
+              <a href="https://campy.lt/search" style="display: inline-block; background-color: #047857; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 13px;">Ieškoti Kito Laiko</a>
+            </p>
+          </div>
+
+          <div style="background-color: #f9fafb; padding: 14px; text-align: center; border-top: 1px solid #e5e7eb; font-size: 11px; color: #6b7280;">
+            Campy.lt Pagalba
+          </div>
+        </div>
+      `;
+
+      return { subject, recipientEmail: guestEmail, recipientName: guestName, contentPreview: preview, htmlBody };
     }
 
     case 'reservation_confirmed': {

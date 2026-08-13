@@ -571,3 +571,89 @@ export async function sendBookingConfirmationEmail(params: BookingConfirmationEm
   });
 }
 
+export interface VerificationEmailParams {
+  email: string;
+  code: string;
+  name?: string;
+}
+
+/**
+ * Sends a verification email containing a verification code using Resend.
+ */
+export async function sendVerificationEmail(params: VerificationEmailParams) {
+  const { email, code, name = 'Keliautojau' } = params;
+
+  // If executing in browser environment, route request to Express backend endpoint
+  if (typeof window !== 'undefined') {
+    try {
+      const response = await fetch('/api/send-verification-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code, name })
+      });
+      const data = await response.json();
+      return data;
+    } catch (err: any) {
+      console.warn('⚠️ Client-side network error sending verification email:', err.message);
+      return { success: false, error: err.message };
+    }
+  }
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f5f6; margin: 0; padding: 20px; color: #1c1917; }
+          .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+          .header { background: linear-gradient(135deg, #065f46 0%, #064e3b 100%); padding: 32px 24px; text-align: center; color: #ffffff; }
+          .header h1 { margin: 0; font-size: 24px; font-weight: 800; }
+          .badge { display: inline-block; background: #a7f3d0; color: #064e3b; font-weight: 800; font-size: 11px; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; margin-top: 8px; }
+          .content { padding: 32px 24px; text-align: center; }
+          .greeting { font-size: 18px; font-weight: 700; color: #064e3b; margin-bottom: 12px; }
+          .code-card { background: #ecfdf5; border: 2px dashed #059669; border-radius: 16px; padding: 20px; margin: 24px 0; }
+          .code-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #047857; margin-bottom: 8px; }
+          .code { font-size: 36px; font-weight: 900; letter-spacing: 8px; color: #064e3b; font-family: 'Courier New', Courier, monospace; }
+          .note { font-size: 13px; color: #4b5563; line-height: 1.5; margin-top: 16px; }
+          .footer { background: #f5f5f4; padding: 20px 24px; text-align: center; font-size: 12px; color: #78716c; border-top: 1px solid #e7e5e4; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🔐 Campy.lt Registracijos Verifikacija</h1>
+            <div class="badge">Saugumo Patvirtinimas</div>
+          </div>
+          <div class="content">
+            <div class="greeting">Sveiki, ${name}!</div>
+            <p>Ačiū, kad registruojatės <strong>Campy.lt</strong> platformoje. Norėdami užbaigti registraciją ir patvirtinti savo el. paštą, įveskite šį verifikacijos kodą:</p>
+            
+            <div class="code-card">
+              <div class="code-label">Verifikacijos Kodas</div>
+              <div class="code">${code}</div>
+            </div>
+
+            <div class="note">
+              Šis kodas galioja 15 minučių.<br>
+              Jei patys nesiregistravote Campy.lt svetainėje, tiesiog ignoruokite šį pranešimą.
+            </div>
+          </div>
+          <div class="footer">
+            Campy.lt — Stovyklaviečių ir Sklypų Rezervacijos Sistema
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return await sendGenericEmail({
+    to: email,
+    subject: `🔐 Campy.lt El. Pašto Verifikacijos Kodas: ${code}`,
+    htmlBody: htmlContent,
+    fromName: 'Campy.lt',
+    fromEmail: 'noreply@campy.lt'
+  });
+}
+
+

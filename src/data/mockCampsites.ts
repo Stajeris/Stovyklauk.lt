@@ -733,6 +733,7 @@ export const INITIAL_CAMPSITES: Campsite[] = [
 export const INITIAL_BOOKINGS: Booking[] = [
   {
     id: 'bk-100',
+    accessCode: 'BK-100',
     campsiteId: 'camp-1',
     campsiteTitle: 'Asvejos Pakrantės Stovyklavietė',
     campsiteImage: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80',
@@ -758,15 +759,22 @@ export const INITIAL_BOOKINGS: Booking[] = [
     escrowStatus: 'held_in_escrow',
     paymentMethodType: 'card',
     stripePaymentIntentId: 'pi_3M0000EscrowAsvejaToday',
-    status: 'approved',
+    status: 'confirmed',
     createdAt: '2026-08-05',
     propertyType: 'tent',
     visitConfirmedByGuest: false,
     arrivalNotificationSent: true,
-    arrivalNotificationSentAt: '2026-08-07T16:00:00'
+    arrivalNotificationSentAt: '2026-08-07T16:00:00',
+    hostBankDetails: {
+      iban: 'LT79 7044 0600 0123 4567',
+      bankName: 'Swedbank',
+      receiverName: 'Mantas Giraitis',
+      paymentReference: 'bk-100'
+    }
   },
   {
     id: 'bk-101',
+    accessCode: 'BK-101',
     campsiteId: 'camp-1',
     campsiteTitle: 'Asvejos Pakrantės Stovyklavietė',
     campsiteImage: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80',
@@ -792,12 +800,23 @@ export const INITIAL_BOOKINGS: Booking[] = [
     escrowStatus: 'held_in_escrow',
     paymentMethodType: 'card',
     stripePaymentIntentId: 'pi_3M0001EscrowAsveja',
-    status: 'approved',
+    status: 'payment_submitted',
+    holdExpiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
+    paymentProofUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=600&q=80',
+    paymentProofNote: 'Mokėjimo pavedimas atliktas iš Swedbank, LT88 7044 0000 1234 5678',
+    paymentProofUploadedAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+    hostBankDetails: {
+      iban: 'LT79 7044 0600 0123 4567',
+      bankName: 'Swedbank',
+      receiverName: 'Mantas Giraitis',
+      paymentReference: 'bk-101'
+    },
     createdAt: '2026-08-01',
     propertyType: 'tent'
   },
   {
     id: 'bk-102',
+    accessCode: 'BK-102',
     campsiteId: 'camp-2',
     campsiteTitle: 'Aukštaitijos Glamping Namelis ir Kubilas',
     campsiteImage: 'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?auto=format&fit=crop&w=600&q=80',
@@ -823,12 +842,20 @@ export const INITIAL_BOOKINGS: Booking[] = [
     escrowStatus: 'held_in_escrow',
     paymentMethodType: 'card',
     stripePaymentIntentId: 'pi_3M0002EscrowGlamping',
-    status: 'pending',
+    status: 'held_for_payment',
+    holdExpiresAt: new Date(Date.now() + 11 * 60 * 60 * 1000).toISOString(),
+    hostBankDetails: {
+      iban: 'LT79 7044 0600 0123 4567',
+      bankName: 'Swedbank',
+      receiverName: 'Rūta Vanagaitė',
+      paymentReference: 'bk-102'
+    },
     createdAt: '2026-08-04',
     propertyType: 'glamping'
   },
   {
     id: 'bk-103',
+    accessCode: 'BK-103',
     campsiteId: 'camp-3',
     campsiteTitle: 'Dzūkijos Šilo Kemperių Aikštelė ir Prijungimai',
     campsiteImage: 'https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?auto=format&fit=crop&w=600&q=80',
@@ -854,7 +881,7 @@ export const INITIAL_BOOKINGS: Booking[] = [
     escrowStatus: 'held_in_escrow',
     paymentMethodType: 'card',
     stripePaymentIntentId: 'pi_3M0003EscrowRv',
-    status: 'pending',
+    status: 'awaiting_host_response',
     createdAt: '2026-08-04',
     propertyType: 'rv'
   }

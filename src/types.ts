@@ -194,8 +194,35 @@ export interface Campsite {
   };
 }
 
+export type ReservationStatus = 
+  | 'awaiting_host_response' // Step 1: Traveler inquiry submitted (no dates held yet)
+  | 'held_for_payment'       // Step 2: Host approved availability, 12h hold active, dates blocked on calendar
+  | 'payment_submitted'      // Step 3: Traveler uploaded bank transfer proof, hold timer active, awaiting host check
+  | 'confirmed'              // Step 4: Host verified payment, booking confirmed, arrival instructions unlocked
+  | 'declined_by_host'       // Host rejected inquiry
+  | 'host_response_expired'  // Host SLA expired
+  | 'payment_hold_expired'   // 12-hour payment hold expired before confirmation
+  | 'payment_not_found'      // Host marked payment proof invalid or not found
+  | 'cancelled_by_guest'     // Cancelled by traveler
+  | 'cancelled_by_host'      // Cancelled by host
+  | 'completed'              // Stay finished
+  // Backward compatibility legacy aliases:
+  | 'free_inquiry'
+  | 'pending'
+  | 'approved'
+  | 'rejected';
+
+export interface HostBankDetails {
+  iban: string;
+  bankName: string;
+  receiverName: string;
+  swift?: string;
+  paymentReference: string;
+}
+
 export interface Booking {
   id: string;
+  accessCode?: string; // Secret portal code for traveler access without login e.g. "BK-8921"
   campsiteId: string;
   campsiteTitle: string;
   campsiteImage: string;
@@ -221,7 +248,15 @@ export interface Booking {
   escrowStatus?: 'held_in_escrow' | 'payout_released_to_host' | 'refunded_to_guest';
   paymentMethodType?: 'card' | 'apple_pay' | 'google_pay';
   stripePaymentIntentId?: string;
-  status: 'free_inquiry' | 'pending' | 'approved' | 'confirmed' | 'rejected' | 'completed';
+  status: ReservationStatus;
+  
+  // 12-Hour Payment Hold & Proof Fields
+  holdExpiresAt?: string; // ISO string for 12h hold expiry
+  paymentProofUrl?: string; // Bank statement / receipt screenshot URL or base64
+  paymentProofNote?: string; // Transaction reference or note from traveler
+  paymentProofUploadedAt?: string; // ISO timestamp when proof uploaded
+  hostBankDetails?: HostBankDetails;
+  
   pitchId?: string;
   pitchName?: string;
   automatedEmailSent?: boolean;
@@ -235,6 +270,7 @@ export interface Booking {
   escrowPayoutReleaseAt?: string;
   arrivalNotificationSent?: boolean;
   arrivalNotificationSentAt?: string;
+  version?: number;
 }
 
 export interface Inquiry {

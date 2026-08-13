@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
 import { HostPhotoUploader } from './HostPhotoUploader';
+import { sendVerificationEmail } from '../lib/email';
 
 export type AuthModalMode = 'login' | 'register' | 'verify-email' | 'forgot-password' | 'forgot-email';
 
@@ -49,10 +50,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   // Email OTP verification state
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
   const [pendingUserEmail, setPendingUserEmail] = useState<string>('');
+  const [pendingUserName, setPendingUserName] = useState<string>('');
   const [emailOtp, setEmailOtp] = useState('');
   const [simulatedCode, setSimulatedCode] = useState('4829');
   const [verifyError, setVerifyError] = useState('');
   const [verifySuccess, setVerifySuccess] = useState(false);
+  const [isSendingVerificationEmail, setIsSendingVerificationEmail] = useState(false);
+  const [resendNotice, setResendNotice] = useState('');
 
   // Forgot password state
   const [resetEmail, setResetEmail] = useState('');
@@ -89,9 +93,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   // Handle Register
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegError('');
+    setResendNotice('');
 
     if (regPassword !== regConfirmPassword) {
       setRegError('Slaptažodžiai nesutampa!');
@@ -113,8 +118,48 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     setPendingUserId(user.id);
     setPendingUserEmail(user.email);
+    setPendingUserName(user.name);
     setSimulatedCode(verificationCode);
     setMode('verify-email');
+
+    // Trigger sending verification email via Resend
+    setIsSendingVerificationEmail(true);
+    try {
+      const emailRes = await sendVerificationEmail({
+        email: user.email,
+        name: user.name,
+        code: verificationCode
+      });
+      console.log('✉️ Verifikacijos laiškas sėkmingai išsiųstas per Resend:', emailRes);
+    } catch (err: any) {
+      console.warn('⚠️ Nepavyko išsiųsti verifikacijos laiško per Resend API:', err);
+    } finally {
+      setIsSendingVerificationEmail(false);
+    }
+  };
+
+  // Resend verification code
+  const handleResendCode = async () => {
+    if (!pendingUserEmail) return;
+    setVerifyError('');
+    setResendNotice('');
+    setIsSendingVerificationEmail(true);
+
+    const newCode = Math.floor(1000 + Math.random() * 9000).toString();
+    setSimulatedCode(newCode);
+
+    try {
+      await sendVerificationEmail({
+        email: pendingUserEmail,
+        name: pendingUserName || 'Keliautojau',
+        code: newCode
+      });
+      setResendNotice('Naujas verifikacijos kodas išsiųstas į jūsų el. paštą!');
+    } catch (err: any) {
+      setResendNotice('Kodas atnaujintas sistemoje (el. pašto siuntimo klaida).');
+    } finally {
+      setIsSendingVerificationEmail(false);
+    }
   };
 
   // Handle Email OTP verification
@@ -549,10 +594,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </div>
                 )}
 
+                {resendNotice && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-800 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{resendNotice}</span>
+                  </div>
+                )}
+
                 <div className="p-4 bg-emerald-50/80 rounded-2xl border border-emerald-200 space-y-2">
-                  <p className="text-xs text-emerald-900 font-bold flex items-center justify-between">
-                    <span>✉️ Verifikacijos kodas išsiųstas į {pendingUserEmail}</span>
-                  </p>
+                  <div className="flex items-center justify-between text-xs font-bold text-emerald-950">
+                    <span className="flex items-center gap-1.5">
+                      <Mail className="w-4 h-4 text-emerald-700" />
+                      <span>Verifikacijos kodas išsiųstas į {pendingUserEmail}</span>
+                    </span>
+                    {isSendingVerificationEmail && (
+                      <RefreshCw className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
+                    )}
+                  </div>
                   <p className="text-xs text-emerald-800 leading-relaxed">
                     Jūsų kodas išmėginimui: <button type="button" onClick={() => setEmailOtp(simulatedCode)} className="bg-emerald-200 hover:bg-emerald-300 px-2.5 py-0.5 rounded text-emerald-950 font-black text-sm font-mono cursor-pointer border border-emerald-300 inline-flex items-center gap-1" title="Paspauskite įrašyti"><span>{simulatedCode}</span> <span className="text-[10px] text-emerald-900 font-bold">(Įrašyti)</span></button>
                   </p>
@@ -573,13 +631,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md shadow-emerald-700/20 transition cursor-pointer active:scale-98 flex items-center justify-center gap-2"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Patvirtinti El. Paštą ir Aktyvuoti</span>
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleResendCode}
+                    disabled={isSendingVerificationEmail}
+                    className="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition cursor-pointer shrink-0 flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isSendingVerificationEmail ? 'animate-spin' : ''}`} />
+                    <span>Siųsti iš naujo</span>
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-md shadow-emerald-700/20 transition cursor-pointer active:scale-98 flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Patvirtinti ir Aktyvuoti</span>
+                  </button>
+                </div>
               </form>
             )}
           </div>
