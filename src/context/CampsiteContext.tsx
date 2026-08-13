@@ -1277,19 +1277,23 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setUsersList(prev => [...prev, newUser]);
     setCurrentUser(newUser);
 
-    // Sync profile data to Supabase if configured with unverified status
+    // Sync profile data to Supabase if configured with unverified status (fault tolerant)
     if (isSupabaseConfigured()) {
-      Promise.resolve(supabase.from('profiles').insert([{
-        email: newUser.email,
-        full_name: newUser.name,
-        phone: newUser.phone,
-        role: newUser.userType === 'host' ? 'host' : 'traveler',
-        is_verified: false,
-        is_email_verified: false
-      }])).then(res => {
-        if (res.error) console.warn('⚠️ Supabase profile insert sync error:', res.error);
-        else console.log('✅ Supabase profile sync successful (account set to unverified)!');
-      }).catch(err => console.warn('⚠️ Supabase network error:', err));
+      try {
+        Promise.resolve(supabase.from('profiles').insert([{
+          email: newUser.email,
+          full_name: newUser.name,
+          phone: newUser.phone,
+          role: newUser.userType === 'host' ? 'host' : 'traveler',
+          is_verified: false,
+          is_email_verified: false
+        }])).then(res => {
+          if (res.error) console.warn('⚠️ Supabase profile insert sync error (neblokuoja tėkmės bei el. pašto siuntimo):', res.error.message || res.error);
+          else console.log('✅ Supabase profile sync successful (account set to unverified)!');
+        }).catch(err => console.warn('⚠️ Supabase network error (neblokuoja tėkmės bei el. pašto siuntimo):', err?.message || err));
+      } catch (err: any) {
+        console.warn('⚠️ Exception during Supabase profile sync (neblokuoja tėkmės bei el. pašto siuntimo):', err?.message || err);
+      }
     }
     
     // Automatically set corresponding mode and dispatch welcome email
@@ -1436,19 +1440,23 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setCurrentUser({ ...currentUser, isEmailVerified: true });
     }
 
-    // Sync verification status to Supabase
+    // Sync verification status to Supabase (fault tolerant)
     if (isSupabaseConfigured()) {
-      const targetUser = usersList.find(u => u.id === userId) || (currentUser && currentUser.id === userId ? currentUser : null);
-      if (targetUser?.email) {
-        Promise.resolve(
-          supabase
-            .from('profiles')
-            .update({ is_verified: true, is_email_verified: true })
-            .eq('email', targetUser.email)
-        ).then(res => {
-          if (res.error) console.warn('⚠️ Supabase profile verification update error:', res.error);
-          else console.log('✅ Supabase profile marked as verified!');
-        }).catch(err => console.warn('⚠️ Supabase network error:', err));
+      try {
+        const targetUser = usersList.find(u => u.id === userId) || (currentUser && currentUser.id === userId ? currentUser : null);
+        if (targetUser?.email) {
+          Promise.resolve(
+            supabase
+              .from('profiles')
+              .update({ is_verified: true, is_email_verified: true })
+              .eq('email', targetUser.email)
+          ).then(res => {
+            if (res.error) console.warn('⚠️ Supabase profile verification update error:', res.error.message || res.error);
+            else console.log('✅ Supabase profile marked as verified!');
+          }).catch(err => console.warn('⚠️ Supabase network error:', err?.message || err));
+        }
+      } catch (err: any) {
+        console.warn('⚠️ Exception in Supabase profile verification update:', err?.message || err);
       }
     }
   };
@@ -1688,22 +1696,26 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       );
     }
 
-    // Sync booking & inquiry to Supabase database if configured
+    // Sync booking & inquiry to Supabase database if configured (fault tolerant)
     if (isSupabaseConfigured()) {
-      Promise.resolve(supabase.from('bookings').insert([{
-        campsite_id: newBooking.campsiteId,
-        guest_name: newBooking.guestName,
-        guest_email: newBooking.guestEmail,
-        guest_phone: newBooking.guestPhone || '',
-        check_in: newBooking.checkIn,
-        check_out: newBooking.checkOut,
-        guests_count: newBooking.guestsCount,
-        total_price: newBooking.totalPrice,
-        status: 'pending'
-      }])).then(res => {
-        if (res.error) console.warn('⚠️ Supabase booking insert sync error:', res.error);
-        else console.log('✅ Supabase booking insert successful!');
-      }).catch(err => console.warn('⚠️ Supabase network error:', err));
+      try {
+        Promise.resolve(supabase.from('bookings').insert([{
+          campsite_id: newBooking.campsiteId,
+          guest_name: newBooking.guestName,
+          guest_email: newBooking.guestEmail,
+          guest_phone: newBooking.guestPhone || '',
+          check_in: newBooking.checkIn,
+          check_out: newBooking.checkOut,
+          guests_count: newBooking.guestsCount,
+          total_price: newBooking.totalPrice,
+          status: 'pending'
+        }])).then(res => {
+          if (res.error) console.warn('⚠️ Supabase booking insert sync error (neblokuoja Resend el. pašto siuntimo):', res.error.message || res.error);
+          else console.log('✅ Supabase booking insert successful!');
+        }).catch(err => console.warn('⚠️ Supabase network error (neblokuoja Resend el. pašto siuntimo):', err?.message || err));
+      } catch (err: any) {
+        console.warn('⚠️ Exception in Supabase booking insert (neblokuoja Resend el. pašto siuntimo):', err?.message || err);
+      }
     }
 
     // Automatically send system inquiry notification emails
@@ -1919,15 +1931,19 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // 2. Unblock all dates across campsites
     setCampsites(prev => prev.map(c => ({ ...c, blockedDates: [] })));
 
-    // 3. Clear Supabase tables if connected
+    // 3. Clear Supabase tables if connected (fault tolerant)
     if (isSupabaseConfigured()) {
-      Promise.all([
-        supabase.from('bookings').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
-        supabase.from('reservations').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
-        supabase.from('inquiries').delete().neq('id', '00000000-0000-0000-0000-000000000000')
-      ]).then(() => {
-        console.log('✅ Supabase test reservations, bookings & inquiries successfully cleared!');
-      }).catch(err => console.warn('⚠️ Error clearing Supabase test records:', err));
+      try {
+        Promise.all([
+          supabase.from('bookings').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+          supabase.from('reservations').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+          supabase.from('inquiries').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+        ]).then(() => {
+          console.log('✅ Supabase test reservations, bookings & inquiries successfully cleared!');
+        }).catch(err => console.warn('⚠️ Error clearing Supabase test records:', err?.message || err));
+      } catch (err: any) {
+        console.warn('⚠️ Exception during Supabase test reset:', err?.message || err);
+      }
     }
   };
 
