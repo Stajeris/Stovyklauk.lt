@@ -4,7 +4,7 @@ import {
   Trash2, Eye, EyeOff, Plus, Sparkles, AlertCircle, Building2, User, 
   Check, X, RefreshCw, ChevronRight, ExternalLink, ShieldAlert, AlertTriangle, Star, MessageSquare,
   CreditCard, DollarSign, Zap, Download, FileText, Lock, ChevronDown, ChevronUp, UserCheck, Shield, Crown,
-  Calendar as CalendarIcon, LogOut, Edit, Save, Key, Mail, Phone
+  Calendar as CalendarIcon, LogOut, Edit, Save, Key, Mail, Phone, Send
 } from 'lucide-react';
 import { useCampsites } from '../context/CampsiteContext';
 import { Campsite, PropertyType, Review, Booking, UserProfile } from '../types';
@@ -12,6 +12,7 @@ import { OrderApproxMap } from './OrderApproxMap';
 import { LocationPickerMap } from './LocationPickerMap';
 import { ProtectedChatMessage } from '../utils/privacyFilter';
 import { HostCalendarManager } from './HostCalendarManager';
+import { generateSystemEmail, SystemEmailType } from '../utils/emailSystem';
 
 export const AdminPanel: React.FC = () => {
   const { 
@@ -21,6 +22,8 @@ export const AdminPanel: React.FC = () => {
     replyToThread,
     currentUser,
     usersList,
+    emailLogs,
+    dispatchSystemEmail,
     setCurrentUser,
     logoutUser,
     openAuthModal,
@@ -32,14 +35,16 @@ export const AdminPanel: React.FC = () => {
     rejectCampsite, 
     updateCampsiteStatus, 
     deleteCampsite, 
-    addCampsite,
+ addCampsite,
     resolveReviewDispute,
     selectCampsiteById,
     updateHostTier,
     setView 
   } = useCampsites();
 
-  const [activeTab, setActiveTab] = useState<'pending' | 'all' | 'add-new' | 'reviews-disputes' | 'chats' | 'users' | 'calendar'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'all' | 'add-new' | 'reviews-disputes' | 'chats' | 'users' | 'calendar' | 'email-logs'>('pending');
+  const [adminEmailTab, setAdminEmailTab] = useState<SystemEmailType>('reservation_confirmed');
+  const [emailLogSearch, setEmailLogSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'pending' | 'rejected'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPreviewCamp, setSelectedPreviewCamp] = useState<Campsite | null>(null);
@@ -406,6 +411,21 @@ export const AdminPanel: React.FC = () => {
             <span>📅 Rezervacijų Kalendorius</span>
             <span className="px-2 py-0.5 text-[10px] font-extrabold bg-emerald-700 text-white rounded-full">
               {bookings.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('email-logs')}
+            className={`flex items-center gap-2 px-5 py-3 font-bold text-xs rounded-t-xl transition-all border-b-2 cursor-pointer shrink-0 ${
+              activeTab === 'email-logs'
+                ? 'border-emerald-600 text-emerald-900 bg-emerald-50/80 font-extrabold'
+                : 'border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
+            }`}
+          >
+            <Mail className="w-4 h-4 text-emerald-600" />
+            <span>✉️ El. Pašto Logai & Šablonai (9 Tipai)</span>
+            <span className="px-2 py-0.5 text-[10px] font-extrabold bg-emerald-800 text-white rounded-full">
+              {emailLogs?.length || 0}
             </span>
           </button>
         </div>
@@ -1588,6 +1608,223 @@ export const AdminPanel: React.FC = () => {
           </div>
 
           <HostCalendarManager campsites={campsites} isAdminView={true} />
+        </div>
+      )}
+
+      {/* TAB 9: SYSTEM EMAIL LOGS & 9 LIVE TEMPLATES PREVIEW */}
+      {activeTab === 'email-logs' && (
+        <div className="space-y-6">
+          {/* Admin Header Banner */}
+          <div className="bg-emerald-950 text-white p-6 sm:p-8 rounded-3xl border border-emerald-900 space-y-3 shadow-xl">
+            <div className="flex items-center gap-2 text-amber-300 font-bold text-xs uppercase tracking-wider">
+              <Mail className="w-4 h-4 text-amber-400" />
+              <span>Administratoriui (Admin): Sistemos El. Pašto Valdymas</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black">
+              El. Pašto Logai & Gyvoji Šablonų Peržiūra (9 Laiškų Tipai)
+            </h2>
+            <p className="text-xs sm:text-sm text-emerald-200 leading-relaxed max-w-3xl">
+              Visi el. laiškų išsiuntimo įrašai atvaizduojami <strong className="text-white">System Sent Logs</strong> žurnale, o gyvoje šablonų peržiūroje galima stebėti visus 9 laiškų tipus.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-3 pt-2 text-xs font-bold">
+              <div className="px-3.5 py-1.5 rounded-xl bg-emerald-900/80 border border-emerald-800 text-emerald-200 flex items-center gap-2">
+                <span>📧 Išsiųstų laiškų skaičius:</span>
+                <strong className="text-white font-extrabold text-sm">{emailLogs?.length || 0}</strong>
+              </div>
+              <div className="px-3.5 py-1.5 rounded-xl bg-emerald-900/80 border border-emerald-800 text-emerald-200 flex items-center gap-2">
+                <span>✉️ Palaikomi Šablonų Tipai:</span>
+                <strong className="text-amber-300 font-extrabold text-sm">9 / 9</strong>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 1: Live Email Template Switcher & HTML Preview */}
+          <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm space-y-6 font-sans">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between border-b border-stone-100 pb-4 gap-4">
+              <div>
+                <h3 className="font-extrabold text-stone-900 text-base flex items-center gap-2">
+                  <Eye className="w-5 h-5 text-emerald-700" />
+                  <span>Gyvoji Šablonų Peržiūra (Live 9 Template Preview)</span>
+                </h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Pasirinkite vieną iš 9 laiško tipų, kad pamatytumėte tikrą sugeneruotą HTML turinį, adresato informaciją bei temą.
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  const sampleCamp = campsites[0];
+                  const sampleBk = bookings[0];
+                  dispatchSystemEmail(adminEmailTab, {
+                    booking: sampleBk as any,
+                    campsite: sampleCamp,
+                    user: currentUser,
+                    verificationCode: '849201',
+                    declineReason: 'Gauta didesnio prioriteto rezervacija tais pačiais datų terminais.'
+                  });
+                  setToastMessage(`✅ Testinis el. laiškas (${adminEmailTab}) sėkmingai sugeneruotas ir įrašytas į žurnalą!`);
+                  setTimeout(() => setToastMessage(null), 3500);
+                }}
+                className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold rounded-xl text-xs flex items-center justify-center gap-2 shadow-sm transition cursor-pointer shrink-0"
+              >
+                <Send className="w-4 h-4" />
+                <span>Generuoti ir Išsiųsti Testinį Laišką</span>
+              </button>
+            </div>
+
+            {/* 9 Template Navigation Tabs */}
+            <div className="flex flex-wrap items-center gap-2 text-xs font-extrabold">
+              {[
+                { id: 'welcome_user', label: '1. Vartotojo Registracija' },
+                { id: 'welcome_host', label: '2. Šeimininko Registracija' },
+                { id: 'reservation_request_received', label: '3. Užklausa Svečiui' },
+                { id: 'new_reservation_request_host', label: '4. Užklausa Šeimininkui' },
+                { id: 'reservation_confirmed', label: '5. Patvirtinimas' },
+                { id: 'reservation_declined', label: '6. Atmetimas' },
+                { id: 'arrival_instructions', label: '7. Atvykimo Kodai' },
+                { id: 'password_reset_code', label: '8. Slaptažodžio Kodas' },
+                { id: 'stay_completed_thank_you', label: '9. Atsiliepimo Kvietimas' }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setAdminEmailTab(tab.id as SystemEmailType)}
+                  className={`px-3.5 py-2 rounded-xl transition cursor-pointer border ${
+                    adminEmailTab === tab.id
+                      ? 'bg-emerald-800 text-white border-emerald-900 shadow-xs font-extrabold'
+                      : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100 font-semibold'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Live Preview Container */}
+            {(() => {
+              const sampleCamp = campsites[0] || {
+                id: 'camp-sample',
+                title: 'Asvejos Ežero Stovyklavietė',
+                location: 'Molėtai',
+                pricePerNight: 45,
+                images: ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80'],
+                propertyType: 'tent'
+              };
+              const sampleBk = bookings[0] || {
+                id: 'bk-sample-101',
+                campsiteTitle: sampleCamp.title,
+                guestName: 'Giedrius Stajeris',
+                guestEmail: 'GiedriusStajeris@gmail.com',
+                guestPhone: '+37060000000',
+                checkIn: '2026-08-20',
+                checkOut: '2026-08-22',
+                guestsCount: 2,
+                totalPrice: 90
+              };
+
+              const preview = generateSystemEmail(adminEmailTab, {
+                booking: sampleBk as any,
+                campsite: sampleCamp as any,
+                user: currentUser,
+                verificationCode: '849201',
+                declineReason: 'Užsakytoms datoms planuojami profilaktiniai sodybos tvarkymo darbai.'
+              });
+
+              return (
+                <div className="p-4 sm:p-6 rounded-3xl bg-stone-100 border border-stone-200 space-y-4 font-sans max-w-3xl mx-auto shadow-inner">
+                  <div className="bg-white rounded-2xl border border-stone-200 p-4 space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between border-b border-stone-100 pb-2">
+                      <span className="font-extrabold text-stone-500 uppercase tracking-wider text-[10px]">Šablono Tipas:</span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-950 font-black text-[10px] border border-emerald-200">
+                        {adminEmailTab}
+                      </span>
+                    </div>
+                    <p className="text-stone-600 font-bold">Gavėjas: <span className="text-stone-900 font-extrabold">{preview.recipientName} ({preview.recipientEmail})</span></p>
+                    <p className="text-stone-600 font-bold">Tema: <span className="text-emerald-900 font-extrabold">{preview.subject}</span></p>
+                  </div>
+
+                  <div 
+                    className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden"
+                    dangerouslySetInnerHTML={{ __html: preview.htmlBody }}
+                  />
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Section 2: System Sent Logs Journal */}
+          <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm space-y-4 font-sans">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-stone-100 pb-4 gap-3">
+              <div>
+                <h3 className="font-extrabold text-stone-900 text-base flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-emerald-700" />
+                  <span>El. Laiškų Išsiuntimo Žurnalas (System Sent Logs)</span>
+                </h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Registruojami visi automatiniai ir rankiniu būdu sugeneruoti sisteminiai pranešimai.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Search className="w-4 h-4 text-stone-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    placeholder="Ieškoti pagal gavėją ar temą..."
+                    value={emailLogSearch}
+                    onChange={(e) => setEmailLogSearch(e.target.value)}
+                    className="pl-9 pr-3 py-1.5 rounded-xl border border-stone-200 text-xs font-semibold focus:ring-2 focus:ring-emerald-600 focus:outline-hidden bg-white text-stone-900"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {(!emailLogs || emailLogs.length === 0) ? (
+              <div className="p-8 text-center bg-stone-50 rounded-2xl border border-stone-200 text-stone-500 text-xs space-y-2">
+                <Mail className="w-8 h-8 text-stone-300 mx-auto" />
+                <p className="font-bold">El. laiškų žurnale dar nėra registruotų pranešimų.</p>
+                <p className="text-[11px] text-stone-400">Atlikite testinį siuntimą viršuje arba įvykdykite rezervacijos užklausą.</p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+                {emailLogs
+                  .filter(log => {
+                    if (!emailLogSearch) return true;
+                    const q = emailLogSearch.toLowerCase();
+                    return (
+                      log.recipientName?.toLowerCase().includes(q) ||
+                      log.recipientEmail?.toLowerCase().includes(q) ||
+                      log.subject?.toLowerCase().includes(q) ||
+                      log.type?.toLowerCase().includes(q)
+                    );
+                  })
+                  .map((log) => (
+                    <div key={log.id} className="p-4 rounded-2xl bg-stone-50 border border-stone-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-white hover:shadow-xs transition">
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-950 text-[10px] font-black uppercase tracking-wider border border-emerald-200">
+                            {log.type}
+                          </span>
+                          <span className="font-extrabold text-stone-900">{log.recipientName}</span>
+                          <span className="text-stone-500 font-mono text-[11px]">({log.recipientEmail})</span>
+                        </div>
+                        <p className="text-stone-900 font-extrabold text-xs">{log.subject}</p>
+                        <p className="text-stone-600 font-medium text-[11px] line-clamp-2 bg-white p-2.5 rounded-xl border border-stone-200/80">
+                          {log.contentPreview}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0 text-[11px] text-stone-500 font-bold space-y-1">
+                        <span className="block font-mono text-[10px] text-stone-400">{log.sentAt}</span>
+                        <span className="inline-flex items-center gap-1 text-emerald-700 font-extrabold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Išsiųsta (Sent)</span>
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
