@@ -33,10 +33,11 @@ export function getResendClient(): Resend | null {
 }
 
 /**
- * Sends generic HTML email using strictly Resend API with smart sandbox fallback.
+ * Sends generic HTML email using strictly Resend API with automatic Live mode and Sandbox fallback.
  */
 export async function sendGenericEmail(params: GenericEmailParams) {
-  const { to, subject, htmlBody, fromName = 'Campy.lt', fromEmail = 'noreply@campy.lt' } = params;
+  const defaultFrom = process.env.RESEND_FROM_EMAIL || process.env.SMTP_FROM_EMAIL || 'noreply@campy.lt';
+  const { to, subject, htmlBody, fromName = 'Campy.lt', fromEmail = defaultFrom } = params;
 
   const resend = getResendClient();
   if (!resend) {
@@ -49,13 +50,12 @@ export async function sendGenericEmail(params: GenericEmailParams) {
     };
   }
 
-  // Use official Resend sandbox sender address
-  const senderAddress = `"${fromName}" <onboarding@resend.dev>`;
+  // 1st Attempt: Primary Live mode sending using custom verified domain
+  const primarySender = `"${fromName}" <${fromEmail}>`;
 
   try {
-    // 1st Attempt: Send directly to the specified recipient
     const res1 = await resend.emails.send({
-      from: senderAddress,
+      from: primarySender,
       to: [to],
       subject,
       html: htmlBody,
@@ -64,17 +64,34 @@ export async function sendGenericEmail(params: GenericEmailParams) {
     if (res1.data && !res1.error) {
       return {
         success: true,
-        method: 'resend',
+        method: 'resend_live',
         data: res1.data,
-        message: `El. laiškas sėkmingai išsiųstas per Resend API (${to})`
+        message: `El. laiškas sėkmingai išsiųstas per Resend API iš ${fromEmail} į ${to} (LIVE režimas)`
       };
     }
 
-    const errMessage = res1.error?.message || '';
-    console.warn('⚠️ Resend siuntimo klaida pirmuoju bandymu:', res1.error);
+    // 2nd Attempt: If custom domain failed (e.g. unverified domain or sandbox limitation), try onboarding@resend.dev
+    const sandboxSender = `"${fromName}" <onboarding@resend.dev>`;
+    const res2 = await resend.emails.send({
+      from: sandboxSender,
+      to: [to],
+      subject,
+      html: htmlBody,
+    });
 
-    // If Resend returns sandbox restriction error (e.g., recipient not allowed in sandbox mode),
-    // extract allowed test account email or fallback to primary admin email.
+    if (res2.data && !res2.error) {
+      return {
+        success: true,
+        method: 'resend_sandbox',
+        data: res2.data,
+        message: `El. laiškas išsiųstas per Resend bandomąjį domeną (onboarding@resend.dev) į ${to}`
+      };
+    }
+
+    const errMessage = res2.error?.message || res1.error?.message || '';
+    console.warn('⚠️ Resend siuntimo klaida per bandomąjį domeną:', res2.error || res1.error);
+
+    // 3rd Attempt: Sandbox interception mode if recipient is restricted by Resend sandbox policy
     let fallbackTo = 'giedriusstajeris@gmail.com';
     if (errMessage.includes('your own email address')) {
       const match = errMessage.match(/\(([^)]+)\)/);
@@ -83,37 +100,36 @@ export async function sendGenericEmail(params: GenericEmailParams) {
       }
     }
 
-    // Decorate HTML body with original recipient details so the admin/tester knows who it was for
     const decoratedHtmlBody = `
       <div style="background-color: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 16px; margin: 12px 0; font-family: sans-serif; font-size: 13px; color: #92400e;">
-        <strong>ℹ️ Campy.lt Resend Pranešimas:</strong><br>
-        Šio laiško paskirties gavėjas: <code>${to}</code>.<br>
-        <em>Bandomajame režiime laiškas pristatytas į registruotą administratoriaus el. paštą (<code>${fallbackTo}</code>).</em>
+        <strong>ℹ️ Campy.lt Resend Pranešimas (Bandomasis Sandbox Režimas):</strong><br>
+        Šio laiško numatytas gavėjas: <code>${to}</code>.<br>
+        <em>Bandomajame režime laiškas nukreiptas į registruotą administratoriaus el. paštą (<code>${fallbackTo}</code>). Norėdami įjungti TIESIOGINĮ (Live) siuntimą visiems lankytojams, patvirtinkite savo domeną puslapyje <a href="https://resend.com/domains">resend.com/domains</a>.</em>
       </div>
       ${htmlBody}
     `;
 
-    const res2 = await resend.emails.send({
-      from: `"${fromName}" <onboarding@resend.dev>`,
+    const res3 = await resend.emails.send({
+      from: sandboxSender,
       to: [fallbackTo],
       subject: `[Campy.lt ➔ ${to}] ${subject}`,
       html: decoratedHtmlBody,
     });
 
-    if (res2.error) {
-      console.error('❌ Resend API siuntimo klaida ir perėmimo režimu:', res2.error);
+    if (res3.error) {
+      console.error('❌ Resend API siuntimo klaida ir perėmimo režimu:', res3.error);
       return {
         success: false,
         method: 'resend',
-        error: res2.error.message || res1.error?.message || 'Nepavyko išsiųsti laiško per Resend API'
+        error: res3.error.message || res2.error?.message || res1.error?.message || 'Nepavyko išsiųsti laiško per Resend API'
       };
     }
 
     return {
       success: true,
       method: 'resend_sandbox_intercepted',
-      data: res2.data,
-      message: `El. laiškas sėkmingai išsiųstas (Resend perėmimo režimu į ${fallbackTo})`
+      data: res3.data,
+      message: `El. laiškas išsiųstas Resend bandomuoju perėmimo režimu į ${fallbackTo}`
     };
 
   } catch (resendErr: any) {
