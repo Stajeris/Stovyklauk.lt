@@ -6,6 +6,7 @@ import {
 import { useCampsites } from '../context/CampsiteContext';
 import { HostPhotoUploader } from './HostPhotoUploader';
 import { sendVerificationEmail } from '../lib/email';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 export type AuthModalMode = 'login' | 'register' | 'verify-email' | 'forgot-password' | 'forgot-email';
 
@@ -122,8 +123,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setSimulatedCode(verificationCode);
     setMode('verify-email');
 
-    // Trigger sending verification email via Resend
+    // Trigger sending verification email via Resend and record in Supabase notification_outbox
     setIsSendingVerificationEmail(true);
+    if (isSupabaseConfigured()) {
+      try {
+        Promise.resolve(supabase.from('notification_outbox').insert([{
+          recipient_email: user.email,
+          recipient_name: user.name,
+          template_type: 'verification_code',
+          subject: `🔐 Campy.lt El. Pašto Verifikacijos Kodas: ${verificationCode}`,
+          payload: { code: verificationCode, user_id: user.id },
+          status: 'pending'
+        }])).then(res => {
+          if (res.error) console.warn('⚠️ Supabase outbox write notice:', res.error.message || res.error);
+          else console.log('📦 Verifikacijos laiškas įrašytas į Supabase notification_outbox!');
+        }).catch(err => console.warn('⚠️ Outbox write error:', err));
+      } catch (e) {
+        console.warn('⚠️ Exception logging to outbox:', e);
+      }
+    }
+
     try {
       const emailRes = await sendVerificationEmail({
         email: user.email,

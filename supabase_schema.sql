@@ -85,12 +85,35 @@ CREATE TABLE IF NOT EXISTS public.inquiries (
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_inquiries_campsite_id ON public.inquiries(campsite_id);
 
+-- 6. NOTIFICATION OUTBOX TABLE (El. pašto pranešimų eilė / Supabase Database Webhooks & Edge Functions)
+CREATE TABLE IF NOT EXISTS public.notification_outbox (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recipient_email TEXT NOT NULL,
+  recipient_name TEXT,
+  template_type TEXT NOT NULL,
+  subject TEXT,
+  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'failed')),
+  error_message TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  sent_at TIMESTAMPTZ
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_outbox_status ON public.notification_outbox(status);
+
 -- Row Level Security (RLS) Policies
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.campsites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reservations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.inquiries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notification_outbox ENABLE ROW LEVEL SECURITY;
+
+-- Notification Outbox RLS
+CREATE POLICY "Anyone can insert outbox notifications" ON public.notification_outbox FOR INSERT WITH CHECK (true);
+CREATE POLICY "Outbox notifications viewable by authenticated users" ON public.notification_outbox FOR SELECT USING (true);
+CREATE POLICY "Authenticated users can update outbox notifications" ON public.notification_outbox FOR UPDATE USING (true);
 
 -- Profiles RLS
 CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);

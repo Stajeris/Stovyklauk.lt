@@ -779,6 +779,33 @@ export const CampsiteProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     setEmailLogs(prev => [newLog, ...prev]);
 
+    // Asynchronously insert outbox record into Supabase notification_outbox if connected
+    if (isSupabaseConfigured()) {
+      try {
+        Promise.resolve(
+          supabase.from('notification_outbox').insert([{
+            recipient_email: generated.recipientEmail,
+            recipient_name: generated.recipientName,
+            template_type: type,
+            subject: generated.subject,
+            payload: {
+              type,
+              campsite_title: payload.campsite?.title || payload.booking?.campsiteTitle,
+              booking_id: payload.booking?.id,
+              content_preview: generated.contentPreview,
+              html_body: generated.htmlBody
+            },
+            status: 'pending'
+          }])
+        ).then(res => {
+          if (res.error) console.warn('⚠️ Supabase notification_outbox sync error:', res.error.message || res.error);
+          else console.log('📦 Supabase notification_outbox įrašas sėkmingai sukurtas!');
+        }).catch(err => console.warn('⚠️ Supabase notification_outbox network error:', err?.message || err));
+      } catch (err: any) {
+        console.warn('⚠️ Exception inserting into notification_outbox:', err?.message || err);
+      }
+    }
+
     // Asynchronously dispatch real email via Express API (Resend or Supabase SMTP)
     sendSystemEmailViaApi(type, payload).then(result => {
       if (result.success) {
