@@ -44,46 +44,55 @@ export async function sendGenericEmail(params: GenericEmailParams) {
   // Use Resend API
   if (resend) {
     try {
-      const data = await resend.emails.send({
+      const res1 = await resend.emails.send({
         from: senderAddress,
         to: [to],
         subject,
         html: htmlBody,
       });
 
-      return {
-        success: true,
-        method: 'resend',
-        data,
-        message: `El. laiškas sėkmingai išsiųstas per Resend API (${fromEmail})`
-      };
-    } catch (resendErr: any) {
-      console.warn('⚠️ Resend siuntimo klaida su skaitomu domenu, bandoma iš onboarding@resend.dev:', resendErr.message);
-      
-      // If domain is not verified on Resend, retry using onboarding@resend.dev
-      try {
+      if (res1.error) {
+        console.warn('⚠️ Resend siuntimo klaida su pirminiu adresu, bandoma per onboarding@resend.dev:', res1.error);
+        
+        // If domain is not verified on Resend, retry using onboarding@resend.dev
         const fallbackAddress = `"${fromName}" <onboarding@resend.dev>`;
-        const data = await resend.emails.send({
+        const res2 = await resend.emails.send({
           from: fallbackAddress,
           to: [to],
           subject,
           html: htmlBody,
         });
 
+        if (res2.error) {
+          console.error('❌ Resend API siuntimo klaida:', res2.error);
+          return {
+            success: false,
+            method: 'resend',
+            error: res2.error.message || res1.error.message || 'Nepavyko išsiųsti laiško per Resend API'
+          };
+        }
+
         return {
           success: true,
           method: 'resend_fallback',
-          data,
+          data: res2.data,
           message: `El. laiškas išsiųstas per Resend API (su bandomuoju adresu onboarding@resend.dev)`
         };
-      } catch (fallbackErr: any) {
-        console.error('❌ Resend API siuntimo klaida:', fallbackErr.message);
-        return {
-          success: false,
-          method: 'resend',
-          error: fallbackErr.message || 'Nepavyko išsiųsti laiško per Resend API'
-        };
       }
+
+      return {
+        success: true,
+        method: 'resend',
+        data: res1.data,
+        message: `El. laiškas sėkmingai išsiųstas per Resend API (${fromEmail})`
+      };
+    } catch (resendErr: any) {
+      console.error('❌ Resend API tinklo / vykdymo klaida:', resendErr.message);
+      return {
+        success: false,
+        method: 'resend',
+        error: resendErr.message || 'Nepavyko išsiųsti laiško per Resend API'
+      };
     }
   }
 
