@@ -16,7 +16,7 @@ import { DisputeReviewModal } from './DisputeReviewModal';
 import { calculateFullPricing, getCampsiteCleaningFee } from '../utils/pricing';
 
 export const CampsiteDetailPage: React.FC = () => {
-  const { selectedCampsite, setView, isDateBlocked, favorites, toggleFavorite, bookings, userMode, addBooking } = useCampsites();
+  const { selectedCampsite, setView, isDateBlocked, favorites, toggleFavorite, bookings, userMode, addBooking, currentUser } = useCampsites();
 
   if (!selectedCampsite) {
     return (
@@ -39,12 +39,21 @@ export const CampsiteDetailPage: React.FC = () => {
   const [selectedPitchId, setSelectedPitchId] = useState<string | null>(
     camp.pitches && camp.pitches.length > 0 ? camp.pitches[0].id : null
   );
-  const [travelerName, setTravelerName] = useState('');
-  const [travelerEmail, setTravelerEmail] = useState('');
-  const [travelerPhone, setTravelerPhone] = useState('');
+  const [travelerName, setTravelerName] = useState(currentUser?.name || '');
+  const [travelerEmail, setTravelerEmail] = useState(currentUser?.email || '');
+  const [travelerPhone, setTravelerPhone] = useState(currentUser?.phone || '');
   const [travelerMessage, setTravelerMessage] = useState('');
   const [inquirySubmittedBooking, setInquirySubmittedBooking] = useState<Booking | null>(null);
   const [inquiryFormError, setInquiryFormError] = useState<string | null>(null);
+
+  // Auto-populate logged-in user details if available
+  React.useEffect(() => {
+    if (currentUser && !travelerEmail) {
+      if (currentUser.name) setTravelerName(currentUser.name);
+      if (currentUser.email) setTravelerEmail(currentUser.email);
+      if (currentUser.phone) setTravelerPhone(currentUser.phone);
+    }
+  }, [currentUser]);
 
   const [showWidgetCalendar, setShowWidgetCalendar] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -686,10 +695,22 @@ export const CampsiteDetailPage: React.FC = () => {
                 </div>
 
                 {/* Traveler Form Fields (No Registration Required) */}
-                <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
-                  <span className="block text-[10px] font-black uppercase text-stone-600 tracking-wider">
-                    Poilsiautojo Kontaktai (Registracija nebūtina)
-                  </span>
+                <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-3 font-sans">
+                  <div className="flex items-center justify-between">
+                    <span className="block text-[10px] font-black uppercase text-stone-600 tracking-wider">
+                      Poilsiautojo Kontaktai (Registracija nebūtina)
+                    </span>
+                    <span className="text-[9px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                      ✓ Neregistruotiems leidžiama
+                    </span>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200 text-emerald-950 text-xs font-medium flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-emerald-700 shrink-0" />
+                    <span>
+                      SVARBU: Užsakymo patvirtinimas bus išsiųstas tiesiai į žemiau nurodytą el. pašto adresą.
+                    </span>
+                  </div>
 
                   <div>
                     <label className="block text-[10px] font-bold text-gray-700 uppercase mb-0.5">
@@ -707,7 +728,7 @@ export const CampsiteDetailPage: React.FC = () => {
 
                   <div>
                     <label className="block text-[10px] font-bold text-gray-700 uppercase mb-0.5">
-                      El. pašto adresas *
+                      El. pašto adresas * (Šiuo adresu atsiųsime patvirtinimą)
                     </label>
                     <input
                       type="email"
@@ -715,7 +736,7 @@ export const CampsiteDetailPage: React.FC = () => {
                       placeholder="jonas@pavyzdys.lt"
                       value={travelerEmail}
                       onChange={(e) => setTravelerEmail(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-900 focus:ring-2 focus:ring-emerald-600 focus:outline-hidden"
+                      className="w-full px-3 py-2 border border-emerald-300 rounded-xl bg-white text-xs font-bold text-gray-900 focus:ring-2 focus:ring-emerald-600 focus:outline-hidden shadow-2xs"
                     />
                   </div>
 
@@ -812,6 +833,13 @@ export const CampsiteDetailPage: React.FC = () => {
                   <p className="text-xs text-gray-600 leading-relaxed">
                     Jūsų užklausa stovyklavietei <strong>"{camp.title}"</strong> ({checkIn} — {checkOut}) išsiųsta šeimininkui <strong>{camp.host.name}</strong>.
                   </p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs font-semibold flex items-center gap-2 font-sans shadow-2xs">
+                  <Mail className="w-4 h-4 text-emerald-700 shrink-0" />
+                  <span>
+                    Patvirtinimo el. laiškas išsiųstas jūsų nurodytu adresu: <strong className="underline text-emerald-900">{inquirySubmittedBooking.guestEmail}</strong>
+                  </span>
                 </div>
 
                 {/* FREE PLAN DIRECT CONTACT BRIDGE */}
